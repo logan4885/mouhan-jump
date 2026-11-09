@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { Storage } from './Storage.js?v=20261110k';
 import { CONFIG } from './config.js?v=20261110k';
 import { pick } from './utils.js?v=20261110k';
-import { CAN_SKINS } from './canSkins.js?v=20261110k';
+import { CAN_SKINS } from './canSkins.js?v=20261110m';
 import { buildCan, tickCan } from './CanModel.js?v=20261110k';
 import { lookupCode, hashCode } from './codes.js?v=20261110k';
 
