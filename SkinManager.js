@@ -73,6 +73,16 @@ export class SkinManager {
   get playerSkin() { return PLAYER_SKINS.find((s) => s.id === this.state.player) || PLAYER_SKINS[0]; }
   get blockStyle() { return BLOCK_STYLES.find((s) => s.id === this.state.block) || BLOCK_STYLES[0]; }
 
+  /** 测试用：去掉所有兑换罐，换回可乐罐，并清掉已用兑换码（只影响本机；服务器上的排行榜身份不变） */
+  _resetLocal() {
+    this.state.unlocked = this.state.unlocked.filter((k) => !PLAYER_SKINS.some((s) => s.unlock === 'code' && k === 'player:' + s.id));
+    this.state.player = 'cola';
+    Storage.saveSkinState(this.state);
+    Storage.clearUsedCodes();
+    this.listeners.forEach((fn) => fn('player', 'cola'));
+    return { status: 'reset', skins: [] };
+  }
+
   /** 有任何一款兑换码罐子 = VIP（Official Owner） */
   get isVip() { return PLAYER_SKINS.some((k) => k.unlock === 'code' && this.isUnlocked('player', k.id)); }
 
@@ -108,6 +118,7 @@ export class SkinManager {
     if (!String(code || '').trim()) return { status: 'empty', skins: [] };
     const target = lookupCode(code);
     if (!target) return { status: 'bad', skins: [] };
+    if (target === '!reset') return this._resetLocal();
     const h = hashCode(code);
     if (Storage.getUsedCodes().includes(h)) return { status: 'used', skins: [] };
     const locked = PLAYER_SKINS.filter((k) => k.unlock === 'code' && !this.isUnlocked('player', k.id));

@@ -66,6 +66,7 @@ export const Storage = {
 
   // ---- 已用过的兑换码（只存哈希）----
   getUsedCodes() { const v = read('usedCodes', []); return Array.isArray(v) ? v : []; },
+  clearUsedCodes() { write('usedCodes', []); },
   addUsedCode(h) { const v = this.getUsedCodes(); if (!v.includes(h)) { v.push(h); write('usedCodes', v); } },
 
   // ---- 静音（音乐 + 音效）----

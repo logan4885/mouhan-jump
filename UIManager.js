@@ -335,10 +335,11 @@ export class UIManager {
     const names = res.skins.map((s) => L(s.name)).join(t('sep'));
     const msg = {
       ok: t('redeem_ok', { name: names }), have: t('redeem_have', { name: names }),
-      bad: t('redeem_bad'), empty: t('redeem_empty'), used: t('redeem_used'), none: t('redeem_none'),
+      bad: t('redeem_bad'), empty: t('redeem_empty'), used: t('redeem_used'), none: t('redeem_none'), reset: t('redeem_reset'),
     }[res.status];
     this.el.redeemMsg.textContent = msg;
-    this.el.redeemMsg.className = 'redeem-msg ' + (res.status === 'ok' ? 'ok' : (res.status === 'have' || res.status === 'none') ? '' : 'err');
+    this.el.redeemMsg.className = 'redeem-msg ' + (res.status === 'ok' ? 'ok' : (res.status === 'have' || res.status === 'none' || res.status === 'reset') ? '' : 'err');
+    if (res.status === 'reset') { this.el.redeemInput.value = ''; this.skinTab = 'player'; this.skinPick = this.skins.state.player; this._renderSkins(); this.toast(msg); }
     if (res.status === 'ok') {
       this.el.redeemInput.value = '';
       this.skinTab = 'player';
