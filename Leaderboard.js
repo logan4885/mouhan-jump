@@ -1,16 +1,22 @@
-// 排行榜：默认读取本地 Mock JSON；填写 API 配置后自动切换为真实接口
+// 排行榜：填写 baseUrl 后读写真实后端（Node + MySQL）；为空则使用本地 Mock JSON
 //
-// 预留接口约定（后端实现时按此返回即可）：
-//   GET  {baseUrl}/leaderboard/top?limit=10
-//        -> [{ id, nickname, avatar, avatarUrl, color, score }]
-//   POST {baseUrl}/leaderboard/submit   body: { nickname, score }
-//        -> { ok: true, rank: 12 }
+// 后端接口（见 jump3d-server/server.js）：
+//   GET  {baseUrl}/api/leaderboard/top?limit=10
+//        -> [{ id, nickname, avatar, color, score, equipped }]
+//   POST {baseUrl}/api/sync   body: { id, secret, nickname, score, perfects, games, unlocked[], equipped }
+//        -> { ok, rank, score }
+//   GET  {baseUrl}/api/player/:id
+//        -> { ok, player: { id, nickname, score, rank, perfects, games, equipped, unlocked[], total, avatar, color } }
+
+import { Storage } from './Storage.js';
 
 export const LEADERBOARD_API = {
-  baseUrl: '',            // 例如 'https://api.example.com'；为空则使用 Mock 数据
-  topPath: '/leaderboard/top',
-  submitPath: '/leaderboard/submit',
-  timeoutMs: 5000,
+  baseUrl: 'https://mouhan-jump-api.onrender.com',            // 部署后端后填这里，例如 'https://jump3d-api.onrender.com'；为空则使用 Mock 数据
+  topPath: '/api/leaderboard/top',
+  syncPath: '/api/sync',
+  playerPath: '/api/player/',
+  timeoutMs: 8000,
+  syncDelayMs: 1500,
 };
 
 const MOCK_URL = new URL('./leaderboard.mock.json', import.meta.url);
@@ -49,25 +55,57 @@ export async function fetchTop(limit = 10) {
   }
 }
 
-/** 提交分数（未配置后端时直接返回成功） */
-export async function submitScore(nickname, score) {
+/** 把本机的玩家数据（昵称/最高分/皮肤/统计）同步到服务器；失败不影响游戏 */
+export async function syncPlayer() {
   if (!LEADERBOARD_API.baseUrl) return { ok: true, mock: true };
+  const p = Storage.getPlayer();
+  const skins = Storage.getSkinState();
+  const stats = Storage.getStats();
   try {
-    return await fetchJson(LEADERBOARD_API.baseUrl + LEADERBOARD_API.submitPath, {
+    return await fetchJson(LEADERBOARD_API.baseUrl + LEADERBOARD_API.syncPath, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ nickname, score }),
+      body: JSON.stringify({
+        id: p.id, secret: p.secret, nickname: Storage.getNickname(),
+        score: Storage.getHighScore(), perfects: stats.perfects || 0, games: stats.games || 0,
+        unlocked: skins.unlocked, equipped: 'player:' + skins.player,
+      }),
     });
   } catch (e) {
     return { ok: false, error: e.message };
   }
 }
 
-/** 把“我”的最高分并入榜单，排序后取前 limit 名；若我不在前列，额外返回我的名次 */
+// 数据一变就稍等片刻再同步（合并短时间内的多次改动）
+let syncTimer = 0;
+if (typeof window !== 'undefined') {
+  Storage.onChange(() => {
+    if (!LEADERBOARD_API.baseUrl) return;
+    clearTimeout(syncTimer);
+    syncTimer = setTimeout(syncPlayer, LEADERBOARD_API.syncDelayMs);
+  });
+}
+
+/** 取某个玩家的详情（已解锁皮肤、正在使用的皮肤等） */
+export async function fetchPlayer(id) {
+  if (!LEADERBOARD_API.baseUrl) return null;
+  try {
+    const r = await fetchJson(LEADERBOARD_API.baseUrl + LEADERBOARD_API.playerPath + encodeURIComponent(id));
+    return r && r.ok ? r.player : null;
+  } catch (e) {
+    return null;
+  }
+}
+
+/**
+ * 整理榜单：真实后端时榜单里本来就有我（按 id 认出来）；Mock 时把“我”并入后排序。
+ * 若我不在前 limit 名，额外返回我的名次。
+ */
 export function buildBoard(list, me, limit = 10) {
-  const rows = list.map((r) => ({ ...r, isMe: false }));
-  if (me && me.score > 0) {
-    rows.push({ id: 'me', nickname: me.nickname || '我', avatar: '😎', color: '#4f86ff', score: me.score, isMe: true });
+  const rows = list.map((r) => ({ ...r, isMe: !!me && !!me.id && r.id === me.id }));
+  const inList = rows.some((r) => r.isMe);
+  if (me && me.score > 0 && !inList) {
+    rows.push({ id: me.id || 'me', nickname: me.nickname || '我', avatar: '😎', color: '#4f86ff', score: me.score, isMe: true, local: true });
   }
   rows.sort((a, b) => b.score - a.score);
   rows.forEach((r, i) => { r.rank = i + 1; });

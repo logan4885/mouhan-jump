@@ -1,6 +1,6 @@
 // UI 层：开始界面、计分板、蓄力条、飘字、结算弹窗、皮肤商店（含兑换码）、排行榜、语言切换
 import { PLAYER_SKINS, BLOCK_STYLES, SkinPreview } from './SkinManager.js';
-import { fetchTop, buildBoard, LEADERBOARD_API } from './Leaderboard.js';
+import { fetchTop, fetchPlayer, syncPlayer, buildBoard, LEADERBOARD_API } from './Leaderboard.js';
 import { Storage } from './Storage.js';
 import { escapeHtml } from './utils.js';
 import { t, L, setLang, onLangChange, applyStatic } from './i18n.js';
@@ -24,6 +24,7 @@ export class UIManager {
       overUnlocked: $('overUnlocked'), nick: $('nickInput'),
       skin: $('skinModal'), skinGrid: $('skinGrid'), skinName: $('skinName'), skinDesc: $('skinDesc'), skinPerk: $('skinPerk'), perk: $('perk'), useSkin: $('btnUseSkin'),
       redeemForm: $('redeemForm'), redeemInput: $('redeemInput'), redeemMsg: $('redeemMsg'),
+      player: $('playerModal'), playerBody: $('playerBody'),
       rank: $('rankModal'), rankList: $('rankList'), rankMine: $('rankMine'), rankNote: $('rankNote'),
       toast: $('toast'),
     };
@@ -45,6 +46,15 @@ export class UIManager {
     ['btnSkinsStart', 'btnSkinsOver'].forEach((id) => $(id).addEventListener('click', () => { this._saveNick(); this.openSkins(); }));
     ['btnRankStart', 'btnRankOver'].forEach((id) => $(id).addEventListener('click', () => { this._saveNick(); this.openRank(); }));
     this.el.nick.addEventListener('change', () => this._saveNick());
+    // 点击排行榜里的头像 / 名字，查看这位玩家解锁的皮肤
+    const onRow = (e) => {
+      const li = e.target.closest('li[data-rid]');
+      if (li && this._rankRows && this._rankRows[li.dataset.rid]) this.openPlayer(this._rankRows[li.dataset.rid]);
+    };
+    [this.el.rankList, this.el.rankMine].forEach((ol) => {
+      ol.addEventListener('click', onRow);
+      ol.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onRow(e); } });
+    });
     document.querySelectorAll('[data-lang]').forEach((b) => b.addEventListener('click', () => setLang(b.dataset.lang)));
 
     // 关闭按钮 / 点击遮罩关闭
@@ -55,7 +65,11 @@ export class UIManager {
       });
     });
     window.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') [this.el.skin, this.el.rank].forEach((w) => { if (!w.classList.contains('hidden')) this._closeModal(w); });
+      if (e.key === 'Escape') {
+        // 玩家详情盖在排行榜上面：先只关详情
+        if (!this.el.player.classList.contains('hidden')) { this._closeModal(this.el.player); return; }
+        [this.el.skin, this.el.rank].forEach((w) => { if (!w.classList.contains('hidden')) this._closeModal(w); });
+      }
     });
 
     // 皮肤 tab
@@ -85,7 +99,7 @@ export class UIManager {
   /** 是否有弹窗 / 菜单遮挡（遮挡时不响应游戏操作） */
   get blocking() {
     return !this.el.start.classList.contains('hidden') ||
-      [this.el.over, this.el.skin, this.el.rank].some((w) => !w.classList.contains('hidden'));
+      [this.el.over, this.el.skin, this.el.rank, this.el.player].some((w) => !w.classList.contains('hidden'));
   }
 
   /** 切换语言后，刷新所有由 JS 生成的文字 */
@@ -94,6 +108,7 @@ export class UIManager {
     if (this.lastOver) this._fillGameOver(this.lastOver);
     if (!this.el.skin.classList.contains('hidden')) this._renderSkins();
     if (!this.el.rank.classList.contains('hidden')) this.openRank();
+    if (!this.el.player.classList.contains('hidden')) this._closeModal(this.el.player);
     this.el.redeemMsg.textContent = '';
   }
 
@@ -232,19 +247,76 @@ export class UIManager {
     this._openModal(this.el.rank);
     this.el.rankList.innerHTML = `<li class="loading">${escapeHtml(t('loading'))}</li>`;
     this.el.rankMine.innerHTML = '';
+    const live = !!LEADERBOARD_API.baseUrl;
+    if (live) await syncPlayer(); // 先把我最新的数据传上去，榜单里才有最新的我
     const data = await fetchTop(10);
-    const me = { nickname: Storage.getNickname() || t('me'), score: Storage.getHighScore() };
+    const meId = Storage.getPlayer().id;
+    const me = { id: meId, nickname: Storage.getNickname() || t('me'), score: Storage.getHighScore() };
     const { top, mine } = buildBoard(Array.isArray(data) ? data : [], me, 10);
+    let mineRow = mine;
+    if (live && !mineRow && me.score > 0 && !top.some((r) => r.isMe)) {
+      const p = await fetchPlayer(meId); // 我不在前 10：向服务器问我的真实名次
+      if (p) mineRow = { id: p.id, nickname: p.nickname, avatar: p.avatar, color: p.color, score: p.score, rank: p.rank, isMe: true };
+    }
+    this._rankRows = {};
     const row = (r) => {
+      // Mock 数据里的别人没有皮肤信息，不可点击；真实后端的每一行、以及“我”都可点击
+      const clickable = r.isMe || live;
+      if (clickable) this._rankRows[r.id] = r;
       const medal = r.rank <= 3 ? ['🥇', '🥈', '🥉'][r.rank - 1] : r.rank;
       const avatar = r.avatarUrl
         ? `<img class="avatar" src="${escapeHtml(r.avatarUrl)}" alt="">`
         : `<span class="avatar" style="background:${escapeHtml(r.color || '#ddd')}">${escapeHtml(r.avatar || '🙂')}</span>`;
-      return `<li class="${r.isMe ? 'me' : ''}"><span class="rk">${medal}</span>${avatar}<span class="nm"><bdi>${escapeHtml(r.nickname)}</bdi>${r.isMe ? ` <em>(${escapeHtml(t('me'))})</em>` : ''}</span><span class="sc">${r.score}</span></li>`;
+      const attrs = clickable ? ` data-rid="${escapeHtml(r.id)}" tabindex="0" role="button" aria-label="${escapeHtml(t('pl_view'))}"` : '';
+      return `<li class="${r.isMe ? 'me' : ''}${clickable ? ' clickable' : ''}"${attrs}><span class="rk">${medal}</span>${avatar}<span class="nm"><bdi>${escapeHtml(r.nickname)}</bdi>${r.isMe ? ` <em>(${escapeHtml(t('me'))})</em>` : ''}</span><span class="sc">${r.score}</span>${clickable ? '<span class="chev" aria-hidden="true">›</span>' : ''}</li>`;
     };
     this.el.rankList.innerHTML = top.map(row).join('');
-    this.el.rankMine.innerHTML = mine ? `<ol class="rank-list">${row(mine)}</ol>` : '';
-    this.el.rankNote.textContent = LEADERBOARD_API.baseUrl ? t('rank_live') : t('rank_mock');
+    this.el.rankMine.innerHTML = mineRow ? `<ol class="rank-list">${row(mineRow)}</ol>` : '';
+    this.el.rankNote.textContent = live ? t('rank_live') + ' · ' + t('pl_tip') : t('rank_mock');
+  }
+
+  /** 点开某位玩家：展示头像、名次、已解锁皮肤和正在使用的皮肤 */
+  async openPlayer(r) {
+    this._openModal(this.el.player);
+    this.el.playerBody.innerHTML = `<p class="loading-line">${escapeHtml(t('loading'))}</p>`;
+    let info;
+    if (r.isMe) {
+      const sk = Storage.getSkinState();
+      const st = Storage.getStats();
+      info = { nickname: Storage.getNickname() || t('me'), avatar: r.avatar, color: r.color, score: Storage.getHighScore(), rank: r.rank,
+        perfects: st.perfects || 0, games: st.games || 0, unlocked: sk.unlocked, equipped: 'player:' + sk.player };
+    } else {
+      info = await fetchPlayer(r.id);
+    }
+    if (this.el.player.classList.contains('hidden')) return; // 加载期间已关闭
+    if (!info) { this.el.playerBody.innerHTML = `<p class="loading-line">${escapeHtml(t('pl_fail'))}</p>`; return; }
+
+    const have = new Set(info.unlocked || []);
+    const cans = PLAYER_SKINS;
+    const owned = cans.filter((s) => have.has('player:' + s.id)).length;
+    const eq = cans.find((s) => 'player:' + s.id === info.equipped) || cans[0];
+    const perk = PERKS[eq.id];
+    const avatar = info.avatarUrl
+      ? `<img class="avatar big" src="${escapeHtml(info.avatarUrl)}" alt="">`
+      : `<span class="avatar big" style="background:${escapeHtml(info.color || '#ddd')}">${escapeHtml(info.avatar || '🙂')}</span>`;
+    const cell = (s) => {
+      const on = have.has('player:' + s.id);
+      const isEq = s.id === eq.id;
+      return `<li class="pcan${on ? '' : ' off'}${isEq ? ' eq' : ''}" title="${escapeHtml(L(s.name))}">
+        <span class="can-sw" style="--b:${escapeHtml(s.body)};--a:${escapeHtml(s.accent)}"></span>
+        <span class="pn">${on ? escapeHtml(L(s.name)) : '🔒'}</span>${isEq ? `<em class="tag-on">${escapeHtml(t('using'))}</em>` : ''}</li>`;
+    };
+    this.el.playerBody.innerHTML = `
+      <div class="pl-head">${avatar}
+        <div class="pl-name"><bdi>${escapeHtml(info.nickname)}</bdi>${r.isMe ? ` <em>(${escapeHtml(t('me'))})</em>` : ''}</div>
+        <div class="pl-stats">${escapeHtml(t('pl_stats', { r: info.rank || '-', s: info.score }))}</div>
+        <div class="pl-stats">${escapeHtml(t('pl_stats2', { p: info.perfects || 0, g: info.games || 0 }))}</div>
+      </div>
+      <div class="pl-eq"><span class="can-sw lg" style="--b:${escapeHtml(eq.body)};--a:${escapeHtml(eq.accent)}"></span>
+        <div><div class="pl-eq-t">${escapeHtml(t('pl_equipped'))}</div><b>${escapeHtml(L(eq.name))}</b>
+        <div class="pl-perk">${perk ? escapeHtml(perk.icon + ' ' + L(perk.name)) : escapeHtml(t('perk_none'))}</div></div></div>
+      <h3 class="pl-sub">${escapeHtml(t('pl_unlocked', { n: owned, m: cans.length }))}</h3>
+      <ul class="pcan-grid">${cans.map(cell).join('')}</ul>`;
   }
 
   /* ---------- 通用 ---------- */

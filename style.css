@@ -198,6 +198,36 @@ body.theme-neon .screen { background: linear-gradient(180deg, rgba(20, 18, 43, .
 .tag-on { background: #3fbf86; color: #fff; }
 .tag-lock { background: var(--ink); color: #fff; }
 
+/* 排行榜里可点击的行 + 玩家详情 */
+.rank-list li.clickable { cursor: pointer; transition: transform .12s, background .12s; }
+.rank-list li.clickable:hover { transform: translateY(-1px); background: #fff8e0; }
+.rank-list li.me.clickable:hover { background: #d9e5ff; }
+.rank-list li.clickable:focus-visible { outline: 3px solid var(--accent-2); outline-offset: 2px; }
+.rank-list .chev { font-size: 20px; font-weight: 900; color: var(--muted); line-height: 1; }
+[dir="rtl"] .rank-list .chev { transform: scaleX(-1); }
+.modal.player { width: min(100%, 400px); }
+.loading-line { color: var(--muted); margin: 30px 0; }
+.pl-head { display: grid; justify-items: center; gap: 4px; margin: 4px 0 14px; }
+.avatar.big { width: 64px; height: 64px; border-radius: 50%; display: grid; place-items: center; font-size: 34px; border: 3px solid var(--ink); }
+.pl-name { font-size: 20px; font-weight: 900; }
+.pl-name em { font-style: normal; font-size: 12px; color: var(--accent-2); }
+.pl-stats { font-size: 13px; color: var(--muted); font-weight: 700; }
+.pl-eq { display: flex; align-items: center; gap: 12px; text-align: start; padding: 10px 14px; border: 3px solid var(--ink); border-radius: 16px; background: #fff8e0; }
+.pl-eq-t { font-size: 12px; color: var(--muted); font-weight: 700; }
+.pl-perk { font-size: 12px; color: var(--ink); margin-top: 2px; }
+.pl-sub { margin: 16px 0 8px; font-size: 14px; text-align: start; }
+.pcan-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.pcan { position: relative; display: grid; justify-items: center; gap: 4px; padding: 8px 2px 6px; border: 2px solid var(--ink); border-radius: 12px; background: #fff; min-width: 0; }
+.pcan.eq { background: #e8fbf1; border-color: #3fbf86; box-shadow: 0 0 0 2px #3fbf86; }
+.pcan.off { background: #f1f1f1; border-style: dashed; }
+.pcan.off .can-sw { filter: grayscale(1) brightness(1.15); opacity: .45; }
+.pcan .pn { font-size: 11px; font-weight: 700; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pcan em { position: absolute; top: -8px; font-size: 9px; padding: 1px 5px; }
+.can-sw { position: relative; display: block; width: 26px; height: 36px; border-radius: 6px 6px 8px 8px; background: linear-gradient(90deg, rgba(255,255,255,.35), transparent 35%, rgba(0,0,0,.18)), var(--b); border: 2px solid var(--ink); }
+.can-sw::before { content: ""; position: absolute; left: -2px; right: -2px; top: -5px; height: 8px; border-radius: 50%; background: #d7dbe3; border: 2px solid var(--ink); }
+.can-sw::after { content: ""; position: absolute; left: 0; right: 0; top: 45%; height: 6px; background: var(--a); }
+.can-sw.lg { width: 34px; height: 48px; flex: none; }
+
 /* 排行榜 */
 .rank-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; text-align: left; }
 .rank-list li {
