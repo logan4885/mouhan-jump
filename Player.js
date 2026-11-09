@@ -1,10 +1,10 @@
 // 角色：外观、蓄力压缩、抛物线跳跃 + 空翻、落地缓冲、摔落动画
 import * as THREE from 'three';
-import { CONFIG } from './config.js?v=20261110f';
-import { Ease, disposeObject } from './utils.js?v=20261110f';
-import { PLAYER_SKINS } from './SkinManager.js?v=20261110f';
-import { tickCan } from './CanModel.js?v=20261110f';
-import { Particles } from './Particles.js?v=20261110f';
+import { CONFIG } from './config.js?v=20261110g';
+import { Ease, disposeObject } from './utils.js?v=20261110g';
+import { PLAYER_SKINS } from './SkinManager.js?v=20261110g';
+import { tickCan } from './CanModel.js?v=20261110g';
+import { Particles } from './Particles.js?v=20261110g';
 
 const UP = new THREE.Vector3(0, 1, 0);
 const GRAVITY = 26;
