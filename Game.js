@@ -242,7 +242,7 @@ export class Game {
         if (this.thunderCount >= pk.thunderStreak) { this.thunderReady = true; this.thunderCount = 0; this.ui.toast(`${pk.icon} ${L(pk.name)}`); }
       }
       this.blocks.ripple(this.blocks.next);
-      const sp0 = this._toScreen(this.player.root.position, 0.6);
+      const sp0 = this._toScreen(this.player.root.position, 0); // 落点：罐底与方块顶面的接触处
       if (this.sig) this._signatureBurst(this.sig, sp0.x, sp0.y, this.combo);
       else this.sound.perfect();
     } else {
