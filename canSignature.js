@@ -2,7 +2,7 @@
 // 平衡原则：这里的一切都是【纯外观】——不改变得分、判定、难度。稀有度越高，视觉和音乐越华丽，用来激发收集欲。
 //
 // 字段说明：
-//   rarity   传说 legendary / 史诗 epic / 稀有 rare（4 款基础罐没有专属表现，是“标准”）
+//   rarity   神话 mythic（红）/ 传说 legendary / 史诗 epic / 稀有 rare（4 款基础罐没有专属表现，是“标准”）
 //   burst    完美落地的特效种类（SignatureFX.js 里实现）
 //   color    主色（飘字、光晕、粒子用）
 //   word     完美落地时弹出的专属飘字（三语）
@@ -14,6 +14,10 @@ export const RARITY = {
   legendary: {
     order: 3, color: '#ffb300', burstMul: 2.2, flash: true, ambienceFrom: 2, comboMusicBoost: 1,
     name: { zh: '传说', en: 'Legendary', ar: 'أسطوري' },
+  },
+  mythic: {
+    order: 4, color: '#e53935', burstMul: 1.5, flash: false, ambienceFrom: 2, comboMusicBoost: 0,
+    name: { zh: '神话', en: 'Mythic', ar: 'أسطورة خالدة' },
   },
   epic: {
     order: 2, color: '#a855f7', burstMul: 1.5, flash: false, ambienceFrom: 2, comboMusicBoost: 0,
@@ -76,7 +80,7 @@ export const SIGNATURE = {
     },
   },
   chrono: {
-    rarity: 'epic', burst: 'pharaoh', color: '#ffd23a', theme: 'egypt', sfx: 'ping',
+    rarity: 'mythic', burst: 'pharaoh', color: '#ffd23a', theme: 'egypt', sfx: 'ping',
     word: { zh: '定格！', en: 'FREEZE!', ar: 'تجمّد!' },
     desc: {
       zh: '🎵 埃及风格音乐 · ✨ 荷鲁斯之眼与安卡金光', en: '🎵 Egyptian-style music · ✨ Eye of Horus & golden ankhs', ar: '🎵 موسيقى بطابع مصري · ✨ عين حورس وعلامات عنخ ذهبية',
