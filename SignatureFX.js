@@ -58,6 +58,16 @@ export class SignatureFX {
     this.glow.classList.toggle('on', on);
   }
 
+  /** 镜头移动时，让还在播放的特效跟着场景一起平移（特效是屏幕坐标，镜头一动就会和罐子错开） */
+  shift(dx, dy) {
+    if (!this.ps.length || (!dx && !dy)) return;
+    for (const p of this.ps) {
+      p.x += dx; p.y += dy;
+      if (p.cx !== undefined) { p.cx += dx; p.cy += dy; }
+      if (p.pts) for (const q of p.pts) { q[0] += dx; q[1] += dy; }
+    }
+  }
+
   clear() {
     this.ps.length = 0;
     this.ctx.clearRect(0, 0, this.cv.width, this.cv.height);
@@ -115,7 +125,7 @@ export class SignatureFX {
       case 'flash':
         c.fillStyle = p.color; c.fillRect(0, 0, this.w, this.h); break;
       case 'ring': {
-        const r = p.r0 + (p.r1 - p.r0) * (1 - k);
+        const r = Math.max(0.5, p.r0 + (p.r1 - p.r0) * (1 - Math.min(1, k)));
         c.strokeStyle = p.hue !== undefined ? `hsl(${(p.hue + p.age * 360) % 360},95%,62%)` : p.color;
         c.lineWidth = (p.lw || 6) * k + 1;
         c.beginPath(); c.ellipse(p.x, p.y, r, r * (p.squash || 0.55), 0, 0, TAU); c.stroke(); break;

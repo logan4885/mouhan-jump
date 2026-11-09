@@ -488,6 +488,18 @@ export class Game {
     return { x: (v.x + 1) / 2 * this.viewW, y: (1 - v.y) / 2 * this.viewH };
   }
 
+  /** 特效画在屏幕上，镜头平移后要同步移动，才能一直贴在落点上 */
+  _followCamFx() {
+    if (!this.fx) return;
+    const o = this._toScreen({ x: 0, y: 0, z: 0 });
+    const prev = this._fxRef;
+    this._fxRef = o;
+    if (!prev || !isFinite(o.x) || !isFinite(prev.x)) return;
+    const dx = o.x - prev.x, dy = o.y - prev.y;
+    if (Math.abs(dx) > 150 || Math.abs(dy) > 150) return;
+    this.fx.shift(dx, dy);
+  }
+
   /* ================= 主循环 ================= */
   start() {
     this.last = performance.now();
@@ -496,6 +508,7 @@ export class Game {
       this.last = now;
       this.update(dt);
       this.renderer.render(this.scene, this.camera);
+      this._followCamFx();
       requestAnimationFrame(loop);
     };
     requestAnimationFrame(loop);
