@@ -1,19 +1,19 @@
 // 游戏主控：渲染器 / 场景 / 正交相机 / 灯光、输入、状态机、计分与落点判定
 import * as THREE from 'three';
-import { CONFIG } from './config.js?v=20261110c';
-import { Storage } from './Storage.js?v=20261110c';
-import { Tweens, clamp, Ease } from './utils.js?v=20261110c';
-import { SkinManager } from './SkinManager.js?v=20261110c';
-import { BlockManager } from './BlockManager.js?v=20261110c';
-import { Player } from './Player.js?v=20261110c';
-import { UIManager } from './UIManager.js?v=20261110e';
-import { Sound } from './Sound.js?v=20261110c';
-import { t, L } from './i18n.js?v=20261110c';
-import { getPerk } from './canPerks.js?v=20261110c';
-import { getSignature, RARITY } from './canSignature.js?v=20261110c';
-import { PLAYER_SKINS } from './SkinManager.js?v=20261110c';
-import { Music, playSfx } from './SkinAudio.js?v=20261110c';
-import { SignatureFX } from './SignatureFX.js?v=20261110c';
+import { CONFIG } from './config.js?v=20261110f';
+import { Storage } from './Storage.js?v=20261110f';
+import { Tweens, clamp, Ease } from './utils.js?v=20261110f';
+import { SkinManager } from './SkinManager.js?v=20261110f';
+import { BlockManager } from './BlockManager.js?v=20261110f';
+import { Player } from './Player.js?v=20261110f';
+import { UIManager } from './UIManager.js?v=20261110f';
+import { Sound } from './Sound.js?v=20261110f';
+import { t, L } from './i18n.js?v=20261110f';
+import { getPerk } from './canPerks.js?v=20261110f';
+import { getSignature, RARITY } from './canSignature.js?v=20261110f';
+import { PLAYER_SKINS } from './SkinManager.js?v=20261110f';
+import { Music, playSfx } from './SkinAudio.js?v=20261110f';
+import { SignatureFX } from './SignatureFX.js?v=20261110f';
 
 // 踩中星号方块后的免费体验时长（秒）
 const TRIAL_SEC = 8;

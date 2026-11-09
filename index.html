@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
   <meta name="theme-color" content="#cfe9ff">
   <title>跳一跳 3D</title>
-  <link rel="stylesheet" href="style.css?v=20261110e">
+  <link rel="stylesheet" href="style.css?v=20261110f">
   <!-- Three.js 以 ES Module 方式从 CDN 引入 -->
   <script type="importmap">
     { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }
@@ -154,7 +154,7 @@
     <div class="modal-wrap hidden" id="rankModal" role="dialog" aria-modal="true" aria-labelledby="rankTitle">
       <div class="modal rank">
         <button class="close" data-close aria-label="关闭" data-i18n-aria="close">✕</button>
-        <h2 id="rankTitle"><span data-i18n="rank_title">排行榜</span> <small>TOP 10</small></h2>
+        <h2 id="rankTitle"><span data-i18n="rank_title">排行榜</span> <small id="rankSub"></small></h2>
         <ol class="rank-list" id="rankList"><li class="loading" data-i18n="loading">加载中…</li></ol>
         <div class="rank-mine" id="rankMine"></div>
         <p class="rank-note" id="rankNote"></p>
@@ -180,7 +180,7 @@
     </div>
   </div>
 
-  <script type="module" src="main.js?v=20261110e"></script>
+  <script type="module" src="main.js?v=20261110f"></script>
   <!-- 兜底：Three.js 或模块加载失败时给出提示 -->
   <script>
     setTimeout(function () { if (!window.__jumpReady) document.getElementById('nogl').classList.remove('hidden'); }, 9000);

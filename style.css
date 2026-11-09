@@ -436,3 +436,5 @@ body.theme-neon #hud .perk { background: rgba(20,18,43,.8); color: #f2f0ff; bord
 .acct-name { margin: 6px 0 8px; font-weight: 800; text-align: center; font-size: 14px; }
 .backup a { color: var(--muted); font-weight: 700; }
 .link-btn { margin-top: 8px; background: none; border: 0; color: var(--muted); font: inherit; font-weight: 800; font-size: 13px; text-decoration: underline; cursor: pointer; padding: 6px 10px; }
+.modal.rank .rank-list#rankList { max-height: 52vh; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; padding: 2px 4px 2px 2px; }
+.rank-list li.loading.more { justify-content: center; }

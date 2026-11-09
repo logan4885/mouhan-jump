@@ -1,22 +1,22 @@
 // UI 层：开始界面、计分板、蓄力条、飘字、结算弹窗、皮肤商店（含兑换码）、排行榜、语言切换
-import { PLAYER_SKINS, BLOCK_STYLES, SkinPreview } from './SkinManager.js?v=20261110c';
-import { fetchTop, fetchPlayer, syncPlayer, buildBoard, LEADERBOARD_API } from './Leaderboard.js?v=20261110c';
-import { Storage } from './Storage.js?v=20261110c';
-import { escapeHtml } from './utils.js?v=20261110c';
-import { t, L, setLang, getLang, onLangChange, applyStatic } from './i18n.js?v=20261110c';
-import { PERKS } from './canPerks.js?v=20261110c';
-import { SIGNATURE, RARITY, getSignature } from './canSignature.js?v=20261110c';
-import { SHOP } from './shop.js?v=20261110c';
-import { recoveryAvailable, makeCode, makeLink, restore } from './Recovery.js?v=20261110c';
-import { accountAvailable, PROVIDER_NAME, completeLogin, renderGoogleButton, prepareFacebook, facebookLogin, logout } from './Account.js?v=20261110c';
-import { AUTH } from './authConfig.js?v=20261110c';
+import { PLAYER_SKINS, BLOCK_STYLES, SkinPreview } from './SkinManager.js?v=20261110f';
+import { fetchTop, fetchPlayer, syncPlayer, buildBoard, LEADERBOARD_API } from './Leaderboard.js?v=20261110f';
+import { Storage } from './Storage.js?v=20261110f';
+import { escapeHtml } from './utils.js?v=20261110f';
+import { t, L, setLang, getLang, onLangChange, applyStatic } from './i18n.js?v=20261110f';
+import { PERKS } from './canPerks.js?v=20261110f';
+import { SIGNATURE, RARITY, getSignature } from './canSignature.js?v=20261110f';
+import { SHOP } from './shop.js?v=20261110f';
+import { recoveryAvailable, makeCode, makeLink, restore } from './Recovery.js?v=20261110f';
+import { accountAvailable, PROVIDER_NAME, completeLogin, renderGoogleButton, prepareFacebook, facebookLogin, logout } from './Account.js?v=20261110f';
+import { AUTH } from './authConfig.js?v=20261110f';
 
 const $ = (id) => document.getElementById(id);
 
 export class UIManager {
   /**
    * @param {object} handlers { onStart, onRestart, onHome }
-   * @param {import('./SkinManager.js?v=20261110c').SkinManager} skins
+   * @param {import('./SkinManager.js?v=20261110f').SkinManager} skins
    */
   constructor(handlers, skins) {
     this.h = handlers;
@@ -442,38 +442,73 @@ export class UIManager {
   }
 
   /* ---------- 排行榜 ---------- */
+  _rankRowHtml(r, live) {
+    // Mock 数据里的别人没有皮肤信息，不可点击；真实后端的每一行、以及“我”都可点击
+    const clickable = r.isMe || live;
+    if (clickable) this._rankRows[r.id] = r;
+    const medal = r.rank <= 3 ? ['🥇', '🥈', '🥉'][r.rank - 1] : r.rank;
+    const avatar = r.avatarUrl
+      ? `<img class="avatar" src="${escapeHtml(r.avatarUrl)}" alt="">`
+      : `<span class="avatar" style="background:${escapeHtml(r.color || '#ddd')}">${escapeHtml(r.avatar || '🙂')}</span>`;
+    const attrs = clickable ? ` data-rid="${escapeHtml(r.id)}" tabindex="0" role="button" aria-label="${escapeHtml(t('pl_view'))}"` : '';
+    const vip = r.isMe ? this.skins.isVip : !!r.vip;
+    const tag = vip ? `<b class="owner-badge">${escapeHtml(t('owner'))}</b>` : `<i class="guest-tag">${escapeHtml(t('guest'))}</i>`;
+    return `<li class="${r.isMe ? 'me' : ''}${vip ? ' vip' : ' guest'}${clickable ? ' clickable' : ''}"${attrs}><span class="rk">${medal}</span>${avatar}<span class="nm"><bdi>${escapeHtml(r.nickname)}</bdi>${r.isMe ? ` <em>(${escapeHtml(t('me'))})</em>` : ''}<br>${tag}</span><span class="sc">${r.score}</span>${clickable ? '<span class="chev" aria-hidden="true">›</span>' : ''}</li>`;
+  }
+
   async openRank() {
     this._openModal(this.el.rank);
+    const PAGE = 50;
+    const token = (this._rankToken = (this._rankToken || 0) + 1);   // 重新打开时作废旧的加载
     this.el.rankList.innerHTML = `<li class="loading">${escapeHtml(t('loading'))}</li>`;
+    this.el.rankList.scrollTop = 0;
     this.el.rankMine.innerHTML = '';
+    const sub = $('rankSub'); if (sub) sub.textContent = t('rank_all');
     const live = !!LEADERBOARD_API.baseUrl;
     if (live) await syncPlayer(); // 先把我最新的数据传上去，榜单里才有最新的我
-    const data = await fetchTop(10);
+    const data = await fetchTop(PAGE, 0);
+    if (token !== this._rankToken) return;
     const meId = Storage.getPlayer().id;
     const me = { id: meId, nickname: Storage.getNickname() || t('me'), score: Storage.getHighScore() };
-    const { top, mine } = buildBoard(Array.isArray(data) ? data : [], me, 10);
+    const list = Array.isArray(data) ? data : [];
+    this._rankRows = {};
+    // 真实后端：整页就是这一页；Mock：一次给全部
+    const { top, mine } = buildBoard(list, me, live ? PAGE : 1e9);
     let mineRow = mine;
-    if (live && !mineRow && me.score > 0 && !top.some((r) => r.isMe)) {
-      const p = await fetchPlayer(meId); // 我不在前 10：向服务器问我的真实名次
+    if (live && (!mineRow || mineRow.local) && me.score > 0 && !top.some((r) => r.isMe)) {
+      const p = await fetchPlayer(meId); // 我不在已加载的名次里：向服务器问我的真实名次
+      if (token !== this._rankToken) return;
       if (p) mineRow = { id: p.id, nickname: p.nickname, avatar: p.avatar, color: p.color, score: p.score, rank: p.rank, isMe: true };
     }
-    this._rankRows = {};
-    const row = (r) => {
-      // Mock 数据里的别人没有皮肤信息，不可点击；真实后端的每一行、以及“我”都可点击
-      const clickable = r.isMe || live;
-      if (clickable) this._rankRows[r.id] = r;
-      const medal = r.rank <= 3 ? ['🥇', '🥈', '🥉'][r.rank - 1] : r.rank;
-      const avatar = r.avatarUrl
-        ? `<img class="avatar" src="${escapeHtml(r.avatarUrl)}" alt="">`
-        : `<span class="avatar" style="background:${escapeHtml(r.color || '#ddd')}">${escapeHtml(r.avatar || '🙂')}</span>`;
-      const attrs = clickable ? ` data-rid="${escapeHtml(r.id)}" tabindex="0" role="button" aria-label="${escapeHtml(t('pl_view'))}"` : '';
-      const vip = r.isMe ? this.skins.isVip : !!r.vip;
-      const tag = vip ? `<b class="owner-badge">${escapeHtml(t('owner'))}</b>` : `<i class="guest-tag">${escapeHtml(t('guest'))}</i>`;
-      return `<li class="${r.isMe ? 'me' : ''}${vip ? ' vip' : ' guest'}${clickable ? ' clickable' : ''}"${attrs}><span class="rk">${medal}</span>${avatar}<span class="nm"><bdi>${escapeHtml(r.nickname)}</bdi>${r.isMe ? ` <em>(${escapeHtml(t('me'))})</em>` : ''}<br>${tag}</span><span class="sc">${r.score}</span>${clickable ? '<span class="chev" aria-hidden="true">›</span>' : ''}</li>`;
-    };
-    this.el.rankList.innerHTML = top.map(row).join('');
-    this.el.rankMine.innerHTML = mineRow ? `<ol class="rank-list">${row(mineRow)}</ol>` : '';
+    this.el.rankList.innerHTML = top.map((r) => this._rankRowHtml(r, live)).join('');
+    const showMine = () => { this.el.rankMine.innerHTML = mineRow ? `<ol class="rank-list">${this._rankRowHtml(mineRow, live)}</ol>` : ''; };
+    showMine();
     this.el.rankNote.textContent = live ? t('rank_live') + ' · ' + t('pl_tip') : t('rank_mock');
+
+    // 往下滑到底就继续加载，直到所有人都显示完
+    let loaded = list.length; let done = !live || list.length < PAGE; let busy = false;
+    this.el.rankList.onscroll = null;
+    if (done) return;
+    this.el.rankList.onscroll = async () => {
+      const el = this.el.rankList;
+      if (busy || done || token !== this._rankToken) return;
+      if (el.scrollTop + el.clientHeight < el.scrollHeight - 80) return;
+      busy = true;
+      el.insertAdjacentHTML('beforeend', `<li class="loading more">${escapeHtml(t('loading'))}</li>`);
+      const more = await fetchTop(PAGE, loaded);
+      if (token !== this._rankToken) return;
+      el.querySelectorAll('li.more').forEach((n) => n.remove());
+      if (!Array.isArray(more)) { busy = false; return; }       // 网络失败：下次滑动再试
+      const html = more.map((r, i) => {
+        const row = { ...r, rank: loaded + i + 1, isMe: r.id === meId };
+        if (row.isMe && mineRow) { mineRow = null; showMine(); }  // 滑到我了，下面固定的“我的名次”就不用再显示
+        return this._rankRowHtml(row, live);
+      }).join('');
+      el.insertAdjacentHTML('beforeend', html);
+      loaded += more.length;
+      if (more.length < PAGE) done = true;
+      busy = false;
+    };
   }
 
   /** 点开某位玩家：展示头像、名次、已解锁皮肤和正在使用的皮肤 */

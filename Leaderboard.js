@@ -8,7 +8,7 @@
 //   GET  {baseUrl}/api/player/:id
 //        -> { ok, player: { id, nickname, score, rank, perfects, games, equipped, unlocked[], total, avatar, color } }
 
-import { Storage } from './Storage.js?v=20261110c';
+import { Storage } from './Storage.js?v=20261110f';
 
 export const LEADERBOARD_API = {
   baseUrl: 'https://mouhan-jump-api.onrender.com',            // 部署后端后填这里，例如 'https://jump3d-api.onrender.com'；为空则使用 Mock 数据
@@ -43,10 +43,10 @@ async function fetchJson(url, options = {}) {
 }
 
 /** 获取榜单原始数据 */
-export async function fetchTop(limit = 10) {
+export async function fetchTop(limit = 10, offset = 0) {
   try {
     if (LEADERBOARD_API.baseUrl) {
-      return await fetchJson(`${LEADERBOARD_API.baseUrl}${LEADERBOARD_API.topPath}?limit=${limit}`);
+      return await fetchJson(`${LEADERBOARD_API.baseUrl}${LEADERBOARD_API.topPath}?limit=${limit}&offset=${offset}`);
     }
     return await fetchJson(MOCK_URL.href);
   } catch (e) {
