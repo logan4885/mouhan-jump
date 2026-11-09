@@ -1,5 +1,5 @@
 // 入口：创建游戏实例
-import { Game } from './Game.js?v=20261110c';
+import { Game } from './Game.js?v=20261110e';
 
 function showError(err) {
   console.error(err);

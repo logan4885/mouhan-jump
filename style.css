@@ -149,7 +149,7 @@ body.theme-neon .screen { background: linear-gradient(180deg, rgba(20, 18, 43, .
 .unlocked { background: #e9fff2; border: 2px dashed #3fbf86; border-radius: 14px; padding: 10px; font-size: 14px; margin-bottom: 14px; }
 .avatar-row { display: flex; align-items: center; gap: 10px; margin: 0 0 8px; font-size: 13px; font-weight: 700; color: var(--muted); }
 .avatar-cur { width: 44px; height: 44px; border-radius: 50%; border: 3px solid var(--ink); background: #fff; font-size: 24px; line-height: 1; cursor: pointer; display: grid; place-items: center; padding: 0; }
-.avatar-grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; margin: 0 0 12px; padding: 8px; box-sizing: border-box; width: 100%; border: 3px solid var(--ink); border-radius: 14px; background: #fff; }
+.avatar-grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; margin: 0 0 12px; padding: 8px; box-sizing: border-box; width: 100%; max-height: 188px; overflow-y: auto; -webkit-overflow-scrolling: touch; border: 3px solid var(--ink); border-radius: 14px; background: #fff; }
 @media (min-width: 440px) { .avatar-grid { grid-template-columns: repeat(8, minmax(0, 1fr)); } }
 .avatar-grid button { min-width: 0; width: 100%; aspect-ratio: 1; border: 2px solid transparent; border-radius: 10px; background: transparent; font-size: 20px; line-height: 1; cursor: pointer; padding: 0; }
 .avatar-grid button.on { border-color: var(--accent-2); background: #e6eeff; }
