@@ -7,6 +7,8 @@
 const SALT = 'jump3d-can:';
 
 export const REDEEM_CODES = {
+  // 临时测试码（测完删除）
+  'f1a39f8740a91f3f': '*',
   'f6ac43b49f0c6d22': 'random',
   '25fcf710ec039f3a': 'random',
   'f8d48ec479605412': 'random',
