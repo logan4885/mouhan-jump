@@ -8,7 +8,7 @@
 //   GET  {baseUrl}/api/player/:id
 //        -> { ok, player: { id, nickname, score, rank, perfects, games, equipped, unlocked[], total, avatar, color } }
 
-import { Storage } from './Storage.js?v=20261110a';
+import { Storage } from './Storage.js?v=20261110b';
 
 export const LEADERBOARD_API = {
   baseUrl: 'https://mouhan-jump-api.onrender.com',            // 部署后端后填这里，例如 'https://jump3d-api.onrender.com'；为空则使用 Mock 数据
