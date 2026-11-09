@@ -1,19 +1,19 @@
 // 游戏主控：渲染器 / 场景 / 正交相机 / 灯光、输入、状态机、计分与落点判定
 import * as THREE from 'three';
-import { CONFIG } from './config.js?v=20261110h';
-import { Storage } from './Storage.js?v=20261110h';
-import { Tweens, clamp, Ease } from './utils.js?v=20261110h';
-import { SkinManager } from './SkinManager.js?v=20261110h';
-import { BlockManager } from './BlockManager.js?v=20261110h';
-import { Player } from './Player.js?v=20261110h';
-import { UIManager } from './UIManager.js?v=20261110h';
-import { Sound } from './Sound.js?v=20261110h';
-import { t, L } from './i18n.js?v=20261110h';
-import { getPerk } from './canPerks.js?v=20261110h';
-import { getSignature, RARITY } from './canSignature.js?v=20261110h';
-import { PLAYER_SKINS } from './SkinManager.js?v=20261110h';
-import { Music, playSfx } from './SkinAudio.js?v=20261110h';
-import { SignatureFX } from './SignatureFX.js?v=20261110h';
+import { CONFIG } from './config.js?v=20261110i';
+import { Storage } from './Storage.js?v=20261110i';
+import { Tweens, clamp, Ease } from './utils.js?v=20261110i';
+import { SkinManager } from './SkinManager.js?v=20261110i';
+import { BlockManager } from './BlockManager.js?v=20261110i';
+import { Player } from './Player.js?v=20261110i';
+import { UIManager } from './UIManager.js?v=20261110i';
+import { Sound } from './Sound.js?v=20261110i';
+import { t, L } from './i18n.js?v=20261110i';
+import { getPerk } from './canPerks.js?v=20261110i';
+import { getSignature, RARITY } from './canSignature.js?v=20261110i';
+import { PLAYER_SKINS } from './SkinManager.js?v=20261110i';
+import { Music, playSfx } from './SkinAudio.js?v=20261110i';
+import { SignatureFX } from './SignatureFX.js?v=20261110i';
 
 // 踩中星号方块后的免费体验时长（秒）
 const TRIAL_SEC = 8;
@@ -113,6 +113,20 @@ export class Game {
     this.perfectRing.rotation.x = -Math.PI / 2;
     this.perfectRing.visible = false;
     this.scene.add(this.perfectRing);
+
+    // 时停罐：蓄力时显示落点箭头（箭杆 + 箭头 + 落点圈），沿 +Z 方向建模，再整体转向
+    const aimMat = () => new THREE.MeshBasicMaterial({ color: '#d4f23a', transparent: true, opacity: 0.9, depthTest: false, depthWrite: false, side: THREE.DoubleSide });
+    this.aimArrow = new THREE.Group();
+    this.aimShaft = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), aimMat());
+    this.aimShaft.rotation.x = -Math.PI / 2;
+    this.aimHead = new THREE.Mesh(new THREE.ConeGeometry(0.2, 0.34, 3), aimMat());
+    this.aimHead.rotation.x = Math.PI / 2; this.aimHead.scale.z = 0.25;
+    this.aimRing = new THREE.Mesh(new THREE.RingGeometry(0.17, 0.26, 32), aimMat());
+    this.aimRing.rotation.x = -Math.PI / 2;
+    [this.aimShaft, this.aimHead, this.aimRing].forEach((m) => { m.renderOrder = 20; });
+    this.aimArrow.add(this.aimShaft, this.aimHead, this.aimRing);
+    this.aimArrow.visible = false;
+    this.scene.add(this.aimArrow);
   }
 
   _applyTheme() {
@@ -672,6 +686,24 @@ export class Game {
       this.perfectRing.position.set(n.x, n.root.position.y + this.blocks.topY(n) + 0.015, n.z);
       this.perfectRing.scale.setScalar(r);
       this.perfectRing.material.opacity = 0.55 + 0.3 * Math.sin(performance.now() / 250);
+    }
+
+    // 时停罐：蓄力落点箭头（和真正起跳用同一条距离公式）
+    const aimOn = this.freezeLeft > 0 && (this.state === 'ready' || this.state === 'charging') && this.blocks.next;
+    this.aimArrow.visible = !!aimOn;
+    if (aimOn) {
+      const t0 = this.chargeT || 0;
+      const dist = clamp(CONFIG.JUMP_MIN_DIST + CONFIG.JUMP_SPEED * t0 + CONFIG.JUMP_ACCEL * t0 * t0, CONFIG.JUMP_MIN_DIST, CONFIG.JUMP_MAX_DIST);
+      const p = this.player.root.position, nx = this.blocks.next;
+      let ax = nx.x - p.x, az = nx.z - p.z; const al = Math.hypot(ax, az) || 1; ax /= al; az /= al;
+      this.aimArrow.position.set(p.x, p.y + 0.05, p.z);
+      this.aimArrow.rotation.y = Math.atan2(ax, az);
+      const shaft = Math.max(dist - 0.45, 0.05);
+      this.aimShaft.scale.set(0.12, shaft, 1); this.aimShaft.position.z = shaft / 2 + 0.1;
+      this.aimHead.position.z = shaft + 0.27;
+      this.aimRing.position.z = dist;
+      const pulse = 0.65 + 0.3 * Math.sin(performance.now() / 120);
+      this.aimShaft.material.opacity = this.aimHead.material.opacity = this.aimRing.material.opacity = pulse;
     }
 
     // 相机平滑跟随

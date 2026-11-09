@@ -1,22 +1,22 @@
 // UI 层：开始界面、计分板、蓄力条、飘字、结算弹窗、皮肤商店（含兑换码）、排行榜、语言切换
-import { PLAYER_SKINS, BLOCK_STYLES, SkinPreview } from './SkinManager.js?v=20261110h';
-import { fetchTop, fetchPlayer, syncPlayer, buildBoard, LEADERBOARD_API } from './Leaderboard.js?v=20261110h';
-import { Storage } from './Storage.js?v=20261110h';
-import { escapeHtml } from './utils.js?v=20261110h';
-import { t, L, setLang, getLang, onLangChange, applyStatic } from './i18n.js?v=20261110h';
-import { PERKS } from './canPerks.js?v=20261110h';
-import { SIGNATURE, RARITY, getSignature } from './canSignature.js?v=20261110h';
-import { SHOP } from './shop.js?v=20261110h';
-import { recoveryAvailable, makeCode, makeLink, restore } from './Recovery.js?v=20261110h';
-import { accountAvailable, PROVIDER_NAME, completeLogin, renderGoogleButton, prepareFacebook, facebookLogin, logout } from './Account.js?v=20261110h';
-import { AUTH } from './authConfig.js?v=20261110h';
+import { PLAYER_SKINS, BLOCK_STYLES, SkinPreview } from './SkinManager.js?v=20261110i';
+import { fetchTop, fetchPlayer, syncPlayer, buildBoard, LEADERBOARD_API } from './Leaderboard.js?v=20261110i';
+import { Storage } from './Storage.js?v=20261110i';
+import { escapeHtml } from './utils.js?v=20261110i';
+import { t, L, setLang, getLang, onLangChange, applyStatic } from './i18n.js?v=20261110i';
+import { PERKS } from './canPerks.js?v=20261110i';
+import { SIGNATURE, RARITY, getSignature } from './canSignature.js?v=20261110i';
+import { SHOP } from './shop.js?v=20261110i';
+import { recoveryAvailable, makeCode, makeLink, restore } from './Recovery.js?v=20261110i';
+import { accountAvailable, PROVIDER_NAME, completeLogin, renderGoogleButton, prepareFacebook, facebookLogin, logout } from './Account.js?v=20261110i';
+import { AUTH } from './authConfig.js?v=20261110i';
 
 const $ = (id) => document.getElementById(id);
 
 export class UIManager {
   /**
    * @param {object} handlers { onStart, onRestart, onHome }
-   * @param {import('./SkinManager.js?v=20261110h').SkinManager} skins
+   * @param {import('./SkinManager.js?v=20261110i').SkinManager} skins
    */
   constructor(handlers, skins) {
     this.h = handlers;
@@ -236,11 +236,15 @@ export class UIManager {
     b.classList.toggle('hidden', !show);
   }
   showFreeze(sec) {
+    document.body.classList.add('timestop');
+    const bu = $('freezeBurst'); $('freezeWord').textContent = t('freeze_word');
+    bu.classList.remove('go'); void bu.offsetWidth; bu.classList.add('go');
+    clearTimeout(this._burstT); this._burstT = setTimeout(() => bu.classList.remove('go'), 1700);
     const f = $('freezeFx');
     f.style.setProperty('--sec', sec + 's');
     f.classList.remove('hidden', 'run'); void f.offsetWidth; f.classList.add('run');
   }
-  hideFreeze() { const f = $('freezeFx'); f.classList.add('hidden'); f.classList.remove('run'); }
+  hideFreeze() { document.body.classList.remove('timestop'); const f = $('freezeFx'); f.classList.add('hidden'); f.classList.remove('run'); }
 
   /* ---------- 试驾体验条（踩中 24K 星号方块） ---------- */
   showTrial(name, sec) {

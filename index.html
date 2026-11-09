@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
   <meta name="theme-color" content="#cfe9ff">
   <title>跳一跳 3D</title>
-  <link rel="stylesheet" href="style.css?v=20261110h">
+  <link rel="stylesheet" href="style.css?v=20261110i">
   <!-- Three.js 以 ES Module 方式从 CDN 引入 -->
   <script type="importmap">
     { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }
@@ -169,7 +169,8 @@
     </div>
 
     <button type="button" id="btnFreeze" class="freeze-btn hidden"></button>
-    <div id="freezeFx" class="freeze-fx hidden" aria-hidden="true"><i></i></div>
+    <div id="freezeFx" class="freeze-fx hidden" aria-hidden="true"><i></i><b class="rg r1"></b><b class="rg r2"></b><b class="rg r3"></b><u class="ak a1"></u><u class="ak a2"></u><u class="ak a3"></u><u class="ak a4"></u><u class="ak a5"></u><u class="ak a6"></u></div>
+    <div id="freezeBurst" class="freeze-burst" aria-hidden="true"><div class="flash"></div><div class="rays"></div><span class="rb b1">ゴ</span><span class="rb b2">ゴ</span><span class="rb b3">ゴ</span><span class="rb b4">ゴ</span><span class="rb b5">ゴ</span><span class="rb b6">ゴ</span><div class="word" id="freezeWord"></div></div>
     <div id="trialBar" class="trial-bar hidden" role="status"><b id="trialText"></b><button type="button" id="trialCta" class="trial-cta hidden"></button><i></i></div>
     <canvas id="fxCanvas" aria-hidden="true"></canvas>
     <button type="button" id="btnMute" class="mute-btn" aria-pressed="false" data-i18n-aria="mute">🔊</button>
@@ -182,7 +183,7 @@
     </div>
   </div>
 
-  <script type="module" src="main.js?v=20261110h"></script>
+  <script type="module" src="main.js?v=20261110i"></script>
   <!-- 兜底：Three.js 或模块加载失败时给出提示 -->
   <script>
     setTimeout(function () { if (!window.__jumpReady) document.getElementById('nogl').classList.remove('hidden'); }, 9000);

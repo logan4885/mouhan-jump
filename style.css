@@ -439,9 +439,30 @@ body.theme-neon #hud .perk { background: rgba(20,18,43,.8); color: #f2f0ff; bord
 .modal.rank .rank-list#rankList { max-height: 52vh; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; padding: 2px 4px 2px 2px; }
 .rank-list li.loading.more { justify-content: center; }
 /* 时停罐：⏱ 按钮 + 时停期间的冷色氛围和 5 秒倒计时条 */
-.freeze-btn { position: absolute; left: 50%; bottom: max(24px, calc(env(safe-area-inset-bottom, 0px) + 18px)); transform: translateX(-50%); z-index: 15; font: inherit; font-weight: 900; font-size: 15px; padding: 10px 18px; border-radius: 999px; border: 3px solid var(--ink); background: #14213d; color: #fca311; box-shadow: 0 4px 0 var(--ink), 0 0 18px 2px rgba(252, 163, 17, .45); cursor: pointer; pointer-events: auto; }
+.freeze-btn { position: absolute; left: 50%; bottom: max(24px, calc(env(safe-area-inset-bottom, 0px) + 18px)); transform: translateX(-50%); z-index: 15; font: inherit; font-weight: 900; font-size: 15px; padding: 10px 18px; border-radius: 999px; border: 3px solid var(--ink); background: #1f3d00; color: #f5e60a; box-shadow: 0 4px 0 var(--ink), 0 0 18px 2px rgba(190, 235, 40, .55); cursor: pointer; pointer-events: auto; }
 .freeze-btn:active { transform: translateX(-50%) translateY(2px); }
-.freeze-fx { position: absolute; inset: 0; z-index: 12; pointer-events: none; background: radial-gradient(ellipse at center, rgba(180, 225, 255, .08) 35%, rgba(40, 90, 160, .38) 100%); backdrop-filter: grayscale(.55) contrast(1.05); -webkit-backdrop-filter: grayscale(.55) contrast(1.05); }
-.freeze-fx > i { position: absolute; left: 0; top: 0; height: 6px; width: 100%; background: #fca311; transform-origin: left; }
+.freeze-fx { position: absolute; inset: 0; z-index: 12; pointer-events: none; overflow: hidden; background: radial-gradient(ellipse at center, rgba(235, 255, 120, .06) 30%, rgba(60, 110, 0, .45) 100%); backdrop-filter: grayscale(.7) contrast(1.12) sepia(.25); -webkit-backdrop-filter: grayscale(.7) contrast(1.12) sepia(.25); }
+.freeze-fx > i { position: absolute; left: 0; top: 0; height: 6px; width: 100%; background: #f5e60a; transform-origin: left; }
 [dir="rtl"] .freeze-fx > i { transform-origin: right; }
 .freeze-fx.run > i { animation: trialDrain var(--sec, 5s) linear forwards; }
+
+/* 时停：扩散波纹 + 漂浮的安卡符号；按下瞬间的全屏文字特效 */
+.freeze-fx .rg { position: absolute; left: 50%; top: 55%; width: 40px; height: 40px; margin: -20px 0 0 -20px; border: 3px solid rgba(245, 230, 10, .7); border-radius: 50%; opacity: 0; animation: fzRing 2.4s ease-out infinite; }
+.freeze-fx .rg.r2 { animation-delay: .8s; } .freeze-fx .rg.r3 { animation-delay: 1.6s; }
+@keyframes fzRing { 0% { transform: scale(.4); opacity: .85; } 100% { transform: scale(16); opacity: 0; } }
+.freeze-fx .ak { position: absolute; width: 22px; height: 44px; bottom: -50px; opacity: 0; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 80'%3E%3Cg fill='none' stroke='%23f5e60a' stroke-width='7' stroke-linecap='round'%3E%3Cellipse cx='20' cy='17' rx='11' ry='14'/%3E%3Cpath d='M20 31V76M5 44H35'/%3E%3C/g%3E%3C/svg%3E") center / contain no-repeat; animation: fzRise 5s linear infinite; }
+.freeze-fx .a1 { left: 8%; animation-delay: 0s; } .freeze-fx .a2 { left: 24%; animation-delay: 1.3s; transform: scale(.7); } .freeze-fx .a3 { left: 41%; animation-delay: .6s; } .freeze-fx .a4 { left: 58%; animation-delay: 2.1s; transform: scale(.8); } .freeze-fx .a5 { left: 74%; animation-delay: 1s; } .freeze-fx .a6 { left: 90%; animation-delay: 2.8s; transform: scale(.7); }
+@keyframes fzRise { 0% { bottom: -50px; opacity: 0; } 15% { opacity: .8; } 85% { opacity: .6; } 100% { bottom: 105%; opacity: 0; } }
+body.timestop #game { filter: grayscale(.55) contrast(1.1); }
+.freeze-burst { position: absolute; inset: 0; z-index: 40; pointer-events: none; overflow: hidden; display: none; }
+.freeze-burst.go { display: block; animation: fbAll 1.6s ease-out forwards; }
+.freeze-burst .flash { position: absolute; inset: 0; background: #fff; mix-blend-mode: difference; animation: fbFlash .5s ease-out forwards; }
+.freeze-burst .rays { position: absolute; left: -50%; top: -50%; width: 200%; height: 200%; background: repeating-conic-gradient(from 0deg at 50% 50%, rgba(245, 230, 10, .55) 0 5deg, rgba(31, 61, 0, .35) 5deg 12deg); -webkit-mask-image: radial-gradient(circle, transparent 12%, #000 55%); mask-image: radial-gradient(circle, transparent 12%, #000 55%); animation: fbSpin 1.6s linear forwards; }
+.freeze-burst .word { position: absolute; left: 50%; top: 42%; white-space: nowrap; font: 900 italic clamp(30px, 11vw, 78px)/1 "Arial Black", "Microsoft YaHei", "PingFang SC", Arial, sans-serif; color: #f5e60a; -webkit-text-stroke: 5px #1f3d00; paint-order: stroke fill; text-shadow: 0 0 24px rgba(160, 230, 30, .95), 5px 6px 0 #1f3d00; transform: translate(-50%, -50%) skewX(-10deg); animation: fbWord 1.6s cubic-bezier(.2, 1.3, .4, 1) forwards, fbShake .09s linear infinite alternate; }
+.freeze-burst .rb { position: absolute; font: 900 40px/1 "Microsoft YaHei", "PingFang SC", sans-serif; color: #1f3d00; -webkit-text-stroke: 1px #f5e60a; animation: fbShake .08s linear infinite alternate; }
+.freeze-burst .b1 { left: 6%; top: 20%; transform: rotate(-12deg); } .freeze-burst .b2 { right: 8%; top: 26%; transform: rotate(10deg); font-size: 54px; } .freeze-burst .b3 { left: 12%; top: 64%; transform: rotate(8deg); font-size: 48px; } .freeze-burst .b4 { right: 10%; top: 70%; transform: rotate(-9deg); } .freeze-burst .b5 { left: 44%; top: 14%; font-size: 30px; } .freeze-burst .b6 { left: 50%; top: 80%; font-size: 34px; }
+@keyframes fbAll { 0%, 70% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes fbFlash { 0% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes fbSpin { from { transform: rotate(0deg) scale(.4); } to { transform: rotate(40deg) scale(1.3); } }
+@keyframes fbWord { 0% { opacity: 0; scale: 2.6; } 25% { opacity: 1; scale: 1; } 100% { opacity: 1; scale: 1.08; } }
+@keyframes fbShake { from { translate: -2px 1px; } to { translate: 2px -1px; } }

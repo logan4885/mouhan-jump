@@ -109,9 +109,9 @@ export const CAN_SKINS = [
     body: '#16151c', accent: '#ffd400', text: 'VOLT', textColor: '#ffd400', sub: 'ENERGY', lid: '#2b2a33',
   },
   {
-    id: 'chrono', unlock: 'code',
+    id: 'chrono', unlock: 'code', effect: 'pharaoh',
     name: { zh: '时停罐', en: 'Chrono Can', ar: 'علبة الزمن' },
-    desc: { zh: '黄绿配色的原创设计；每局一次按 ⏱ 时停 5 秒', en: 'Original yellow-green design; tap ⏱ once per game to stop time for 5 seconds', ar: 'تصميم أصلي بالأخضر الأصفر؛ اضغط ⏱ مرة في كل جولة لإيقاف الزمن 5 ثوانٍ' },
+    desc: { zh: '埃及风格的黄绿罐（金字塔冠 + 荷鲁斯之眼）；每局一次按 ⏱ 时停 5 秒', en: 'Egyptian yellow-green can (pyramid crown + Eye of Horus); tap ⏱ once per game to stop time for 5 seconds', ar: 'علبة مصرية بالأخضر الأصفر (تاج هرمي + عين حورس)؛ اضغط ⏱ مرة في كل جولة لإيقاف الزمن 5 ثوانٍ' },
     body: '#7cb518', accent: '#f5e60a', text: 'CHRONO', textColor: '#1f3d00', sub: '5 SEC · FREEZE', lid: '#e5e5e5',
   },
 ];

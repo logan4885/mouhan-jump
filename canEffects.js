@@ -303,4 +303,85 @@ export const EFFECTS = {
     },
     trail: { colors: ['#fff27a', '#7af6ff', '#ffffff'], rate: 50, size: 0.03, life: 0.3, gravity: 0, spread: 0.35, jitter: 3 },
   },
+  /* 11. 法老罐（时停罐）：黄绿配色的埃及风格——荷鲁斯之眼、安卡、三角边饰、金字塔冠和翼饰 */
+  pharaoh: {
+    label(skin) {
+      const [c, g] = canvas(); const [ec, eg] = canvas();
+      eg.fillStyle = '#000'; eg.fillRect(0, 0, W, H);
+      const YE = '#f5e60a', DK = '#1f3d00';
+      const gr = g.createLinearGradient(0, 0, 0, H);
+      gr.addColorStop(0, '#93d11e'); gr.addColorStop(1, '#5c900f');
+      g.fillStyle = gr; g.fillRect(0, 0, W, H);
+      g.fillStyle = 'rgba(0,0,0,0.07)'; for (let x = 0; x < W; x += 32) g.fillRect(x, 0, 16, H);
+      // 三角边饰（上下各一条，首尾相接）
+      const band = (ctx, y, h, flip, col, tri) => {
+        ctx.fillStyle = col; ctx.fillRect(0, y, W, h);
+        ctx.fillStyle = tri;
+        for (let x = 0; x < W; x += h) {
+          ctx.beginPath();
+          if (!flip) { ctx.moveTo(x, y); ctx.lineTo(x + h / 2, y + h); ctx.lineTo(x + h, y); }
+          else { ctx.moveTo(x, y + h); ctx.lineTo(x + h / 2, y); ctx.lineTo(x + h, y + h); }
+          ctx.fill();
+        }
+      };
+      band(g, 0, 40, false, YE, DK); band(g, H - 40, 40, true, YE, DK);
+      g.fillStyle = DK; g.fillRect(0, 44, W, 5); g.fillRect(0, H - 49, W, 5);
+      // 尼罗河“水纹”折线带
+      g.lineWidth = 9; g.lineJoin = 'round'; g.strokeStyle = DK;
+      [0.76, 0.84].forEach((k, j) => {
+        g.beginPath();
+        for (let x = 0; x <= W; x += 32) { const y = H * k + ((x / 32) % 2 ? -14 : 14); x ? g.lineTo(x, y) : g.moveTo(x, y); }
+        g.stroke();
+        g.strokeStyle = YE; g.lineWidth = 4; g.stroke(); g.strokeStyle = DK; g.lineWidth = 9;
+      });
+      const outline = (ctx, fn, col, w) => { ctx.save(); ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.strokeStyle = DK; ctx.lineWidth = w + 10; fn(ctx); ctx.stroke(); ctx.strokeStyle = col; ctx.lineWidth = w; fn(ctx); ctx.stroke(); ctx.restore(); };
+      // 荷鲁斯之眼
+      const eye = (ctx, x, y, s, glow) => {
+        const body = (k) => { k.beginPath(); k.moveTo(x - 62 * s, y); k.quadraticCurveTo(x, y - 48 * s, x + 62 * s, y); k.quadraticCurveTo(x, y + 30 * s, x - 62 * s, y); };
+        if (!glow) { body(ctx); ctx.fillStyle = YE; ctx.fill(); }
+        outline(ctx, body, glow ? '#fff27a' : DK, glow ? 6 : 5);
+        ctx.beginPath(); ctx.arc(x, y - 4 * s, 15 * s, 0, 7); ctx.fillStyle = glow ? '#fff27a' : DK; ctx.fill();
+        outline(ctx, (k) => { k.beginPath(); k.moveTo(x - 68 * s, y - 26 * s); k.quadraticCurveTo(x, y - 62 * s, x + 70 * s, y - 28 * s); }, glow ? '#fff27a' : YE, 7);
+        outline(ctx, (k) => { k.beginPath(); k.moveTo(x - 12 * s, y + 16 * s); k.lineTo(x - 12 * s, y + 46 * s); k.quadraticCurveTo(x - 12 * s, y + 62 * s, x + 12 * s, y + 58 * s); }, glow ? '#fff27a' : YE, 7);
+        outline(ctx, (k) => { k.beginPath(); k.moveTo(x + 46 * s, y + 12 * s); k.quadraticCurveTo(x + 76 * s, y + 24 * s, x + 66 * s, y + 52 * s); }, glow ? '#fff27a' : YE, 7);
+      };
+      // 安卡（生命符号）
+      const ankh = (ctx, x, y, s, glow) => {
+        const col = glow ? '#fff27a' : YE;
+        outline(ctx, (k) => { k.beginPath(); k.ellipse(x, y - 44 * s, 22 * s, 30 * s, 0, 0, 7); }, col, 11 * s);
+        outline(ctx, (k) => { k.beginPath(); k.moveTo(x, y - 14 * s); k.lineTo(x, y + 78 * s); k.moveTo(x - 40 * s, y + 6 * s); k.lineTo(x + 40 * s, y + 6 * s); }, col, 11 * s);
+      };
+      [0.39, 0.89, 0.89 - 1].forEach((u) => { eye(g, u * W, H * 0.2, 0.9, false); eye(eg, u * W, H * 0.2, 0.9, true); });
+      [0.14, 0.64].forEach((u) => { ankh(g, u * W, H * 0.38, 1.05, false); ankh(eg, u * W, H * 0.38, 1.05, true); });
+      writeText(g, skin.text, skin.sub, YE, { stroke: DK });
+      return { map: toTex(c), emissiveMap: toTex(ec) };
+    },
+    body: (skin, t) => new THREE.MeshStandardMaterial({ map: t.map, emissiveMap: t.emissiveMap, emissive: '#ffffff', emissiveIntensity: 0.25, metalness: 0.55, roughness: 0.34, envMap: getEnv(), envMapIntensity: 0.9 }),
+    metal: () => new THREE.MeshStandardMaterial({ color: '#e9cf1f', metalness: 1, roughness: 0.28, envMap: getEnv() }),
+    build(g, skin, d) {
+      const gold = new THREE.MeshStandardMaterial({ color: '#f5e60a', metalness: 1, roughness: 0.26, envMap: getEnv() });
+      const gem = new THREE.MeshStandardMaterial({ color: '#7cb518', emissive: '#7cb518', emissiveIntensity: 0.5, metalness: 0.3, roughness: 0.3 });
+      const topY = d.BOTTOM_H + d.BODY_H + d.NECK_H;
+      // 金字塔冠
+      const pyr = new THREE.Mesh(new THREE.ConeGeometry(0.17, 0.2, 4), gold);
+      pyr.position.set(0, topY + 0.1, 0); pyr.rotation.y = Math.PI / 4;
+      const eyeGem = new THREE.Mesh(new THREE.SphereGeometry(0.028, 12, 10), gem);
+      eyeGem.position.set(0, topY + 0.07, 0.085);
+      // 左右翼饰（太阳圆盘的翅膀）
+      [-1, 1].forEach((s) => {
+        for (let i = 0; i < 3; i++) {
+          const w = new THREE.Mesh(new THREE.BoxGeometry(0.2 - i * 0.03, 0.022, 0.07), gold);
+          w.position.set(s * (0.34 + i * 0.015), d.BOTTOM_H + d.BODY_H * 0.9 - i * 0.07, 0);
+          w.rotation.z = s * (0.35 - i * 0.12);
+          g.add(w);
+        }
+      });
+      // 底部金环
+      const collar = new THREE.Mesh(new THREE.TorusGeometry(d.R * 0.9, 0.022, 8, 40), gold);
+      collar.rotation.x = Math.PI / 2; collar.position.y = d.BOTTOM_H + 0.01;
+      g.add(pyr, eyeGem, collar);
+    },
+    tick(model, time) { model.userData.bodyMat.emissiveIntensity = 0.22 + 0.12 * Math.sin(time * 2.4); },
+    trail: { colors: ['#f5e60a', '#b8e62e', '#ffffff'], rate: 34, size: 0.045, life: 0.6, gravity: -0.5, spread: 0.25 },
+  },
 };
