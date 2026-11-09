@@ -68,6 +68,10 @@ export const Storage = {
   getUsedCodes() { const v = read('usedCodes', []); return Array.isArray(v) ? v : []; },
   addUsedCode(h) { const v = this.getUsedCodes(); if (!v.includes(h)) { v.push(h); write('usedCodes', v); } },
 
+  // ---- 静音（音乐 + 音效）----
+  getMuted() { return !!read('muted', false); },
+  setMuted(m) { write('muted', !!m); },
+
   // ---- 语言 ----
   getLang() { return read('lang', '') || ''; },
   setLang(l) { write('lang', l); },

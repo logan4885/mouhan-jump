@@ -14,6 +14,7 @@
 <body class="theme-candy">
   <div id="app">
     <canvas id="game" aria-label="游戏画面"></canvas>
+    <div id="fxGlow" aria-hidden="true"></div>
 
     <!-- 实时计分板 -->
     <div id="hud" class="hidden">
@@ -94,6 +95,8 @@
             <b id="skinName"></b>
             <span id="skinDesc"></span>
             <span class="perk-line" id="skinPerk"></span>
+            <span class="sig-line hidden" id="skinSig"></span>
+            <button type="button" class="btn fx-preview hidden" id="btnFxPreview" data-i18n="fx_preview">▶ 试听特效</button>
           </div>
         </div>
         <div class="skin-grid" id="skinGrid"></div>
@@ -123,6 +126,9 @@
         <div id="playerBody"></div>
       </div>
     </div>
+
+    <canvas id="fxCanvas" aria-hidden="true"></canvas>
+    <button type="button" id="btnMute" class="mute-btn" aria-pressed="false" data-i18n-aria="mute">🔊</button>
 
     <div id="toast" role="status" aria-live="polite"></div>
 

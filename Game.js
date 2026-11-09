@@ -10,6 +10,9 @@ import { UIManager } from './UIManager.js';
 import { Sound } from './Sound.js';
 import { t, L } from './i18n.js';
 import { getPerk } from './canPerks.js';
+import { getSignature, RARITY } from './canSignature.js';
+import { Music, playSfx } from './SkinAudio.js';
+import { SignatureFX } from './SignatureFX.js';
 
 // 状态：menu 首页 | ready 等待按压 | charging 蓄力 | jumping 空中 | falling 摔落 | over 结算
 export class Game {
@@ -23,6 +26,10 @@ export class Game {
     this.chargeT = 0;
     this.tweens = new Tweens();
     this.sound = new Sound();
+    this.sound.muted = Storage.getMuted();
+    this.music = new Music(this.sound);
+    this.fx = null;
+    this.sig = null;
     this.camTarget = new THREE.Vector3();
     this.camGoal = new THREE.Vector3();
     this.shake = 0;
@@ -38,10 +45,16 @@ export class Game {
       onStart: () => this.startRound(),
       onRestart: () => this.startRound(),
       onHome: () => this.goHome(),
+      onPreviewFx: (id) => this.previewSignature(id),
+      onStopFx: () => this.stopPreview(),
+      onMute: () => this.setMuted(!this.sound.muted),
     }, this.skins);
+    try { this.fx = new SignatureFX(document.getElementById('fxCanvas'), document.getElementById('fxGlow')); } catch (e) { this.fx = null; }
+    this._syncMuteBtn();
+    this._refreshSig();
 
     this.skins.onChange((kind, id) => {
-      if (kind === 'player') { this.player.setSkin(id); this._refreshPerk(); }
+      if (kind === 'player') { this.player.setSkin(id); this._refreshPerk(); this._refreshSig(); }
       else { this._applyTheme(); this.blocks.restyleAll(); }
     });
 
@@ -138,7 +151,9 @@ export class Game {
 
     // 切到后台时自动松手，防止卡在蓄力状态
     window.addEventListener('blur', () => this.release());
-    document.addEventListener('visibilitychange', () => { if (document.hidden) this.release(); });
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) { this.release(); this.music.pause(); } else this.music.resume();
+    });
     window.addEventListener('contextmenu', (e) => { if (!isUI(e.target)) e.preventDefault(); });
   }
 
@@ -227,7 +242,9 @@ export class Game {
         if (this.thunderCount >= pk.thunderStreak) { this.thunderReady = true; this.thunderCount = 0; this.ui.toast(`${pk.icon} ${L(pk.name)}`); }
       }
       this.blocks.ripple(this.blocks.next);
-      this.sound.perfect();
+      const sp0 = this._toScreen(this.player.root.position, 0.6);
+      if (this.sig) this._signatureBurst(this.sig, sp0.x, sp0.y, this.combo);
+      else this.sound.perfect();
     } else {
       this.combo = 0;
       this.thunderCount = 0;
@@ -241,6 +258,7 @@ export class Game {
     if (every && Math.floor(this.score / every) > Math.floor(before / every)) { bonus = 1; this.score += 1; }
     this.ui.setScore(this.score);
     this.ui.setCombo(this.combo);
+    this._comboFx();
     const sp = this._toScreen(this.player.root.position, 1.5);
     this.ui.popScore(perfect ? t('perfect', { n: gain }) : `+${gain}`, sp.x, sp.y, perfect);
     if (bonus) setTimeout(() => this.ui.popScore(`${this.perk.icon} +1`, sp.x + 40, sp.y + 10, true), 250);
@@ -283,6 +301,7 @@ export class Game {
     this.reviveUsed = true;
     this.combo = 0; this.thunderReady = false; this.thunderCount = 0;
     this.ui.setCombo(0);
+    this._comboFx();
     this.ui.toast(t('perk_saved', { icon: this.perk.icon, name: L(this.perk.name) }));
     this._updatePerkHud();
     setTimeout(() => {
@@ -313,6 +332,7 @@ export class Game {
 
   _gameOver() {
     this.state = 'over';
+    this._stopMusic(0.9);
     const record = this.score > this.bestAtStart;
     Storage.saveHighScore(this.score);
     this.best = Storage.getHighScore();
@@ -324,6 +344,85 @@ export class Game {
     this.ui.showGameOver({ score: this.score, best: this.best, record, perfects: this.perfects, unlocked });
   }
 
+  /* ================= 专属特效 / 音乐（纯外观，不影响得分与判定） ================= */
+  _refreshSig() {
+    const id = this.skins.state.player;
+    this.sig = this.skins.isUnlocked('player', id) ? getSignature(id) : null;
+    if (this.state === 'ready' || this.state === 'charging' || this.state === 'jumping') this._startMusic();
+    this._comboFx();
+  }
+
+  _startMusic() {
+    if (!this.sig) { this.music.stop(0.3); return; }
+    this.music.play(this.sig.theme, { boost: RARITY[this.sig.rarity].comboMusicBoost, level: this.combo > 0 ? 1 : 0 });
+    this.music.setCombo(this.combo);
+  }
+
+  _stopMusic(fade = 0.5) { this.music.stop(fade); }
+
+  _comboFx() {
+    const sig = this.sig;
+    if (this._pv) return;
+    this.music.setCombo(this.combo);
+    if (!this.fx) return;
+    if (!sig) { this.fx.ambience(0); return; }
+    const r = RARITY[sig.rarity];
+    this.fx.ambience(this.combo, sig.color, r.ambienceFrom, Math.min(1.3, 0.8 + 0.25 * r.order));
+  }
+
+  _signatureBurst(sig, x, y, combo) {
+    const r = RARITY[sig.rarity];
+    if (this.fx) this.fx.burst(sig.burst, x, y, { color: sig.color, mul: r.burstMul, flash: r.flash, combo });
+    playSfx(this.sound, sig.sfx, combo, 0.9);
+    this.ui.popWord(L(sig.word), x, y - 70, sig.color, sig.rarity);
+  }
+
+  /** 商店里试听：循环放音乐、依次升高连击放特效，直到 stopPreview */
+  previewSignature(id) {
+    this.stopPreview();
+    const sig = getSignature(id);
+    if (!sig) return false;
+    if (this.sound.muted) this.setMuted(false);
+    this._stopMusic(0.1);
+    const r = RARITY[sig.rarity];
+    this._pv = { n: 0, timer: 0 };
+    this.music.play(sig.theme, { boost: r.comboMusicBoost, level: 1 });
+    const step = () => {
+      if (!this._pv) return;
+      const combo = Math.min(++this._pv.n + 1, 8);
+      this.music.setCombo(combo);
+      this._signatureBurst(sig, window.innerWidth / 2, window.innerHeight * 0.3, combo);
+      if (this.fx) this.fx.ambience(combo, sig.color, r.ambienceFrom, Math.min(1.3, 0.8 + 0.25 * r.order));
+      if (this._pv.n >= 8) this._pv.n = 0;
+      this._pv.timer = setTimeout(step, 1300);
+    };
+    step();
+    return true;
+  }
+
+  stopPreview() {
+    if (!this._pv) return;
+    clearTimeout(this._pv.timer);
+    this._pv = null;
+    this.music.stop(0.3);
+    if (this.fx) this.fx.clear();
+  }
+
+  setMuted(m) {
+    this.sound.muted = !!m;
+    Storage.setMuted(!!m);
+    if (m) { this.music.stop(0.1); if (this._pv) this.stopPreview(); }
+    else if (this.state === 'ready') this._startMusic();
+    this._syncMuteBtn();
+  }
+
+  _syncMuteBtn() {
+    const b = document.getElementById('btnMute');
+    if (!b) return;
+    b.textContent = this.sound.muted ? '🔇' : '🔊';
+    b.setAttribute('aria-pressed', String(!this.sound.muted));
+  }
+
   /* ================= 回合控制 ================= */
   reset() {
     this.tweens.clear();
@@ -333,6 +432,8 @@ export class Game {
     this.reviveUsed = false; this.thunderReady = false; this.thunderCount = 0; this.lastResult = null;
     if (this.skins) this._refreshPerk();
     this.ui && (this.ui.setScore(0), this.ui.setCombo(0), this.ui.hideCharge());
+    this._comboFx();
+    this.fx && this.fx.clear();
     this._updateCamGoal();
     this.camTarget.copy(this.camGoal);
   }
@@ -341,12 +442,15 @@ export class Game {
     this.ui.hideGameOver();
     this.reset();
     this.bestAtStart = this.best;
+    this.stopPreview();
     this.ui.setBest(this.best);
     this.ui.hideStart();
+    this._startMusic();
     this.state = 'ready';
   }
 
   goHome() {
+    this._stopMusic(0.6);
     this.ui.hideGameOver();
     this.reset();
     this.state = 'menu';

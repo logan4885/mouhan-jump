@@ -335,3 +335,40 @@ body.theme-neon #hud .perk { background: rgba(20,18,43,.8); color: #f2f0ff; bord
 .site-back:focus-visible, .site-link:focus-visible { outline: 3px solid var(--accent-2); outline-offset: 3px; }
 .site-link { display: inline-block; margin-top: 14px; font-size: 13.5px; font-weight: 800; color: var(--accent-2); text-decoration: none; }
 .site-link:hover, .site-back:hover { text-decoration: underline; }
+
+
+/* ========== 专属特效 / 音乐（纯外观） ========== */
+#fxCanvas { position: absolute; inset: 0; z-index: 15; pointer-events: none; }
+#fxGlow {
+  position: absolute; inset: 0; z-index: 2; pointer-events: none; opacity: 0; transition: opacity .35s;
+  --glow: #fff; --gk: 0;
+  box-shadow: inset 0 0 calc(40px + 90px * var(--gk)) calc(4px + 26px * var(--gk)) color-mix(in srgb, var(--glow) 70%, transparent);
+}
+#fxGlow.on { opacity: 1; animation: glowPulse 1.1s ease-in-out infinite alternate; }
+@keyframes glowPulse { from { filter: brightness(.8); } to { filter: brightness(1.25); } }
+@media (prefers-reduced-motion: reduce) { #fxGlow.on { animation: none; } }
+
+.pop.word {
+  color: var(--wc, #fff);
+  font-size: 24px; letter-spacing: .02em; -webkit-text-stroke: 1px rgba(30, 26, 52, .55); paint-order: stroke fill;
+  text-shadow: 0 0 12px currentColor, 0 3px 0 rgba(30, 26, 52, .35); animation-duration: 1.15s;
+}
+
+.mute-btn {
+  position: absolute; right: max(12px, env(safe-area-inset-right, 0px)); bottom: max(12px, env(safe-area-inset-bottom, 0px)); z-index: 12;
+  width: 42px; height: 42px; border-radius: 50%; border: 3px solid var(--ink); background: #fff; color: var(--ink);
+  font-size: 18px; line-height: 1; cursor: pointer; box-shadow: 0 3px 0 var(--ink); display: grid; place-items: center; padding: 0;
+}
+.mute-btn[aria-pressed="true"] { background: #e9e7f2; opacity: .8; }
+.mute-btn:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--ink); }
+
+.sig-line { margin-top: 4px; font-size: 12.5px; font-weight: 700; color: #b0561a; line-height: 1.45; }
+.fx-preview { margin-top: 6px; padding: 7px 12px; font-size: 13px; justify-self: start; }
+.fx-preview.playing { background: var(--ink); color: #fff; }
+.rar-chip { display: inline-block; font-size: 11px; font-weight: 900; padding: 1px 8px; border-radius: 999px; color: #fff; margin-inline-end: 6px; vertical-align: middle; }
+.rar-dot { position: absolute; top: 6px; inset-inline-start: 6px; width: 10px; height: 10px; border-radius: 50%; border: 2px solid var(--ink); background: var(--rc, #38a3ff); }
+.rar-legendary { --rc: #ffb300; box-shadow: 0 0 8px 2px #ffb300aa; }
+.rar-chip.rar-legendary,.rar-chip.rar-epic,.rar-chip.rar-rare { background: var(--rc); box-shadow: none; }
+.rar-epic { --rc: #a855f7; }
+.rar-rare { --rc: #38a3ff; }
+.skin-card { position: relative; }

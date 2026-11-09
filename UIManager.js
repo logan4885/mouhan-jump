@@ -5,6 +5,7 @@ import { Storage } from './Storage.js';
 import { escapeHtml } from './utils.js';
 import { t, L, setLang, onLangChange, applyStatic } from './i18n.js';
 import { PERKS } from './canPerks.js';
+import { SIGNATURE, RARITY, getSignature } from './canSignature.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -26,8 +27,9 @@ export class UIManager {
       redeemForm: $('redeemForm'), redeemInput: $('redeemInput'), redeemMsg: $('redeemMsg'),
       player: $('playerModal'), playerBody: $('playerBody'),
       rank: $('rankModal'), rankList: $('rankList'), rankMine: $('rankMine'), rankNote: $('rankNote'),
-      toast: $('toast'),
+      toast: $('toast'), sig: $('skinSig'), fxBtn: $('btnFxPreview'), mute: $('btnMute'),
     };
+    this.fxOn = false;
     this.skinTab = 'player';
     this.skinPick = null;
     this.preview = null;
@@ -77,12 +79,19 @@ export class UIManager {
       this.skinTab = tab.dataset.tab;
       this.el.skin.querySelectorAll('[data-tab]').forEach((x) => x.classList.toggle('active', x === tab));
       this.skinPick = this.skins.state[this.skinTab];
+      this._stopFx();
       this._renderSkins();
     }));
     this.el.skinGrid.addEventListener('click', (e) => {
       const card = e.target.closest('[data-skin]'); if (!card) return;
       this.skinPick = card.dataset.skin;
+      this._stopFx();
       this._renderSkins();
+    });
+    this.el.mute.addEventListener('click', () => this.h.onMute && this.h.onMute());
+    this.el.fxBtn.addEventListener('click', () => {
+      if (this.fxOn) { this._stopFx(); return; }
+      if (this.h.onPreviewFx && this.h.onPreviewFx(this.skinPick)) { this.fxOn = true; this._syncFxBtn(); }
     });
     this.el.useSkin.addEventListener('click', () => {
       if (this.skins.select(this.skinTab, this.skinPick)) { this.toast(t('equipped')); this._renderSkins(); }
@@ -145,6 +154,25 @@ export class UIManager {
   }
   hideCharge() { this.el.charge.classList.add('hidden'); this.el.chargeFill.style.transform = 'scaleX(0)'; }
 
+  /** 专属飘字（稀有度越高越大） */
+  popWord(text, x, y, color, rarity) {
+    const d = document.createElement('div');
+    d.className = 'pop word ' + (rarity || '');
+    d.textContent = text;
+    d.style.left = x + 'px'; d.style.top = y + 'px';
+    if (color) d.style.setProperty('--wc', color);
+    this.el.popups.appendChild(d);
+    setTimeout(() => d.remove(), 1100);
+  }
+
+  _stopFx() {
+    if (!this.fxOn) return;
+    this.fxOn = false;
+    this.h.onStopFx && this.h.onStopFx();
+    this._syncFxBtn();
+  }
+  _syncFxBtn() { this.el.fxBtn.textContent = t(this.fxOn ? 'fx_stop' : 'fx_preview'); this.el.fxBtn.classList.toggle('playing', this.fxOn); }
+
   /** 得分飘字（屏幕坐标） */
   popScore(text, x, y, perfect) {
     const d = document.createElement('div');
@@ -205,7 +233,9 @@ export class UIManager {
       const icon = kind === 'player'
         ? `<span class="can-icon${s.effect ? ' fx' : ''}" style="--c:${escapeHtml(s.body)};--a:${escapeHtml(s.accent)};--l:${escapeHtml(s.lid || '#cfd3dc')}"></span>`
         : `<span class="skin-icon ${kind}-${s.id}"></span>`;
-      return `<button class="${cls}" data-skin="${s.id}">${icon}<span class="skin-label">${escapeHtml(L(s.name))}</span>${badge}</button>`;
+      const sg = kind === 'player' ? SIGNATURE[s.id] : null;
+      const dot = sg ? `<i class="rar-dot rar-${sg.rarity}"></i>` : '';
+      return `<button class="${cls}" data-skin="${s.id}">${dot}${icon}<span class="skin-label">${escapeHtml(L(s.name))}</span>${badge}</button>`;
     }).join('');
     this.el.skinGrid.style.gridTemplateColumns = `repeat(${list.length <= 4 ? list.length : 3}, 1fr)`;
     const pick = list.find((s) => s.id === this.skinPick) || list[0];
@@ -215,6 +245,14 @@ export class UIManager {
     const perk = kind === 'player' ? PERKS[pick.id] : null;
     this.el.skinPerk.classList.toggle('hidden', kind !== 'player');
     this.el.skinPerk.textContent = perk ? `${perk.icon} ${t('perk_label')}：${L(perk.name)} — ${L(perk.desc)}` : t('perk_none');
+    const sg = kind === 'player' ? getSignature(pick.id) : null;
+    this.el.sig.classList.toggle('hidden', !sg);
+    this.el.fxBtn.classList.toggle('hidden', !sg);
+    if (sg) {
+      const r = RARITY[sg.rarity];
+      this.el.sig.innerHTML = `<b class="rar-chip rar-${sg.rarity}">${escapeHtml(L(r.name))}</b> ${escapeHtml(t('sig_label'))}：${escapeHtml(L(sg.desc))}`;
+    }
+    this._syncFxBtn();
     const using = pick.id === current;
     this.el.useSkin.disabled = !unlocked || using;
     this.el.useSkin.textContent = using ? t('using') : unlocked ? t('use') : t('locked');
@@ -323,6 +361,7 @@ export class UIManager {
   _openModal(wrap) { wrap.classList.remove('hidden'); }
   _closeModal(wrap) {
     wrap.classList.add('hidden');
+    if (wrap === this.el.skin) this._stopFx();
     if (wrap === this.el.skin && this.preview) this.preview.stop();
   }
 
