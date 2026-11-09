@@ -185,65 +185,75 @@ export class SignatureFX {
 /* ------------------------- 十种大特效 ------------------------- */
 const n = (base, mul) => Math.max(3, Math.round(base * mul));
 
+// 所有特效都以“罐底与方块顶面的接触点”为中心，沿地面（压扁的椭圆）向外扩散，
+// 只允许小幅弹起，不再往罐子头顶上冲。FLAT = 地面椭圆的纵横比（和冲击环一致）。
+const FLAT = 0.5;
+const ground = (a, s, lift = 0) => ({ vx: Math.cos(a) * s, vy: Math.sin(a) * s * FLAT - lift });
+const onRim = (x, y, rx) => { const a = rnd(0, TAU), r = rnd(0.3, 1) * rx; return { x: x + Math.cos(a) * r, y: y + Math.sin(a) * r * FLAT }; };
+const shock = (fx, x, y, color, r1, lw, delay = 0) => fx.add({ shape: 'ring', x, y, r0: 8, r1, color, lw, life: 0.5, delay, squash: FLAT });
+
 const BURSTS = {
   coins(fx, x, y, { mul }) {
-    for (let i = 0; i < n(26, mul); i++) fx.add({ shape: 'coin', x: x + rnd(-14, 14), y, vx: rnd(-300, 300), vy: rnd(-760, -300), g: 1500, life: rnd(1.0, 1.6), size: rnd(9, 15), spin: rnd(7, 13), rot: rnd(0, 6) });
-    fx.add({ shape: 'ring', x, y, r0: 10, r1: 150, color: '#ffd24a', lw: 8, life: 0.55 });
-    for (let i = 0; i < n(14, mul); i++) fx.add({ shape: 'star', x: x + rnd(-80, 80), y: y + rnd(-90, 20), vx: 0, vy: -30, color: '#fff3b0', size: rnd(5, 9), life: rnd(0.5, 0.9), vr: 2 });
+    shock(fx, x, y, '#ffd24a', 170, 9);
+    for (let i = 0; i < n(26, mul); i++) fx.add({ shape: 'coin', x, y, ...ground(rnd(0, TAU), rnd(140, 380), rnd(120, 260)), g: 1100, drag: 0.985, life: rnd(0.5, 0.8), size: rnd(8, 13), spin: rnd(7, 13), rot: rnd(0, 6) });
+    for (let i = 0; i < n(14, mul); i++) fx.add({ shape: 'star', ...onRim(x, y, 110), vx: 0, vy: 0, color: '#fff3b0', size: rnd(5, 9), life: rnd(0.4, 0.8), delay: rnd(0, 0.15), vr: 2 });
   },
   shards(fx, x, y, { mul }) {
-    for (let i = 0; i < n(18, mul); i++) { const a = rnd(0, TAU), s = rnd(160, 460); fx.add({ shape: 'diamond', x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s - 120, g: 500, drag: 0.985, color: pick(['#ffffff', '#dfe6f3', '#a9d6ff', '#c8c8d8']), size: rnd(7, 14), rot: rnd(0, 6), vr: rnd(-8, 8), life: rnd(0.6, 1.1) }); }
-    fx.add({ shape: 'ring', x, y, r0: 8, r1: 130, color: '#ffffff', lw: 5, life: 0.45 });
-    for (let i = 0; i < 6; i++) fx.add({ shape: 'star', x: x + rnd(-60, 60), y: y + rnd(-70, 30), vx: 0, vy: 0, color: '#fff', size: rnd(10, 18), life: rnd(0.3, 0.6), delay: rnd(0, 0.25), vr: 3 });
+    shock(fx, x, y, '#ffffff', 150, 6);
+    for (let i = 0; i < n(18, mul); i++) fx.add({ shape: 'diamond', x, y, ...ground(rnd(0, TAU), rnd(180, 460), rnd(40, 120)), g: 600, drag: 0.97, color: pick(['#ffffff', '#dfe6f3', '#a9d6ff', '#c8c8d8']), size: rnd(7, 13), rot: rnd(0, 6), vr: rnd(-8, 8), life: rnd(0.45, 0.8) });
+    for (let i = 0; i < 6; i++) fx.add({ shape: 'star', ...onRim(x, y, 90), vx: 0, vy: 0, color: '#fff', size: rnd(10, 16), life: rnd(0.3, 0.55), delay: rnd(0, 0.2), vr: 3 });
   },
   rainbow(fx, x, y, { mul }) {
-    for (let i = 0; i < 4; i++) fx.add({ shape: 'ring', x, y, r0: 6, r1: 120 + i * 55, hue: i * 70, lw: 9, life: 0.7 + i * 0.1, delay: i * 0.05 });
-    for (let i = 0; i < n(30, mul); i++) { const a = rnd(-Math.PI, 0), s = rnd(200, 620); fx.add({ shape: 'rect', x, y, vx: Math.cos(a) * s * 0.9, vy: Math.sin(a) * s, g: 900, drag: 0.99, color: `hsl(${Math.floor(rnd(0, 360))},95%,60%)`, size: rnd(4, 8), rot: rnd(0, 6), vr: rnd(-12, 12), life: rnd(0.9, 1.5) }); }
+    for (let i = 0; i < 4; i++) fx.add({ shape: 'ring', x, y, r0: 6, r1: 120 + i * 50, hue: i * 70, lw: 9, life: 0.65 + i * 0.1, delay: i * 0.05, squash: FLAT });
+    for (let i = 0; i < n(30, mul); i++) fx.add({ shape: 'rect', x, y, ...ground(rnd(0, TAU), rnd(200, 520), rnd(60, 180)), g: 800, drag: 0.97, color: `hsl(${Math.floor(rnd(0, 360))},95%,60%)`, size: rnd(4, 8), rot: rnd(0, 6), vr: rnd(-12, 12), life: rnd(0.55, 0.9) });
   },
-  neon(fx, x, y, { mul, color }) {
+  neon(fx, x, y, { mul }) {
     const cols = ['#00f0ff', '#ff3df2', '#7dff4f', '#ffe600'];
-    for (let i = 0; i < n(22, mul); i++) { const a = (i / n(22, mul)) * TAU + rnd(-0.1, 0.1), s = rnd(420, 900); fx.add({ shape: 'streak', x, y, ang: a, vx: Math.cos(a) * s, vy: Math.sin(a) * s * 0.7, drag: 0.93, color: pick(cols), size: rnd(40, 90), lw: rnd(2, 4), life: rnd(0.35, 0.6) }); }
-    fx.add({ shape: 'ring', x, y, r0: 8, r1: 170, color: '#00f0ff', lw: 6, life: 0.5 });
-    fx.add({ shape: 'ring', x, y, r0: 8, r1: 120, color: '#ff3df2', lw: 4, life: 0.4, delay: 0.06 });
+    const m = n(22, mul);
+    for (let i = 0; i < m; i++) { const a = (i / m) * TAU + rnd(-0.1, 0.1), s = rnd(420, 860), v = ground(a, s); fx.add({ shape: 'streak', x, y, ang: Math.atan2(v.vy, v.vx), ...v, drag: 0.92, color: pick(cols), size: rnd(30, 70), lw: rnd(2, 4), life: rnd(0.3, 0.5) }); }
+    shock(fx, x, y, '#00f0ff', 180, 6);
+    shock(fx, x, y, '#ff3df2', 125, 4, 0.06);
   },
   galaxy(fx, x, y, { mul }) {
-    for (let i = 0; i < n(30, mul); i++) fx.add({ shape: 'star', cx: x, cy: y, x, y, ang: rnd(0, TAU), r: rnd(6, 30), rv: rnd(80, 190), orbit: rnd(2.2, 4.2), color: pick(['#ffffff', '#ff9ee6', '#b69cff', '#7ad7ff']), size: rnd(5, 11), vr: 2, life: rnd(0.9, 1.5) });
-    fx.add({ shape: 'ring', x, y, r0: 10, r1: 190, color: '#c77dff', lw: 9, life: 0.7 });
+    for (let i = 0; i < n(30, mul); i++) fx.add({ shape: 'star', cx: x, cy: y, x, y, ang: rnd(0, TAU), r: rnd(6, 30), rv: rnd(80, 170), orbit: rnd(2.2, 4.2), color: pick(['#ffffff', '#ff9ee6', '#b69cff', '#7ad7ff']), size: rnd(5, 10), vr: 2, life: rnd(0.8, 1.3) });
+    shock(fx, x, y, '#c77dff', 200, 9);
     for (let i = 0; i < 3; i++) { const sx = rnd(0, fx.w), sy = rnd(0, fx.h * 0.4); fx.add({ shape: 'streak', x: sx, y: sy, ang: Math.PI * 0.3, vx: 700, vy: 420, color: '#ffffff', size: 120, lw: 2.5, life: 0.5, delay: i * 0.12 }); }
   },
   blaze(fx, x, y, { mul }) {
-    fx.add({ shape: 'ring', x, y, r0: 10, r1: 210, color: '#ff7a1a', lw: 14, life: 0.5 });
-    fx.add({ shape: 'ring', x, y, r0: 6, r1: 140, color: '#ffd23f', lw: 8, life: 0.4, delay: 0.04 });
-    for (let i = 0; i < n(18, mul); i++) fx.add({ shape: 'flame', x: x + rnd(-70, 70), y: y + rnd(-6, 14), vx: rnd(-40, 40), vy: rnd(-420, -180), g: -80, size: rnd(26, 52), life: rnd(0.45, 0.85) });
-    for (let i = 0; i < n(30, mul); i++) fx.add({ shape: 'ember', x, y, vx: rnd(-320, 320), vy: rnd(-560, -120), g: 380, size: rnd(4, 9), life: rnd(0.7, 1.3) });
+    shock(fx, x, y, '#ff7a1a', 220, 14);
+    shock(fx, x, y, '#ffd23f', 150, 8, 0.04);
+    // 一圈贴地的火苗：沿地面椭圆排开，只往上窜一小段
+    for (let i = 0; i < n(18, mul); i++) { const a = rnd(0, TAU), r = rnd(30, 110); fx.add({ shape: 'flame', x: x + Math.cos(a) * r, y: y + Math.sin(a) * r * FLAT, vx: Math.cos(a) * 60, vy: rnd(-120, -50), g: -40, size: rnd(18, 34), life: rnd(0.35, 0.6), delay: rnd(0, 0.08) }); }
+    for (let i = 0; i < n(30, mul); i++) fx.add({ shape: 'ember', x, y, ...ground(rnd(0, TAU), rnd(160, 420), rnd(60, 200)), g: 700, drag: 0.98, size: rnd(4, 8), life: rnd(0.5, 0.9) });
   },
   frost(fx, x, y, { mul }) {
-    fx.add({ shape: 'ring', x, y, r0: 8, r1: 150, color: '#bfeaff', lw: 8, life: 0.55 });
-    for (let i = 0; i < n(22, mul); i++) { const a = rnd(0, TAU), s = rnd(120, 360); fx.add({ shape: 'flake', x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s - 100, g: 160, drag: 0.985, color: pick(['#ffffff', '#bfeaff', '#8fd3ff']), size: rnd(6, 13), rot: rnd(0, 3), vr: rnd(-3, 3), life: rnd(0.9, 1.5) }); }
-    for (let i = 0; i < n(10, mul); i++) fx.add({ shape: 'diamond', x: x + rnd(-40, 40), y, vx: rnd(-120, 120), vy: rnd(-380, -160), g: 700, color: '#d9f4ff', size: rnd(6, 11), rot: rnd(0, 6), life: rnd(0.6, 1) });
+    shock(fx, x, y, '#bfeaff', 160, 8);
+    for (let i = 0; i < n(22, mul); i++) fx.add({ shape: 'flake', x, y, ...ground(rnd(0, TAU), rnd(120, 340), rnd(20, 80)), g: 200, drag: 0.975, color: pick(['#ffffff', '#bfeaff', '#8fd3ff']), size: rnd(6, 12), rot: rnd(0, 3), vr: rnd(-3, 3), life: rnd(0.6, 1.0) });
+    for (let i = 0; i < n(10, mul); i++) fx.add({ shape: 'diamond', ...onRim(x, y, 60), vx: rnd(-100, 100), vy: rnd(-180, -80), g: 900, color: '#d9f4ff', size: rnd(6, 10), rot: rnd(0, 6), life: rnd(0.4, 0.7) });
   },
   bubbles(fx, x, y, { mul }) {
-    for (let i = 0; i < n(20, mul); i++) fx.add({ shape: 'bubble', x: x + rnd(-60, 60), y: y + rnd(-10, 20), vx: rnd(-40, 40), vy: rnd(-260, -90), g: -30, color: pick(['#ff7fb0', '#ff4f8b', '#ffb3d1']), size: rnd(6, 17), life: rnd(0.9, 1.6) });
-    fx.add({ shape: 'ring', x, y, r0: 8, r1: 120, color: '#ff7fb0', lw: 6, life: 0.45 });
+    shock(fx, x, y, '#ff7fb0', 140, 6);
+    for (let i = 0; i < n(20, mul); i++) fx.add({ shape: 'bubble', ...onRim(x, y, 110), vx: rnd(-30, 30), vy: rnd(-90, -30), g: -10, color: pick(['#ff7fb0', '#ff4f8b', '#ffb3d1']), size: rnd(6, 15), life: rnd(0.6, 1.0), delay: rnd(0, 0.12) });
   },
   pixel(fx, x, y, { mul }) {
     const cols = ['#ffe600', '#ff4f9a', '#3b2fd1', '#00e5ff', '#7dff4f'];
-    for (let i = 0; i < n(36, mul); i++) { const a = rnd(0, TAU), s = rnd(140, 520); fx.add({ shape: 'pixel', x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s - 160, g: 900, color: pick(cols), size: pick([6, 6, 12]), life: rnd(0.6, 1.2) }); }
-    fx.add({ shape: 'ring', x, y, r0: 8, r1: 110, color: '#ffe600', lw: 6, life: 0.4, squash: 1 });
+    for (let i = 0; i < n(36, mul); i++) fx.add({ shape: 'pixel', x, y, ...ground(rnd(0, TAU), rnd(140, 460), rnd(40, 160)), g: 900, color: pick(cols), size: pick([6, 6, 12]), life: rnd(0.45, 0.8) });
+    shock(fx, x, y, '#ffe600', 120, 6);
   },
   thunder(fx, x, y, { mul }) {
+    // 闪电从天上劈到落点（终点就是罐底接触点）
     const bolt = (tx, delay, lw) => {
       const pts = [[tx + rnd(-30, 30), -20]];
       const steps = 9;
-      for (let i = 1; i <= steps; i++) pts.push([tx + (x - tx) * (i / steps) + rnd(-34, 34) * (1 - i / steps * 0.6), (y + 10) * (i / steps)]);
-      pts[pts.length - 1] = [x, y + 8];
+      for (let i = 1; i <= steps; i++) pts.push([tx + (x - tx) * (i / steps) + rnd(-34, 34) * (1 - i / steps * 0.6), y * (i / steps)]);
+      pts[pts.length - 1] = [x, y];
       fx.add({ shape: 'bolt', pts, color: '#ffe14a', lw, life: 0.36, delay });
     };
     bolt(x + rnd(-90, 90), 0, 7);
     if (mul > 0.9) { bolt(x + rnd(-140, 140), 0.07, 4); }
     if (mul > 1.5) { bolt(x + rnd(-200, 200), 0.13, 3); }
-    fx.add({ shape: 'ring', x, y, r0: 8, r1: 170, color: '#ffe14a', lw: 10, life: 0.45, delay: 0.04 });
-    for (let i = 0; i < n(20, mul); i++) { const a = rnd(0, TAU), s = rnd(200, 560); fx.add({ shape: 'spark', x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, drag: 0.95, g: 300, color: pick(['#ffe14a', '#fff7b0', '#ffffff']), size: rnd(3, 6), life: rnd(0.3, 0.7), delay: 0.04 }); }
+    shock(fx, x, y, '#ffe14a', 180, 10, 0.04);
+    for (let i = 0; i < n(20, mul); i++) fx.add({ shape: 'spark', x, y, ...ground(rnd(0, TAU), rnd(220, 520), rnd(20, 90)), drag: 0.94, g: 400, color: pick(['#ffe14a', '#fff7b0', '#ffffff']), size: rnd(3, 6), life: rnd(0.3, 0.6), delay: 0.04 });
   },
 };
 
