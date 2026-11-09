@@ -5,6 +5,6 @@
 //               留空 = 不显示倒计时（没有真实截止时间时不要编造倒计时）
 export const SHOP = {
   price: "160 EGP", // 目前按钮上不显示价格，留作备用
-  buyUrl: 'https://wa.me/8619550262721?text=' + encodeURIComponent('Hi, I want the physical can toy with the VIP code'),
+  buyUrl: 'https://mouhan.dev/#shop', // 跳到主站小店页面
   offerEndsAt: '',
 };

@@ -1,19 +1,19 @@
 // UI 层：开始界面、计分板、蓄力条、飘字、结算弹窗、皮肤商店（含兑换码）、排行榜、语言切换
-import { PLAYER_SKINS, BLOCK_STYLES, SkinPreview } from './SkinManager.js?v=20261109e';
-import { fetchTop, fetchPlayer, syncPlayer, buildBoard, LEADERBOARD_API } from './Leaderboard.js?v=20261109e';
-import { Storage } from './Storage.js?v=20261109e';
-import { escapeHtml } from './utils.js?v=20261109e';
-import { t, L, setLang, onLangChange, applyStatic } from './i18n.js?v=20261109e';
-import { PERKS } from './canPerks.js?v=20261109e';
-import { SIGNATURE, RARITY, getSignature } from './canSignature.js?v=20261109e';
-import { SHOP } from './shop.js?v=20261109e';
+import { PLAYER_SKINS, BLOCK_STYLES, SkinPreview } from './SkinManager.js?v=20261109f';
+import { fetchTop, fetchPlayer, syncPlayer, buildBoard, LEADERBOARD_API } from './Leaderboard.js?v=20261109f';
+import { Storage } from './Storage.js?v=20261109f';
+import { escapeHtml } from './utils.js?v=20261109f';
+import { t, L, setLang, onLangChange, applyStatic } from './i18n.js?v=20261109f';
+import { PERKS } from './canPerks.js?v=20261109f';
+import { SIGNATURE, RARITY, getSignature } from './canSignature.js?v=20261109f';
+import { SHOP } from './shop.js?v=20261109f';
 
 const $ = (id) => document.getElementById(id);
 
 export class UIManager {
   /**
    * @param {object} handlers { onStart, onRestart, onHome }
-   * @param {import('./SkinManager.js?v=20261109e').SkinManager} skins
+   * @param {import('./SkinManager.js?v=20261109f').SkinManager} skins
    */
   constructor(handlers, skins) {
     this.h = handlers;
