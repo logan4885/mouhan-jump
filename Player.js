@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { CONFIG } from './config.js?v=20261110k';
 import { Ease, disposeObject } from './utils.js?v=20261110k';
-import { PLAYER_SKINS } from './SkinManager.js?v=20261110m';
+import { PLAYER_SKINS } from './SkinManager.js?v=20261110n';
 import { tickCan } from './CanModel.js?v=20261110k';
 import { Particles } from './Particles.js?v=20261110k';
 

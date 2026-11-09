@@ -111,7 +111,7 @@ export const CAN_SKINS = [
   {
     id: 'chrono', unlock: 'code', effect: 'pharaoh',
     name: { zh: '时停罐', en: 'Chrono Can', ar: 'علبة الزمن' },
-    desc: { zh: '埃及风格的黄绿罐（金字塔冠 + 荷鲁斯之眼）；攒 30 积分开一次 ⏱ 时停 8 秒', en: 'Egyptian yellow-green can (pyramid crown + Eye of Horus); spend 30 credits on ⏱ to stop time for 8 seconds', ar: 'علبة مصرية بالأخضر الأصفر (تاج هرمي + عين حورس)؛ أنفق 30 نقطة على ⏱ لإيقاف الزمن 8 ثوانٍ' },
+    desc: { zh: '埃及风格的黄绿罐（金字塔冠 + 荷鲁斯之眼）；攒 50 积分开一次 ⏱ 时停 8 秒', en: 'Egyptian yellow-green can (pyramid crown + Eye of Horus); spend 50 credits on ⏱ to stop time for 8 seconds', ar: 'علبة مصرية بالأخضر الأصفر (تاج هرمي + عين حورس)؛ أنفق 50 نقطة على ⏱ لإيقاف الزمن 8 ثوانٍ' },
     body: '#7cb518', accent: '#f5e60a', text: 'CHRONO', textColor: '#1f3d00', sub: '8 SEC · FREEZE', lid: '#e5e5e5',
   },
 ];
