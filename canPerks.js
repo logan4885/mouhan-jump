@@ -70,12 +70,12 @@ export const PERKS = {
     desc: { zh: '分数到 30 后获得一次复活', en: 'Earn one extra life after reaching 30 points', ar: 'تحصل على حياة إضافية بعد الوصول إلى 30 نقطة' },
   },
   chrono: {
-    icon: '⏱', timeStop: 5, freezeChargeMul: 2, freezeCooldown: 12, perfectMul: 0.9,
+    icon: '⏱', timeStop: 8, freezeChargeMul: 1, freezeCost: 20, perfectMul: 0.9,
     name: { zh: '时停', en: 'Time Stop', ar: 'إيقاف الزمن' },
     desc: {
-      zh: '点 ⏱ 时停 5 秒：蓄力速度 ×2、有落点箭头、落空不算失败，期间可以一直跳；用完后再得 12 分才能再用；代价：完美范围小 10%',
-      en: 'Tap ⏱ to stop time for 5 s: charging is 2x faster, a landing arrow appears, misses do not end the run and you can keep jumping; reusable after 12 more points; cost: perfect zone 10% smaller',
-      ar: 'اضغط ⏱ لإيقاف الزمن 5 ثوانٍ: شحن أسرع مرتين، سهم يوضح الهبوط، والسقوط لا ينهي الجولة ويمكنك مواصلة القفز؛ يعاد استخدامه بعد 12 نقطة أخرى؛ الثمن: منطقة المثالي أصغر 10%',
+      zh: '攒够 20 积分可开一次时停：8 秒内有落点箭头、落空不算失败，可以一直跳（蓄力速度不变）；每得 1 分 = 1 积分，开一次花 20；代价：完美范围小 10%',
+      en: 'Spend 20 credits to stop time for 8 s: a landing arrow appears, misses do not end the run and you can keep jumping (charge speed unchanged). 1 point = 1 credit; cost: perfect zone 10% smaller',
+      ar: 'أنفق 20 نقطة رصيد لإيقاف الزمن 8 ثوانٍ: يظهر سهم للهبوط والسقوط لا ينهي الجولة ويمكنك مواصلة القفز (سرعة الشحن كما هي). كل نقطة = رصيد واحد؛ الثمن: منطقة المثالي أصغر 10%',
     },
   },
   thunder: {

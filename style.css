@@ -469,3 +469,5 @@ body.timestop #game { filter: grayscale(.55) contrast(1.1); }
 @keyframes fbSpin { from { transform: rotate(0deg) scale(.4); } to { transform: rotate(40deg) scale(1.3); } }
 @keyframes fbWord { 0% { opacity: 0; scale: 2.6; } 25% { opacity: 1; scale: 1; } 100% { opacity: 1; scale: 1.08; } }
 @keyframes fbShake { from { translate: -2px 1px; } to { translate: 2px -1px; } }
+
+#sandFx { position: absolute; left: 0; top: 0; width: 100%; height: 100%; pointer-events: none; }

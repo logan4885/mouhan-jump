@@ -1,6 +1,6 @@
 // 多语言：中文 / English / العربية
 // 静态文字写在 index.html 的 data-i18n 属性里，动态文字用 t('key', { 变量 })
-import { Storage } from './Storage.js?v=20261110j';
+import { Storage } from './Storage.js?v=20261110k';
 
 export const LANGS = ['zh', 'en', 'ar'];
 
@@ -20,7 +20,7 @@ const DICT = {
     use: '使用', using: '使用中', locked: '未解锁', equipped: '已换上新皮肤',
     lock_score: '🔒 {n} 分', lock_code: '🔑 兑换码',
     need_score: '最高分达到 {n} 解锁（当前 {best}）', need_code: '输入兑换码，随机解锁一款新罐子',
-    freeze_btn: '时停 5 秒', freeze_word: '时间，停止！', freeze_cd: '再得 {n} 分可用', freeze_safe: '时停保护：落空不算失败', perk_freeze_on: '时停中', perk_label: '能力', perk_none: '标准手感，没有能力', perk_used: '已用', perk_ready: '可用 ×1', perk_after: '{n} 分后可用',
+    freeze_btn: '时停 8 秒', freeze_word: '时间，停止！', freeze_cd: '积分 {n}/{m}', freeze_safe: '时停保护：落空不算失败', perk_freeze_on: '时停中', perk_label: '能力', perk_none: '标准手感，没有能力', perk_used: '已用', perk_ready: '可用 ×1', perk_after: '{n} 分后可用',
     perk_charged: '已充能', perk_streak: '{n}/{m}', perk_saved: '{icon} {name} 生效！',
     redeem_ph: '输入兑换码', redeem_btn: '兑换',
     redeem_ok: '🎉 抽中了：{name}', redeem_bad: '兑换码无效，请检查后再试', redeem_have: '你已经拥有：{name}',
@@ -68,7 +68,7 @@ const DICT = {
     use: 'Use', using: 'In use', locked: 'Locked', equipped: 'New skin equipped',
     lock_score: '🔒 {n} pts', lock_code: '🔑 Code',
     need_score: 'Reach a best of {n} to unlock (now {best})', need_code: 'Enter a redeem code to unlock a random new can',
-    freeze_btn: 'Time Stop 5s', freeze_word: 'TIME. STOP.', freeze_cd: 'ready in {n} pts', freeze_safe: 'Time-stop safety: no fail', perk_freeze_on: 'time stopped', perk_label: 'Ability', perk_none: 'Standard feel, no ability', perk_used: 'used', perk_ready: 'ready ×1', perk_after: 'from {n} pts',
+    freeze_btn: 'Time Stop 8s', freeze_word: 'TIME. STOP.', freeze_cd: 'Credits {n}/{m}', freeze_safe: 'Time-stop safety: no fail', perk_freeze_on: 'time stopped', perk_label: 'Ability', perk_none: 'Standard feel, no ability', perk_used: 'used', perk_ready: 'ready ×1', perk_after: 'from {n} pts',
     perk_charged: 'charged', perk_streak: '{n}/{m}', perk_saved: '{icon} {name} saved you!',
     redeem_ph: 'Enter redeem code', redeem_btn: 'Redeem',
     redeem_ok: '🎉 You got: {name}', redeem_bad: 'That code is not valid. Check it and try again.', redeem_have: 'You already have {name}',
@@ -116,7 +116,7 @@ const DICT = {
     use: 'استخدم', using: 'قيد الاستخدام', locked: 'مقفل', equipped: 'تم تغيير الشكل',
     lock_score: '🔒 {n} نقطة', lock_code: '🔑 رمز',
     need_score: 'يُفتح عند الوصول إلى {n} نقطة (الآن {best})', need_code: 'أدخل رمز الاسترداد لفتح علبة جديدة عشوائية',
-    freeze_btn: 'إيقاف الزمن 5ث', freeze_word: 'توقّف الزمن!', freeze_cd: 'جاهز بعد {n} نقطة', freeze_safe: 'حماية الزمن: لا فشل', perk_freeze_on: 'الزمن متوقف', perk_label: 'القدرة', perk_none: 'إحساس عادي، بلا قدرة', perk_used: 'مستخدمة', perk_ready: 'جاهزة ×1', perk_after: 'بعد {n} نقطة',
+    freeze_btn: 'إيقاف الزمن 8ث', freeze_word: 'توقّف الزمن!', freeze_cd: 'رصيد {n}/{m}', freeze_safe: 'حماية الزمن: لا فشل', perk_freeze_on: 'الزمن متوقف', perk_label: 'القدرة', perk_none: 'إحساس عادي، بلا قدرة', perk_used: 'مستخدمة', perk_ready: 'جاهزة ×1', perk_after: 'بعد {n} نقطة',
     perk_charged: 'مشحونة', perk_streak: '{n}/{m}', perk_saved: '{icon} {name} أنقذتك!',
     redeem_ph: 'أدخل رمز الاسترداد', redeem_btn: 'استرداد',
     redeem_ok: '🎉 حصلت على: {name}', redeem_bad: 'الرمز غير صالح، تحقّق منه وحاول مرة أخرى', redeem_have: 'لديك بالفعل: {name}',

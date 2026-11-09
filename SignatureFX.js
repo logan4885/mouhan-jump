@@ -208,14 +208,47 @@ export class SignatureFX {
         c.shadowBlur = 0; break;
       }
       case 'pyramid': {
-        const g = Math.min(1, (p.age || 0) / 0.22), e = 1 - Math.pow(1 - g, 3);
-        const w = p.size * e, h = p.size * 1.15 * e, x = p.x, y = p.y;
-        if (w < 1) break;
-        c.lineJoin = 'round'; c.lineWidth = 2; c.strokeStyle = '#7a5a00';
-        c.fillStyle = '#ffe27a'; c.beginPath(); c.moveTo(x, y - h); c.lineTo(x - w, y); c.lineTo(x, y + w * 0.5); c.closePath(); c.fill(); c.stroke();
-        c.fillStyle = '#d9a514'; c.beginPath(); c.moveTo(x, y - h); c.lineTo(x, y + w * 0.5); c.lineTo(x + w, y); c.closePath(); c.fill(); c.stroke();
-        c.fillStyle = '#fff'; c.globalAlpha *= (0.6 + 0.4 * Math.sin(p.age * 20));
-        c.beginPath(); c.arc(x, y - h, 3 + 3 * e, 0, TAU); c.fill(); break;
+        // 石砌金字塔：从地面升起（被底面菱形裁掉地下部分），砂岩渐变 + 层层石块线 + 受光/背光面 + 接触阴影
+        const g = Math.min(1, (p.age || 0) / 0.35), e = 1 - Math.pow(1 - g, 3);
+        const w = p.size, h = p.size * 1.0, x = p.x, y = p.y, d = w * 0.5;
+        const pale = p.pale || 0;                                     // 远处的塔：偏白（大气透视）
+        const mix = (r, gg, bb) => `rgb(${Math.round(r + (225 - r) * pale)},${Math.round(gg + (205 - gg) * pale)},${Math.round(bb + (160 - bb) * pale)})`;
+        // 接触阴影
+        c.save(); c.globalAlpha *= 0.28 * e; c.fillStyle = '#3a2a10';
+        c.beginPath(); c.ellipse(x + w * 0.25, y + d * 0.35, w * 1.1, d * 0.8, 0, 0, TAU); c.fill(); c.restore();
+        c.save();
+        c.beginPath(); c.moveTo(x - w - 6, y - h * 2.5); c.lineTo(x + w + 6, y - h * 2.5); c.lineTo(x + w + 6, y); c.lineTo(x, y + d + 2); c.lineTo(x - w - 6, y); c.closePath(); c.clip();
+        const oy = (1 - e) * (h + d), ay = y - h + oy;                 // 升起偏移
+        const A = [x, ay], L = [x - w, y + oy], F = [x, y + d + oy], R = [x + w, y + oy];
+        const lg = c.createLinearGradient(L[0], A[1], F[0], F[1]);
+        lg.addColorStop(0, mix(238, 208, 138)); lg.addColorStop(1, mix(205, 160, 84));
+        const rg = c.createLinearGradient(F[0], A[1], R[0], R[1]);
+        rg.addColorStop(0, mix(160, 112, 54)); rg.addColorStop(1, mix(112, 74, 32));
+        const face = (P, Q, S, fill) => { c.fillStyle = fill; c.beginPath(); c.moveTo(P[0], P[1]); c.lineTo(Q[0], Q[1]); c.lineTo(S[0], S[1]); c.closePath(); c.fill(); };
+        face(A, L, F, lg); face(A, F, R, rg);
+        // 石块层线
+        c.lineWidth = 1; c.strokeStyle = 'rgba(70,42,10,0.32)';
+        const lerp = (P, Q, f) => [P[0] + (Q[0] - P[0]) * f, P[1] + (Q[1] - P[1]) * f];
+        for (let i = 1; i < 9; i++) {
+          const f = i / 9;
+          let a1 = lerp(A, L, f), a2 = lerp(A, F, f); c.beginPath(); c.moveTo(a1[0], a1[1]); c.lineTo(a2[0], a2[1]); c.stroke();
+          a1 = lerp(A, F, f); a2 = lerp(A, R, f); c.beginPath(); c.moveTo(a1[0], a1[1]); c.lineTo(a2[0], a2[1]); c.stroke();
+        }
+        // 棱线 + 轮廓
+        c.lineJoin = 'round'; c.lineWidth = 1.5; c.strokeStyle = 'rgba(60,36,8,0.7)';
+        c.beginPath(); c.moveTo(L[0], L[1]); c.lineTo(A[0], A[1]); c.lineTo(R[0], R[1]); c.lineTo(F[0], F[1]); c.closePath(); c.moveTo(A[0], A[1]); c.lineTo(F[0], F[1]); c.stroke();
+        // 塔尖的一点金光
+        c.fillStyle = '#fff3b0'; c.globalAlpha *= (0.7 + 0.3 * Math.sin(p.age * 14));
+        c.beginPath(); c.arc(A[0], A[1] + 2, 2.2 + 1.5 * e, 0, TAU); c.fill();
+        c.restore();
+        break;
+      }
+      case 'dust': {
+        // 沙尘团：越飘越大、越淡
+        const r = p.size * (1 + (1 - k) * 1.4);
+        const gr = c.createRadialGradient(p.x, p.y, 0, p.x, p.y, r);
+        gr.addColorStop(0, 'rgba(214,176,108,0.55)'); gr.addColorStop(1, 'rgba(214,176,108,0)');
+        c.fillStyle = gr; c.beginPath(); c.arc(p.x, p.y, r, 0, TAU); c.fill(); break;
       }
       case 'spark':
         c.fillStyle = p.color; c.beginPath(); c.arc(p.x, p.y, p.size * k + 1, 0, TAU); c.fill(); break;
@@ -283,13 +316,12 @@ const BURSTS = {
     shock(fx, x, y, '#ffe600', 120, 6);
   },
   pyramid(fx, x, y, { mul }) {
-    // 金字塔从落点升起，两侧各一座小的，周围洒出金沙
-    shock(fx, x, y, '#ffd23a', 190, 9);
-    fx.add({ shape: 'pyramid', x, y, size: 58, life: 1.0 });
-    fx.add({ shape: 'pyramid', x: x - 86, y: y + 10, size: 30, life: 0.9, delay: 0.06 });
-    fx.add({ shape: 'pyramid', x: x + 86, y: y + 10, size: 30, life: 0.9, delay: 0.1 });
-    for (let i = 0; i < n(26, mul); i++) fx.add({ shape: 'spark', x, y, ...ground(rnd(0, TAU), rnd(120, 420), rnd(60, 180)), g: 800, drag: 0.97, color: pick(['#ffd23a', '#fff1a0', '#f5e60a', '#c9921f']), size: rnd(3, 6), life: rnd(0.5, 0.9) });
-    for (let i = 0; i < n(8, mul); i++) fx.add({ shape: 'star', ...onRim(x, y, 110), vx: 0, vy: 0, color: '#fff3b0', size: rnd(6, 11), life: rnd(0.4, 0.8), delay: rnd(0, 0.2), vr: 2 });
+    // 吉萨三塔：远处两座小而偏白（先画，垫在后面），主塔从落点升起；脚下卷起沙尘，一阵风沙吹过
+    fx.add({ shape: 'pyramid', x: x + 78, y: y - 6, size: 24, pale: 0.35, life: 1.15, delay: 0.1 });
+    fx.add({ shape: 'pyramid', x: x - 70, y: y - 4, size: 32, pale: 0.22, life: 1.2, delay: 0.05 });
+    fx.add({ shape: 'pyramid', x, y, size: 52, life: 1.3 });
+    for (let i = 0; i < n(9, mul); i++) { const a = rnd(0, TAU), r = rnd(20, 90); fx.add({ shape: 'dust', x: x + Math.cos(a) * r, y: y + Math.sin(a) * r * FLAT, vx: Math.cos(a) * 40 + 30, vy: rnd(-40, -10), drag: 0.97, size: rnd(18, 34), life: rnd(0.7, 1.2), delay: rnd(0, 0.15) }); }
+    for (let i = 0; i < n(30, mul); i++) fx.add({ shape: 'spark', x: x + rnd(-110, 40), y: y + rnd(-60, 20), vx: rnd(260, 620), vy: rnd(-30, 50), color: pick(['#e8c77a', '#f3dc9c', '#c99a4b']), size: rnd(1.5, 3.5), life: rnd(0.4, 0.9), delay: rnd(0, 0.3) });
   },
   thunder(fx, x, y, { mul }) {
     // 闪电从天上劈到落点（终点就是罐底接触点）

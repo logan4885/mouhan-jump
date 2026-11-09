@@ -1,22 +1,22 @@
 // UI 层：开始界面、计分板、蓄力条、飘字、结算弹窗、皮肤商店（含兑换码）、排行榜、语言切换
-import { PLAYER_SKINS, BLOCK_STYLES, SkinPreview } from './SkinManager.js?v=20261110j';
-import { fetchTop, fetchPlayer, syncPlayer, buildBoard, LEADERBOARD_API } from './Leaderboard.js?v=20261110j';
-import { Storage } from './Storage.js?v=20261110j';
-import { escapeHtml } from './utils.js?v=20261110j';
-import { t, L, setLang, getLang, onLangChange, applyStatic } from './i18n.js?v=20261110j';
-import { PERKS } from './canPerks.js?v=20261110j';
-import { SIGNATURE, RARITY, getSignature } from './canSignature.js?v=20261110j';
-import { SHOP } from './shop.js?v=20261110j';
-import { recoveryAvailable, makeCode, makeLink, restore } from './Recovery.js?v=20261110j';
-import { accountAvailable, PROVIDER_NAME, completeLogin, renderGoogleButton, prepareFacebook, facebookLogin, logout } from './Account.js?v=20261110j';
-import { AUTH } from './authConfig.js?v=20261110j';
+import { PLAYER_SKINS, BLOCK_STYLES, SkinPreview } from './SkinManager.js?v=20261110k';
+import { fetchTop, fetchPlayer, syncPlayer, buildBoard, LEADERBOARD_API } from './Leaderboard.js?v=20261110k';
+import { Storage } from './Storage.js?v=20261110k';
+import { escapeHtml } from './utils.js?v=20261110k';
+import { t, L, setLang, getLang, onLangChange, applyStatic } from './i18n.js?v=20261110k';
+import { PERKS } from './canPerks.js?v=20261110k';
+import { SIGNATURE, RARITY, getSignature } from './canSignature.js?v=20261110k';
+import { SHOP } from './shop.js?v=20261110k';
+import { recoveryAvailable, makeCode, makeLink, restore } from './Recovery.js?v=20261110k';
+import { accountAvailable, PROVIDER_NAME, completeLogin, renderGoogleButton, prepareFacebook, facebookLogin, logout } from './Account.js?v=20261110k';
+import { AUTH } from './authConfig.js?v=20261110k';
 
 const $ = (id) => document.getElementById(id);
 
 export class UIManager {
   /**
    * @param {object} handlers { onStart, onRestart, onHome }
-   * @param {import('./SkinManager.js?v=20261110j').SkinManager} skins
+   * @param {import('./SkinManager.js?v=20261110k').SkinManager} skins
    */
   constructor(handlers, skins) {
     this.h = handlers;
@@ -244,8 +244,49 @@ export class UIManager {
     const f = $('freezeFx');
     f.style.setProperty('--sec', sec + 's');
     f.classList.remove('hidden', 'run'); void f.offsetWidth; f.classList.add('run');
+    this._sandStart();
   }
-  hideFreeze() { document.body.classList.remove('timestop'); const f = $('freezeFx'); f.classList.add('hidden'); f.classList.remove('run'); }
+  /** 沙尘暴：斜向吹过的沙粒 + 缓缓漂过的尘雾（时停期间一直刮，只是画面效果） */
+  _sandStart() {
+    const c = $('sandFx'); if (!c || this._sandRaf) return;
+    const dpr = Math.min(window.devicePixelRatio || 1, 2), w = window.innerWidth, h = window.innerHeight;
+    c.width = Math.round(w * dpr); c.height = Math.round(h * dpr);
+    const g = c.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const weak = (navigator.hardwareConcurrency || 8) <= 4;
+    const N = reduce ? 40 : weak ? 110 : 200, rnd = (a, b) => a + Math.random() * (b - a);
+    const grains = Array.from({ length: N }, () => ({ x: rnd(0, w), y: rnd(0, h), s: rnd(1.2, 3.4), v: rnd(420, 980), ang: rnd(0.08, 0.3), ph: rnd(0, 6.3), amp: rnd(6, 26), a: rnd(0.5, 1) }));
+    const clouds = Array.from({ length: 6 }, (_, i) => ({ x: rnd(0, w), y: (i + 0.5) * h / 6 + rnd(-40, 40), r: rnd(140, 280), v: rnd(60, 150), a: rnd(0.2, 0.36) }));
+    let last = performance.now(), tt = 0;
+    const loop = (now) => {
+      const dt = Math.min(0.05, (now - last) / 1000); last = now; tt += dt;
+      g.clearRect(0, 0, w, h);
+      g.fillStyle = 'rgba(196, 150, 70, 0.16)'; g.fillRect(0, 0, w, h);
+      for (const k of clouds) {
+        k.x += k.v * dt; if (k.x - k.r > w) k.x = -k.r;
+        const gr = g.createRadialGradient(k.x, k.y, 0, k.x, k.y, k.r);
+        gr.addColorStop(0, `rgba(214, 170, 92, ${k.a})`); gr.addColorStop(1, 'rgba(214, 170, 92, 0)');
+        g.fillStyle = gr; g.fillRect(k.x - k.r, k.y - k.r, k.r * 2, k.r * 2);
+      }
+      g.lineCap = 'round';
+      for (const p of grains) {
+        p.x += p.v * dt; p.y += p.v * Math.tan(p.ang) * dt * 0.5 + Math.sin(tt * 3 + p.ph) * p.amp * dt;
+        if (p.x > w + 40) { p.x = -40; p.y = rnd(0, h); }
+        if (p.y > h + 20) p.y = -20; else if (p.y < -30) p.y = h;
+        const len = p.v * 0.045;
+        g.strokeStyle = `rgba(240, 205, 125, ${p.a})`; g.lineWidth = p.s;
+        g.beginPath(); g.moveTo(p.x, p.y); g.lineTo(p.x - len, p.y - len * Math.tan(p.ang) * 0.5); g.stroke();
+      }
+      this._sandRaf = requestAnimationFrame(loop);
+    };
+    this._sandRaf = requestAnimationFrame(loop);
+  }
+  _sandStop() {
+    if (this._sandRaf) cancelAnimationFrame(this._sandRaf);
+    this._sandRaf = 0;
+    const c = $('sandFx'); if (c) c.getContext('2d').clearRect(0, 0, c.width, c.height);
+  }
+  hideFreeze() { this._sandStop(); document.body.classList.remove('timestop'); const f = $('freezeFx'); f.classList.add('hidden'); f.classList.remove('run'); }
 
   /* ---------- 试驾体验条（踩中 24K 星号方块） ---------- */
   showTrial(name, sec) {

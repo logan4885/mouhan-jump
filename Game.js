@@ -1,19 +1,19 @@
 // 游戏主控：渲染器 / 场景 / 正交相机 / 灯光、输入、状态机、计分与落点判定
 import * as THREE from 'three';
-import { CONFIG } from './config.js?v=20261110j';
-import { Storage } from './Storage.js?v=20261110j';
-import { Tweens, clamp, Ease } from './utils.js?v=20261110j';
-import { SkinManager } from './SkinManager.js?v=20261110j';
-import { BlockManager } from './BlockManager.js?v=20261110j';
-import { Player } from './Player.js?v=20261110j';
-import { UIManager } from './UIManager.js?v=20261110j';
-import { Sound } from './Sound.js?v=20261110j';
-import { t, L } from './i18n.js?v=20261110j';
-import { getPerk } from './canPerks.js?v=20261110j';
-import { getSignature, RARITY } from './canSignature.js?v=20261110j';
-import { PLAYER_SKINS } from './SkinManager.js?v=20261110j';
-import { Music, playSfx } from './SkinAudio.js?v=20261110j';
-import { SignatureFX } from './SignatureFX.js?v=20261110j';
+import { CONFIG } from './config.js?v=20261110k';
+import { Storage } from './Storage.js?v=20261110k';
+import { Tweens, clamp, Ease } from './utils.js?v=20261110k';
+import { SkinManager } from './SkinManager.js?v=20261110k';
+import { BlockManager } from './BlockManager.js?v=20261110k';
+import { Player } from './Player.js?v=20261110k';
+import { UIManager } from './UIManager.js?v=20261110k';
+import { Sound } from './Sound.js?v=20261110k';
+import { t, L } from './i18n.js?v=20261110k';
+import { getPerk } from './canPerks.js?v=20261110k';
+import { getSignature, RARITY } from './canSignature.js?v=20261110k';
+import { PLAYER_SKINS } from './SkinManager.js?v=20261110k';
+import { Music, playSfx } from './SkinAudio.js?v=20261110k';
+import { SignatureFX } from './SignatureFX.js?v=20261110k';
 
 // 踩中星号方块后的免费体验时长（秒）
 const TRIAL_SEC = 8;
@@ -350,8 +350,12 @@ export class Game {
   /** 时停罐：每局一次，时停 N 秒。期间蓄力速度变慢（更好控制），不改变地图、方块和判定范围之外的任何东西 */
   activateFreeze() {
     const pk = this.perk;
-    if (!pk || !pk.timeStop || this.freezeLeft > 0 || this.score < (this.freezeNext || 0)) return;
+    if (!pk || !pk.timeStop || this.freezeLeft > 0) return;
     if (this.state !== 'ready' && this.state !== 'charging') return;
+    this._syncCredit();
+    const cost = pk.freezeCost || 20;
+    if ((this.freezeCredit || 0) < cost) return;
+    this.freezeCredit -= cost;
     this.freezeLeft = pk.timeStop;
     this.ui.showFreeze(pk.timeStop);
     this.ui.setFreezeBtn(false);
@@ -362,10 +366,16 @@ export class Game {
 
   _tr(k) { return t(k); }
 
+  /** 积分：每得 1 分 = 1 积分（时停期间得的分也算），开一次时停花 freezeCost 积分 */
+  _syncCredit() {
+    const d = this.score - (this._creditScore || 0);
+    if (d > 0) this.freezeCredit = (this.freezeCredit || 0) + d;
+    this._creditScore = this.score;
+  }
+
   _endFreeze(announce, force) {
     const was = force || this.freezeLeft > 0;
     this.freezeLeft = 0;
-    if (was && this.perk) this.freezeNext = this.score + (this.perk.freezeCooldown || 12);
     if (this.ui) { this.ui.hideFreeze(); }
     if (was && announce) { playSfx(this.sound, 'tock', 1, 1); this._updatePerkHud(); }
   }
@@ -378,12 +388,14 @@ export class Game {
     if (pk.timeStop) {
       // 按钮一直在：冷却中变灰并显示还差几分；时停中显示“时停中”
       const inPlay = ['ready', 'charging', 'jumping', 'falling'].includes(this.state);
-      const left = Math.max(0, (this.freezeNext || 0) - this.score);
+      this._syncCredit();
+      const cost = pk.freezeCost || 20, cr = this.freezeCredit || 0;
+      const left = Math.max(0, cost - cr);
       const active = this.freezeLeft > 0;
       const usable = !active && left === 0 && (this.state === 'ready' || this.state === 'charging');
-      const note = active ? t('perk_freeze_on') : left > 0 ? t('freeze_cd', { n: left }) : '';
+      const note = active ? t('perk_freeze_on') : left > 0 ? t('freeze_cd', { n: cr, m: cost }) : '';
       this.ui.setFreezeBtn(inPlay, usable, note);
-      status = active ? t('perk_freeze_on') : left > 0 ? t('freeze_cd', { n: left }) : t('perk_ready');
+      status = active ? t('perk_freeze_on') : left > 0 ? t('freeze_cd', { n: cr, m: cost }) : t('perk_ready');
     } else {
       this.ui.setFreezeBtn(false);
       if (pk.revive) {
@@ -559,7 +571,7 @@ export class Game {
     this.player.place(0, CONFIG.BLOCK_HEIGHT, 0);
     this.score = 0; this.combo = 0; this.perfects = 0; this.chargeT = 0;
     this.reviveUsed = false; this.thunderReady = false; this.thunderCount = 0; this.lastResult = null;
-    this.freezeNext = 0; this.freezeLeft = 0; this._endFreeze(false);
+    this.freezeCredit = 0; this._creditScore = 0; this.freezeLeft = 0; this._endFreeze(false);
     if (this.skins) this._refreshPerk();
     this.ui && (this.ui.setScore(0), this.ui.setCombo(0), this.ui.hideCharge());
     this._comboFx();
