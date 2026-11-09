@@ -190,7 +190,7 @@ export class UIManager {
 
   async _vipHint(score) {
     this._hideVipHint();
-    if (this.skins.isVip || !LEADERBOARD_API.baseUrl || score <= 0) return;
+    if (this.skins.isVip || !LEADERBOARD_API.baseUrl || Storage.getHighScore() <= 0) return; // 看的是历史最高分的名次，这一局得 0 分也照样提示
     const token = (this._vipTok = (this._vipTok || 0) + 1);
     await syncPlayer();
     const p = await fetchPlayer(Storage.getPlayer().id);
