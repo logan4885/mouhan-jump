@@ -229,7 +229,9 @@ body.theme-neon .screen { background: linear-gradient(180deg, rgba(20, 18, 43, .
 .can-sw.lg { width: 34px; height: 48px; flex: none; }
 
 /* 排行榜 */
-.rank-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; text-align: left; }
+.rank-list { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; text-align: left; }
+.rank-list li { min-width: 0; }
+.rank-list .sc, .rank-list .chev { flex: none; }
 .rank-list li {
   display: flex; align-items: center; gap: 10px; padding: 8px 12px;
   border: 3px solid var(--ink); border-radius: 14px; background: #fff;
