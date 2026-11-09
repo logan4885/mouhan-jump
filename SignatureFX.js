@@ -207,6 +207,16 @@ export class SignatureFX {
         c.beginPath(); p.pts.forEach((pt, i) => (i ? c.lineTo(pt[0], pt[1]) : c.moveTo(pt[0], pt[1]))); c.stroke();
         c.shadowBlur = 0; break;
       }
+      case 'pyramid': {
+        const g = Math.min(1, (p.age || 0) / 0.22), e = 1 - Math.pow(1 - g, 3);
+        const w = p.size * e, h = p.size * 1.15 * e, x = p.x, y = p.y;
+        if (w < 1) break;
+        c.lineJoin = 'round'; c.lineWidth = 2; c.strokeStyle = '#7a5a00';
+        c.fillStyle = '#ffe27a'; c.beginPath(); c.moveTo(x, y - h); c.lineTo(x - w, y); c.lineTo(x, y + w * 0.5); c.closePath(); c.fill(); c.stroke();
+        c.fillStyle = '#d9a514'; c.beginPath(); c.moveTo(x, y - h); c.lineTo(x, y + w * 0.5); c.lineTo(x + w, y); c.closePath(); c.fill(); c.stroke();
+        c.fillStyle = '#fff'; c.globalAlpha *= (0.6 + 0.4 * Math.sin(p.age * 20));
+        c.beginPath(); c.arc(x, y - h, 3 + 3 * e, 0, TAU); c.fill(); break;
+      }
       case 'spark':
         c.fillStyle = p.color; c.beginPath(); c.arc(p.x, p.y, p.size * k + 1, 0, TAU); c.fill(); break;
       default: break;
@@ -271,6 +281,15 @@ const BURSTS = {
     const cols = ['#ffe600', '#ff4f9a', '#3b2fd1', '#00e5ff', '#7dff4f'];
     for (let i = 0; i < n(36, mul); i++) fx.add({ shape: 'pixel', x, y, ...ground(rnd(0, TAU), rnd(140, 460), rnd(40, 160)), g: 900, color: pick(cols), size: pick([6, 6, 12]), life: rnd(0.45, 0.8) });
     shock(fx, x, y, '#ffe600', 120, 6);
+  },
+  pyramid(fx, x, y, { mul }) {
+    // 金字塔从落点升起，两侧各一座小的，周围洒出金沙
+    shock(fx, x, y, '#ffd23a', 190, 9);
+    fx.add({ shape: 'pyramid', x, y, size: 58, life: 1.0 });
+    fx.add({ shape: 'pyramid', x: x - 86, y: y + 10, size: 30, life: 0.9, delay: 0.06 });
+    fx.add({ shape: 'pyramid', x: x + 86, y: y + 10, size: 30, life: 0.9, delay: 0.1 });
+    for (let i = 0; i < n(26, mul); i++) fx.add({ shape: 'spark', x, y, ...ground(rnd(0, TAU), rnd(120, 420), rnd(60, 180)), g: 800, drag: 0.97, color: pick(['#ffd23a', '#fff1a0', '#f5e60a', '#c9921f']), size: rnd(3, 6), life: rnd(0.5, 0.9) });
+    for (let i = 0; i < n(8, mul); i++) fx.add({ shape: 'star', ...onRim(x, y, 110), vx: 0, vy: 0, color: '#fff3b0', size: rnd(6, 11), life: rnd(0.4, 0.8), delay: rnd(0, 0.2), vr: 2 });
   },
   thunder(fx, x, y, { mul }) {
     // 闪电从天上劈到落点（终点就是罐底接触点）

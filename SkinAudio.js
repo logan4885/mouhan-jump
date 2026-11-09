@@ -94,6 +94,14 @@ export const THEMES = {
     arp: '1+ 3+ 5+ 3+ 1+ 3+ 5+ 3+ 6 1+ 3+ 1+ 6 1+ 3+ 1+  5 7 2+ 7 5 7 2+ 7 1 3 5 3 1 3 5 3',
     chords: [[1, 3, 5], [4, 6, 8]], leadWave: 'square', bassWave: 'triangle', padWave: 'square', leadVol: 0.045, decay: 0.12, noiseDrums: true,
   },
+  egypt: { // 埃及风：弗里几亚属音阶（带增二度）+ 手鼓节奏 + 双簧管式旋律
+    bpm: 104, swing: 0, root: 57, scale: 'phryg', bassShift: -2,
+    kick: 'x..x..x.x..x....', snare: '....x.......x.x.', hat: 'x.x.x.x.x.x.x.xx',
+    bass: '1 . . . 1 . 2 . 1 . . . 5- . 4- .  1 . . . 1 . 2 . 1 . . . 5- . 4- .',
+    lead: '5 . 4 3 . 2 3 . 2 1 . 7- 1 . . .  5 . 6 5 4 . 3 . 4 3 2 . 1 . . .',
+    arp: '1+ . 3+ . 5+ . 3+ . 2+ . 3+ . 1+ . 7 .  1+ . 4+ . 6+ . 4+ . 3+ . 2+ . 1+ . 5 .',
+    chords: [[1, 5, 8], [2, 5, 7]], leadWave: 'sawtooth', bassWave: 'triangle', padWave: 'triangle', leadVol: 0.045, decay: 0.22, padVol: 0.03,
+  },
   thunder: { // 重低音电子
     bpm: 132, swing: 0, root: 55, scale: 'minor', bassShift: -3,
     kick: 'x.....x..x..x...', snare: '........x.......', hat: 'xxxxxxxxxxxxxxxx',
@@ -227,7 +235,7 @@ export const SFX = {
 
 /* ------------------------- 循环音乐 ------------------------- */
 export class Music {
-  /** @param {import('./Sound.js?v=20261110i').Sound} sound 借用它的 AudioContext 和静音状态 */
+  /** @param {import('./Sound.js?v=20261110j').Sound} sound 借用它的 AudioContext 和静音状态 */
   constructor(sound) {
     this.sound = sound;
     this.theme = null; this.id = null;
