@@ -76,7 +76,7 @@ export const SIGNATURE = {
     },
   },
   chrono: {
-    rarity: 'epic', burst: 'shards', color: '#fca311', theme: 'chrome', sfx: 'ping',
+    rarity: 'epic', burst: 'shards', color: '#f5e60a', theme: 'chrome', sfx: 'ping',
     word: { zh: '定格！', en: 'FREEZE!', ar: 'تجمّد!' },
     desc: {
       zh: '🎵 清爽浩室 · ✨ 琥珀碎片闪光', en: '🎵 Clean house groove · ✨ Amber shard glints', ar: '🎵 هاوس منعش · ✨ شظايا كهرمانية',

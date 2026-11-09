@@ -111,7 +111,7 @@ export const CAN_SKINS = [
   {
     id: 'chrono', unlock: 'code',
     name: { zh: '时停罐', en: 'Chrono Can', ar: 'علبة الزمن' },
-    desc: { zh: '深蓝配琥珀的原创设计；每局一次按 ⏱ 时停 5 秒', en: 'Original navy-and-amber design; tap ⏱ once per game to stop time for 5 seconds', ar: 'تصميم أصلي بالأزرق الداكن والكهرماني؛ اضغط ⏱ مرة في كل جولة لإيقاف الزمن 5 ثوانٍ' },
-    body: '#14213d', accent: '#fca311', text: 'CHRONO', textColor: '#ffffff', sub: '5 SEC · FREEZE', lid: '#e5e5e5',
+    desc: { zh: '黄绿配色的原创设计；每局一次按 ⏱ 时停 5 秒', en: 'Original yellow-green design; tap ⏱ once per game to stop time for 5 seconds', ar: 'تصميم أصلي بالأخضر الأصفر؛ اضغط ⏱ مرة في كل جولة لإيقاف الزمن 5 ثوانٍ' },
+    body: '#7cb518', accent: '#f5e60a', text: 'CHRONO', textColor: '#1f3d00', sub: '5 SEC · FREEZE', lid: '#e5e5e5',
   },
 ];
