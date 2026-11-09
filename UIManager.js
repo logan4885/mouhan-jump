@@ -1,22 +1,22 @@
 // UI 层：开始界面、计分板、蓄力条、飘字、结算弹窗、皮肤商店（含兑换码）、排行榜、语言切换
-import { PLAYER_SKINS, BLOCK_STYLES, SkinPreview } from './SkinManager.js?v=20261110i';
-import { fetchTop, fetchPlayer, syncPlayer, buildBoard, LEADERBOARD_API } from './Leaderboard.js?v=20261110i';
-import { Storage } from './Storage.js?v=20261110i';
-import { escapeHtml } from './utils.js?v=20261110i';
-import { t, L, setLang, getLang, onLangChange, applyStatic } from './i18n.js?v=20261110i';
-import { PERKS } from './canPerks.js?v=20261110i';
-import { SIGNATURE, RARITY, getSignature } from './canSignature.js?v=20261110i';
-import { SHOP } from './shop.js?v=20261110i';
-import { recoveryAvailable, makeCode, makeLink, restore } from './Recovery.js?v=20261110i';
-import { accountAvailable, PROVIDER_NAME, completeLogin, renderGoogleButton, prepareFacebook, facebookLogin, logout } from './Account.js?v=20261110i';
-import { AUTH } from './authConfig.js?v=20261110i';
+import { PLAYER_SKINS, BLOCK_STYLES, SkinPreview } from './SkinManager.js?v=20261110j';
+import { fetchTop, fetchPlayer, syncPlayer, buildBoard, LEADERBOARD_API } from './Leaderboard.js?v=20261110j';
+import { Storage } from './Storage.js?v=20261110j';
+import { escapeHtml } from './utils.js?v=20261110j';
+import { t, L, setLang, getLang, onLangChange, applyStatic } from './i18n.js?v=20261110j';
+import { PERKS } from './canPerks.js?v=20261110j';
+import { SIGNATURE, RARITY, getSignature } from './canSignature.js?v=20261110j';
+import { SHOP } from './shop.js?v=20261110j';
+import { recoveryAvailable, makeCode, makeLink, restore } from './Recovery.js?v=20261110j';
+import { accountAvailable, PROVIDER_NAME, completeLogin, renderGoogleButton, prepareFacebook, facebookLogin, logout } from './Account.js?v=20261110j';
+import { AUTH } from './authConfig.js?v=20261110j';
 
 const $ = (id) => document.getElementById(id);
 
 export class UIManager {
   /**
    * @param {object} handlers { onStart, onRestart, onHome }
-   * @param {import('./SkinManager.js?v=20261110i').SkinManager} skins
+   * @param {import('./SkinManager.js?v=20261110j').SkinManager} skins
    */
   constructor(handlers, skins) {
     this.h = handlers;
@@ -230,10 +230,11 @@ export class UIManager {
   hideCharge() { this.el.charge.classList.add('hidden'); this.el.chargeFill.style.transform = 'scaleX(0)'; }
 
   /* ---------- 时停罐：⏱ 按钮和时停期间的氛围 ---------- */
-  setFreezeBtn(show) {
+  setFreezeBtn(show, enabled = true, note = '') {
     const b = $('btnFreeze');
-    b.textContent = '⏱ ' + t('freeze_btn');
+    b.textContent = '⏱ ' + (note || t('freeze_btn'));
     b.classList.toggle('hidden', !show);
+    b.disabled = !enabled; b.classList.toggle('cool', !enabled);
   }
   showFreeze(sec) {
     document.body.classList.add('timestop');

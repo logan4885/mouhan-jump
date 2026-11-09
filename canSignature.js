@@ -76,10 +76,10 @@ export const SIGNATURE = {
     },
   },
   chrono: {
-    rarity: 'epic', burst: 'shards', color: '#f5e60a', theme: 'chrome', sfx: 'ping',
+    rarity: 'epic', burst: 'pyramid', color: '#ffd23a', theme: 'egypt', sfx: 'ping',
     word: { zh: '定格！', en: 'FREEZE!', ar: 'تجمّد!' },
     desc: {
-      zh: '🎵 清爽浩室 · ✨ 金色碎片闪光', en: '🎵 Clean house groove · ✨ Golden shard glints', ar: '🎵 هاوس منعش · ✨ شظايا ذهبية',
+      zh: '🎵 埃及风格音乐 · ✨ 金字塔升起', en: '🎵 Egyptian-style music · ✨ Pyramid rises', ar: '🎵 موسيقى بطابع مصري · ✨ ارتفاع الأهرام',
     },
   },
   chrome: {

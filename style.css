@@ -439,8 +439,11 @@ body.theme-neon #hud .perk { background: rgba(20,18,43,.8); color: #f2f0ff; bord
 .modal.rank .rank-list#rankList { max-height: 52vh; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; padding: 2px 4px 2px 2px; }
 .rank-list li.loading.more { justify-content: center; }
 /* 时停罐：⏱ 按钮 + 时停期间的冷色氛围和 5 秒倒计时条 */
-.freeze-btn { position: absolute; left: 50%; bottom: max(24px, calc(env(safe-area-inset-bottom, 0px) + 18px)); transform: translateX(-50%); z-index: 15; font: inherit; font-weight: 900; font-size: 15px; padding: 10px 18px; border-radius: 999px; border: 3px solid var(--ink); background: #1f3d00; color: #f5e60a; box-shadow: 0 4px 0 var(--ink), 0 0 18px 2px rgba(190, 235, 40, .55); cursor: pointer; pointer-events: auto; }
-.freeze-btn:active { transform: translateX(-50%) translateY(2px); }
+.freeze-btn { position: absolute; bottom: max(24px, calc(env(safe-area-inset-bottom, 0px) + 18px)); left: 14px; z-index: 15; font: inherit; font-weight: 900; font-size: 15px; padding: 10px 18px; border-radius: 999px; border: 3px solid var(--ink); background: #1f3d00; color: #f5e60a; box-shadow: 0 4px 0 var(--ink), 0 0 18px 2px rgba(190, 235, 40, .55); cursor: pointer; pointer-events: auto; }
+.freeze-btn:active { transform: translateY(2px); }
+.freeze-btn.cool { opacity: .6; filter: grayscale(.45); }
+.freeze-fx .gg { position: absolute; font: 900 36px/1 "Microsoft YaHei", "PingFang SC", sans-serif; font-style: normal; color: #1f3d00; -webkit-text-stroke: 1px #f5e60a; opacity: .5; animation: fbShake .08s linear infinite alternate; }
+.freeze-fx .g1 { left: 4%; top: 30%; } .freeze-fx .g2 { right: 5%; top: 24%; font-size: 46px; } .freeze-fx .g3 { left: 6%; top: 66%; font-size: 42px; } .freeze-fx .g4 { right: 4%; top: 72%; }
 .freeze-fx { position: absolute; inset: 0; z-index: 12; pointer-events: none; overflow: hidden; background: radial-gradient(ellipse at center, rgba(235, 255, 120, .06) 30%, rgba(60, 110, 0, .45) 100%); backdrop-filter: grayscale(.7) contrast(1.12) sepia(.25); -webkit-backdrop-filter: grayscale(.7) contrast(1.12) sepia(.25); }
 .freeze-fx > i { position: absolute; left: 0; top: 0; height: 6px; width: 100%; background: #f5e60a; transform-origin: left; }
 [dir="rtl"] .freeze-fx > i { transform-origin: right; }

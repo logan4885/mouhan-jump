@@ -1,19 +1,19 @@
 // 游戏主控：渲染器 / 场景 / 正交相机 / 灯光、输入、状态机、计分与落点判定
 import * as THREE from 'three';
-import { CONFIG } from './config.js?v=20261110i';
-import { Storage } from './Storage.js?v=20261110i';
-import { Tweens, clamp, Ease } from './utils.js?v=20261110i';
-import { SkinManager } from './SkinManager.js?v=20261110i';
-import { BlockManager } from './BlockManager.js?v=20261110i';
-import { Player } from './Player.js?v=20261110i';
-import { UIManager } from './UIManager.js?v=20261110i';
-import { Sound } from './Sound.js?v=20261110i';
-import { t, L } from './i18n.js?v=20261110i';
-import { getPerk } from './canPerks.js?v=20261110i';
-import { getSignature, RARITY } from './canSignature.js?v=20261110i';
-import { PLAYER_SKINS } from './SkinManager.js?v=20261110i';
-import { Music, playSfx } from './SkinAudio.js?v=20261110i';
-import { SignatureFX } from './SignatureFX.js?v=20261110i';
+import { CONFIG } from './config.js?v=20261110j';
+import { Storage } from './Storage.js?v=20261110j';
+import { Tweens, clamp, Ease } from './utils.js?v=20261110j';
+import { SkinManager } from './SkinManager.js?v=20261110j';
+import { BlockManager } from './BlockManager.js?v=20261110j';
+import { Player } from './Player.js?v=20261110j';
+import { UIManager } from './UIManager.js?v=20261110j';
+import { Sound } from './Sound.js?v=20261110j';
+import { t, L } from './i18n.js?v=20261110j';
+import { getPerk } from './canPerks.js?v=20261110j';
+import { getSignature, RARITY } from './canSignature.js?v=20261110j';
+import { PLAYER_SKINS } from './SkinManager.js?v=20261110j';
+import { Music, playSfx } from './SkinAudio.js?v=20261110j';
+import { SignatureFX } from './SignatureFX.js?v=20261110j';
 
 // 踩中星号方块后的免费体验时长（秒）
 const TRIAL_SEC = 8;
@@ -206,7 +206,7 @@ export class Game {
     dx /= len; dz /= len;
     const lx = p.x + dx * dist, lz = p.z + dz * dist;
     const top = CONFIG.BLOCK_HEIGHT;
-    const target = new THREE.Vector3(lx, top, lz);
+    let target = new THREE.Vector3(lx, top, lz);
 
     // ---------- 落点判定 ----------
     const perk = this.perk;
@@ -224,8 +224,14 @@ export class Game {
     else if (this.blocks.contains(cur, lx, lz, CONFIG.FOOT_RADIUS)) result = 'tip-cur';
     else result = 'miss';
 
+    // 时停保护：时停期间落空不算失败，原地弹回当前方块，可以一直跳
+    if (this.freezeLeft > 0 && result !== 'perfect' && result !== 'hit' && result !== 'stay') {
+      result = 'stay';
+      target = new THREE.Vector3(p.x, p.y, p.z);
+      this.ui.toast(this._tr('freeze_safe'));
+    }
     this.state = 'jumping';
-    if (this.perk && this.perk.timeStop) this.ui.setFreezeBtn(false);
+    this._updatePerkHud();
     this.lastResult = result;
     const opts = { onFallen: () => this._onFallen(), durMul: perk.floatMul };
     if (result === 'perfect' || result === 'hit' || result === 'stay') {
@@ -251,7 +257,7 @@ export class Game {
 
   _onLand(result) {
     this.sound.land();
-    if (result === 'stay') { this.state = 'ready'; return; }
+    if (result === 'stay') { this.state = 'ready'; this._updatePerkHud(); return; }
     const landed = this.blocks.next;
     if (landed && landed.trial) this._startTrial(landed);
     let gain;
@@ -297,6 +303,7 @@ export class Game {
     }
     this.blocks.advance(this.score);
     this.state = 'ready';
+    this._updatePerkHud();
   }
 
   _onFallen() {
@@ -343,9 +350,8 @@ export class Game {
   /** 时停罐：每局一次，时停 N 秒。期间蓄力速度变慢（更好控制），不改变地图、方块和判定范围之外的任何东西 */
   activateFreeze() {
     const pk = this.perk;
-    if (!pk || !pk.timeStop || this.freezeUsed || this.freezeLeft > 0) return;
+    if (!pk || !pk.timeStop || this.freezeLeft > 0 || this.score < (this.freezeNext || 0)) return;
     if (this.state !== 'ready' && this.state !== 'charging') return;
-    this.freezeUsed = true;
     this.freezeLeft = pk.timeStop;
     this.ui.showFreeze(pk.timeStop);
     this.ui.setFreezeBtn(false);
@@ -354,9 +360,12 @@ export class Game {
     this._updatePerkHud();
   }
 
-  _endFreeze(announce) {
-    const was = this.freezeLeft > 0;
+  _tr(k) { return t(k); }
+
+  _endFreeze(announce, force) {
+    const was = force || this.freezeLeft > 0;
     this.freezeLeft = 0;
+    if (was && this.perk) this.freezeNext = this.score + (this.perk.freezeCooldown || 12);
     if (this.ui) { this.ui.hideFreeze(); }
     if (was && announce) { playSfx(this.sound, 'tock', 1, 1); this._updatePerkHud(); }
   }
@@ -364,18 +373,26 @@ export class Game {
   /** 计分板下方的能力状态 */
   _updatePerkHud() {
     const pk = this.perk;
-    if (!pk || !pk.id) { this.ui.setPerk(null); return; }
+    if (!pk || !pk.id) { this.ui.setFreezeBtn(false); this.ui.setPerk(null); return; }
     let status = '';
-    const canFreeze = !!pk.timeStop && !this.freezeUsed && (this.state === 'ready' || this.state === 'charging');
-    this.ui.setFreezeBtn(canFreeze && !(this.freezeLeft > 0));
     if (pk.timeStop) {
-      status = this.freezeLeft > 0 ? t('perk_freeze_on') : this.freezeUsed ? t('perk_used') : t('perk_ready');
-    } else if (pk.revive) {
-      if (this.reviveUsed) status = t('perk_used');
-      else if (pk.reviveAfter && this.score < pk.reviveAfter) status = t('perk_after', { n: pk.reviveAfter });
-      else status = t('perk_ready');
-    } else if (pk.thunderStreak) {
-      status = this.thunderReady ? t('perk_charged') : t('perk_streak', { n: this.thunderCount || 0, m: pk.thunderStreak });
+      // 按钮一直在：冷却中变灰并显示还差几分；时停中显示“时停中”
+      const inPlay = ['ready', 'charging', 'jumping', 'falling'].includes(this.state);
+      const left = Math.max(0, (this.freezeNext || 0) - this.score);
+      const active = this.freezeLeft > 0;
+      const usable = !active && left === 0 && (this.state === 'ready' || this.state === 'charging');
+      const note = active ? t('perk_freeze_on') : left > 0 ? t('freeze_cd', { n: left }) : '';
+      this.ui.setFreezeBtn(inPlay, usable, note);
+      status = active ? t('perk_freeze_on') : left > 0 ? t('freeze_cd', { n: left }) : t('perk_ready');
+    } else {
+      this.ui.setFreezeBtn(false);
+      if (pk.revive) {
+        if (this.reviveUsed) status = t('perk_used');
+        else if (pk.reviveAfter && this.score < pk.reviveAfter) status = t('perk_after', { n: pk.reviveAfter });
+        else status = t('perk_ready');
+      } else if (pk.thunderStreak) {
+        status = this.thunderReady ? t('perk_charged') : t('perk_streak', { n: this.thunderCount || 0, m: pk.thunderStreak });
+      }
     }
     this.ui.setPerk({ icon: pk.icon, name: L(pk.name), status });
   }
@@ -542,7 +559,7 @@ export class Game {
     this.player.place(0, CONFIG.BLOCK_HEIGHT, 0);
     this.score = 0; this.combo = 0; this.perfects = 0; this.chargeT = 0;
     this.reviveUsed = false; this.thunderReady = false; this.thunderCount = 0; this.lastResult = null;
-    this.freezeUsed = false; this.freezeLeft = 0; this._endFreeze(false);
+    this.freezeNext = 0; this.freezeLeft = 0; this._endFreeze(false);
     if (this.skins) this._refreshPerk();
     this.ui && (this.ui.setScore(0), this.ui.setCombo(0), this.ui.hideCharge());
     this._comboFx();
@@ -661,7 +678,7 @@ export class Game {
 
   update(dt) {
     this.tweens.update(dt);
-    if (this.freezeLeft > 0) { this.freezeLeft -= dt; if (this.freezeLeft <= 0) this._endFreeze(true); }
+    if (this.freezeLeft > 0) { this.freezeLeft -= dt; if (this.freezeLeft <= 0) this._endFreeze(true, true); }
     this._autoPlay(dt);
 
     if (this.state === 'charging') {

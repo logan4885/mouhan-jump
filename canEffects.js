@@ -382,6 +382,6 @@ export const EFFECTS = {
       g.add(pyr, eyeGem, collar);
     },
     tick(model, time) { model.userData.bodyMat.emissiveIntensity = 0.22 + 0.12 * Math.sin(time * 2.4); },
-    trail: { colors: ['#f5e60a', '#b8e62e', '#ffffff'], rate: 34, size: 0.045, life: 0.6, gravity: -0.5, spread: 0.25 },
+    trail: { colors: ['#ffd23a', '#fff1a0', '#f5e60a', '#c9921f'], rate: 46, size: 0.05, life: 0.7, gravity: -0.4, spread: 0.28 },
   },
 };
