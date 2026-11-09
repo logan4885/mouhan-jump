@@ -1,22 +1,22 @@
 // UI 层：开始界面、计分板、蓄力条、飘字、结算弹窗、皮肤商店（含兑换码）、排行榜、语言切换
-import { PLAYER_SKINS, BLOCK_STYLES, SkinPreview } from './SkinManager.js?v=20261110b';
-import { fetchTop, fetchPlayer, syncPlayer, buildBoard, LEADERBOARD_API } from './Leaderboard.js?v=20261110b';
-import { Storage } from './Storage.js?v=20261110b';
-import { escapeHtml } from './utils.js?v=20261110b';
-import { t, L, setLang, getLang, onLangChange, applyStatic } from './i18n.js?v=20261110b';
-import { PERKS } from './canPerks.js?v=20261110b';
-import { SIGNATURE, RARITY, getSignature } from './canSignature.js?v=20261110b';
-import { SHOP } from './shop.js?v=20261110b';
-import { recoveryAvailable, makeCode, makeLink, restore } from './Recovery.js?v=20261110b';
-import { accountAvailable, PROVIDER_NAME, completeLogin, renderGoogleButton, prepareFacebook, facebookLogin, logout } from './Account.js?v=20261110b';
-import { AUTH } from './authConfig.js?v=20261110b';
+import { PLAYER_SKINS, BLOCK_STYLES, SkinPreview } from './SkinManager.js?v=20261110c';
+import { fetchTop, fetchPlayer, syncPlayer, buildBoard, LEADERBOARD_API } from './Leaderboard.js?v=20261110c';
+import { Storage } from './Storage.js?v=20261110c';
+import { escapeHtml } from './utils.js?v=20261110c';
+import { t, L, setLang, getLang, onLangChange, applyStatic } from './i18n.js?v=20261110c';
+import { PERKS } from './canPerks.js?v=20261110c';
+import { SIGNATURE, RARITY, getSignature } from './canSignature.js?v=20261110c';
+import { SHOP } from './shop.js?v=20261110c';
+import { recoveryAvailable, makeCode, makeLink, restore } from './Recovery.js?v=20261110c';
+import { accountAvailable, PROVIDER_NAME, completeLogin, renderGoogleButton, prepareFacebook, facebookLogin, logout } from './Account.js?v=20261110c';
+import { AUTH } from './authConfig.js?v=20261110c';
 
 const $ = (id) => document.getElementById(id);
 
 export class UIManager {
   /**
    * @param {object} handlers { onStart, onRestart, onHome }
-   * @param {import('./SkinManager.js?v=20261110b').SkinManager} skins
+   * @param {import('./SkinManager.js?v=20261110c').SkinManager} skins
    */
   constructor(handlers, skins) {
     this.h = handlers;
@@ -43,6 +43,7 @@ export class UIManager {
     applyStatic();
     this._bind();
     this.el.nick.value = Storage.getNickname();
+    this._initAvatar();
     onLangChange(() => this._refreshLang());
   }
 
@@ -336,6 +337,29 @@ export class UIManager {
     } else this.el.overUnlocked.classList.add('hidden');
   }
   hideGameOver() { this._hideVipHint(); this._vipTok = (this._vipTok || 0) + 1; this._closeModal(this.el.over); this.lastOver = null; }
+
+  /** 动物头像：点一下展开，选一个就存（会自动同步到服务器，排行榜每行都显示它） */
+  _initAvatar() {
+    const AV = ['🐯', '🦊', '🐱', '🐼', '🐸', '🐵', '🐰', '🐻', '🦁', '🐨', '🐙', '🦄', '🐧', '🐶', '🦒', '🐘', '🐢', '🦉', '🐬', '🐳', '🦋', '🐝', '🐞', '🦖'];
+    const cur = $('avatarCur'); const grid = $('avatarGrid');
+    grid.innerHTML = AV.map((a) => `<button type="button" role="option" data-a="${a}">${a}</button>`).join('');
+    const paint = () => {
+      const a = Storage.getAvatar();
+      cur.textContent = a || '🙂';
+      grid.querySelectorAll('button').forEach((b) => b.classList.toggle('on', b.dataset.a === a));
+    };
+    cur.addEventListener('click', () => { const open = grid.classList.toggle('hidden') === false; cur.setAttribute('aria-expanded', String(open)); });
+    grid.addEventListener('click', (e) => {
+      const b = e.target.closest('button[data-a]');
+      if (!b) return;
+      Storage.setAvatar(b.dataset.a);
+      grid.classList.add('hidden'); cur.setAttribute('aria-expanded', 'false');
+      paint();
+    });
+    Storage.onChange((k) => { if (k === 'avatar') paint(); });
+    paint();
+    this._paintAvatar = paint;
+  }
 
   _saveNick() { Storage.setNickname(this.el.nick.value.trim()); }
 

@@ -8,7 +8,7 @@
 //   GET  {baseUrl}/api/player/:id
 //        -> { ok, player: { id, nickname, score, rank, perfects, games, equipped, unlocked[], total, avatar, color } }
 
-import { Storage } from './Storage.js?v=20261110b';
+import { Storage } from './Storage.js?v=20261110c';
 
 export const LEADERBOARD_API = {
   baseUrl: 'https://mouhan-jump-api.onrender.com',            // 部署后端后填这里，例如 'https://jump3d-api.onrender.com'；为空则使用 Mock 数据
@@ -62,15 +62,18 @@ export async function syncPlayer() {
   const skins = Storage.getSkinState();
   const stats = Storage.getStats();
   try {
-    return await fetchJson(LEADERBOARD_API.baseUrl + LEADERBOARD_API.syncPath, {
+    const j = await fetchJson(LEADERBOARD_API.baseUrl + LEADERBOARD_API.syncPath, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        id: p.id, secret: p.secret, nickname: Storage.getNickname(),
+        id: p.id, secret: p.secret, nickname: Storage.getNickname(), avatar: Storage.getAvatar(),
         score: Storage.getHighScore(), perfects: stats.perfects || 0, games: stats.games || 0,
         unlocked: skins.unlocked, equipped: 'player:' + skins.player,
       }),
     });
+    // 还没选过头像：先记下服务器按 ID 随机分到的那个，之后可以随时更换
+    if (j && j.avatar && !Storage.getAvatar()) Storage.setAvatar(j.avatar);
+    return j;
   } catch (e) {
     return { ok: false, error: e.message };
   }
@@ -110,7 +113,7 @@ export function buildBoard(list, me, limit = 10) {
   const rows = list.map((r) => ({ ...r, isMe: !!me && !!me.id && r.id === me.id }));
   const inList = rows.some((r) => r.isMe);
   if (me && me.score > 0 && !inList) {
-    rows.push({ id: me.id || 'me', nickname: me.nickname || '我', avatar: '😎', color: '#4f86ff', score: me.score, isMe: true, local: true });
+    rows.push({ id: me.id || 'me', nickname: me.nickname || '我', avatar: Storage.getAvatar() || '😎', color: '#4f86ff', score: me.score, isMe: true, local: true });
   }
   rows.sort((a, b) => b.score - a.score);
   rows.forEach((r, i) => { r.rank = i + 1; });

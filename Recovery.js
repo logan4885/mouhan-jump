@@ -1,8 +1,8 @@
 // 备份 / 恢复进度：不需要注册登录。
 // 恢复码 = 本机的玩家 ID + 密钥（等于“密码”，不要发给别人）。在新设备上粘贴恢复码，
 // 就会从服务器取回最高分、已解锁的罐子和 VIP 身份，并把这台设备绑定到同一个账号。
-import { Storage } from './Storage.js?v=20261110b';
-import { LEADERBOARD_API } from './Leaderboard.js?v=20261110b';
+import { Storage } from './Storage.js?v=20261110c';
+import { LEADERBOARD_API } from './Leaderboard.js?v=20261110c';
 
 export const recoveryAvailable = () => !!LEADERBOARD_API.baseUrl;
 
@@ -75,5 +75,6 @@ export function mergeServerPlayer(sp) {
   const unlocked = [...new Set([...(sk.unlocked || []), ...(sp.unlocked || [])])];
   const eq = String(sp.equipped || '');
   Storage.saveSkinState({ ...sk, unlocked, player: eq.startsWith('player:') && unlocked.includes(eq) ? eq.slice(7) : sk.player });
+  if (!Storage.getAvatar() && sp.avatar) Storage.setAvatar(sp.avatar);
   if (!Storage.getNickname() && sp.nickname && !/^Player[0-9A-F]{4}$/.test(sp.nickname)) Storage.setNickname(sp.nickname);
 }

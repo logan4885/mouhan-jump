@@ -12,7 +12,7 @@ function read(key, fallback) {
   }
 }
 
-const SYNC_KEYS = new Set(['highScore', 'skins:v2', 'nickname', 'stats']);
+const SYNC_KEYS = new Set(['highScore', 'skins:v2', 'nickname', 'avatar', 'stats']);
 const changeListeners = [];
 
 function write(key, value) {
@@ -45,7 +45,7 @@ export const Storage = {
   setAccount(a) { write('account', a); },
   /** 退出登录 / 删除数据后：清空本机进度和身份（语言、静音保留），下次打开会生成全新的玩家 */
   clearLocalProgress() {
-    ['player', 'highScore', 'skins:v2', 'nickname', 'stats', 'usedCodes', 'account'].forEach((k) => {
+    ['player', 'highScore', 'skins:v2', 'nickname', 'avatar', 'stats', 'usedCodes', 'account'].forEach((k) => {
       delete memory[k];
       try { localStorage.removeItem(PREFIX + k); } catch (e) { /* 忽略 */ }
     });
@@ -75,6 +75,10 @@ export const Storage = {
   // ---- 昵称（用于排行榜）----
   getNickname() { return read('nickname', '') || ''; },
   setNickname(name) { write('nickname', String(name || '').slice(0, 12)); },
+
+  // ---- 头像（动物 emoji；空 = 用服务器按 ID 随机分配的那个）----
+  getAvatar() { return read('avatar', '') || ''; },
+  setAvatar(a) { write('avatar', String(a || '').slice(0, 8)); },
 
   // ---- 已用过的兑换码（只存哈希）----
   getUsedCodes() { const v = read('usedCodes', []); return Array.isArray(v) ? v : []; },

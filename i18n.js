@@ -1,6 +1,6 @@
 // 多语言：中文 / English / العربية
 // 静态文字写在 index.html 的 data-i18n 属性里，动态文字用 t('key', { 变量 })
-import { Storage } from './Storage.js?v=20261110b';
+import { Storage } from './Storage.js?v=20261110c';
 
 export const LANGS = ['zh', 'en', 'ar'];
 
@@ -15,7 +15,7 @@ const DICT = {
     over_title: '游戏结束', new_record: '🎉 新纪录！',
     over_line: '最高分 <b>{best}</b> · 本局完美 <b>{p}</b> 次',
     unlocked_new: '🔓 解锁新皮肤：', sep: '、',
-    nick_label: '排行榜昵称', nick_ph: '给自己起个名字', restart: '再来一局',
+    av_hint: '点头像换一个动物', nick_label: '排行榜昵称', nick_ph: '给自己起个名字', restart: '再来一局',
     shop_title: '皮肤商店', tab_player: '易拉罐', tab_block: '方块',
     use: '使用', using: '使用中', locked: '未解锁', equipped: '已换上新皮肤',
     lock_score: '🔒 {n} 分', lock_code: '🔑 兑换码',
@@ -63,7 +63,7 @@ const DICT = {
     over_title: 'Game over', new_record: '🎉 New record!',
     over_line: 'Best <b>{best}</b> · Perfect landings <b>{p}</b>',
     unlocked_new: '🔓 New skin unlocked: ', sep: ', ',
-    nick_label: 'Name', nick_ph: 'Your name on the ranking', restart: 'Play again',
+    av_hint: 'Tap to pick your animal', nick_label: 'Name', nick_ph: 'Your name on the ranking', restart: 'Play again',
     shop_title: 'Skin shop', tab_player: 'Cans', tab_block: 'Blocks',
     use: 'Use', using: 'In use', locked: 'Locked', equipped: 'New skin equipped',
     lock_score: '🔒 {n} pts', lock_code: '🔑 Code',
@@ -111,7 +111,7 @@ const DICT = {
     over_title: 'انتهت اللعبة', new_record: '🎉 رقم قياسي جديد!',
     over_line: 'الأفضل <b>{best}</b> · هبوط مثالي <b>{p}</b> مرة',
     unlocked_new: '🔓 تم فتح شكل جديد: ', sep: '، ',
-    nick_label: 'الاسم', nick_ph: 'اسمك في الترتيب', restart: 'العب مرة أخرى',
+    av_hint: 'اضغط لاختيار حيوانك', nick_label: 'الاسم', nick_ph: 'اسمك في الترتيب', restart: 'العب مرة أخرى',
     shop_title: 'متجر الأشكال', tab_player: 'العلب', tab_block: 'المكعبات',
     use: 'استخدم', using: 'قيد الاستخدام', locked: 'مقفل', equipped: 'تم تغيير الشكل',
     lock_score: '🔒 {n} نقطة', lock_code: '🔑 رمز',
