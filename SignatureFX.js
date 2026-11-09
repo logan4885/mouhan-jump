@@ -48,6 +48,28 @@ export class SignatureFX {
     this._run();
   }
 
+  /** 金色气泡（VIP 罐开罐的“冒气泡”）：贴着落点小幅上升，不会冲到罐子头顶 */
+  fizz(x, y, mul = 1) {
+    const m = Math.max(4, Math.round(12 * mul * this.quality));
+    for (let i = 0; i < m; i++) {
+      const a = rnd(0, TAU), r = rnd(0.2, 1) * 70;
+      this.add({ shape: 'bubble', x: x + Math.cos(a) * r, y: y + Math.sin(a) * r * FLAT, vx: rnd(-14, 14), vy: rnd(-110, -40), g: -6,
+        color: pick(['#ffd24a', '#ffe58a', '#ffb300']), size: rnd(4, 10), life: rnd(0.55, 1.0), delay: rnd(0, 0.25) });
+    }
+    this._run();
+  }
+
+  /** 体验结束：灰色“噗”的一声，金光消散 */
+  poof(x, y) {
+    this.add({ shape: 'ring', x, y, r0: 8, r1: 120, color: '#9a98a8', lw: 6, life: 0.45, squash: FLAT });
+    const m = Math.max(5, Math.round(12 * this.quality));
+    for (let i = 0; i < m; i++) {
+      const a = rnd(0, TAU), s = rnd(60, 200);
+      this.add({ shape: 'bubble', x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s * FLAT - 30, drag: 0.93, color: pick(['#bdbbc9', '#d6d4e0', '#a9a7b8']), size: rnd(8, 16), life: rnd(0.5, 0.8) });
+    }
+    this._run();
+  }
+
   /** 连击氛围：边缘光晕，连击越高越亮；combo 低于 from 就关掉 */
   ambience(combo, color, from = 2, mul = 1) {
     if (!this.glow) return;

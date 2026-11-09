@@ -6,6 +6,7 @@ import { escapeHtml } from './utils.js';
 import { t, L, setLang, onLangChange, applyStatic } from './i18n.js';
 import { PERKS } from './canPerks.js';
 import { SIGNATURE, RARITY, getSignature } from './canSignature.js';
+import { SHOP } from './shop.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -27,7 +28,8 @@ export class UIManager {
       redeemForm: $('redeemForm'), redeemInput: $('redeemInput'), redeemMsg: $('redeemMsg'),
       player: $('playerModal'), playerBody: $('playerBody'),
       rank: $('rankModal'), rankList: $('rankList'), rankMine: $('rankMine'), rankNote: $('rankNote'),
-      toast: $('toast'), sig: $('skinSig'), fxBtn: $('btnFxPreview'), mute: $('btnMute'),
+      toast: $('toast'), sig: $('skinSig'), trial: $('trialBar'), trialText: $('trialText'), trialCta: $('trialCta'),
+      overVip: $('overVip'), overVipText: $('overVipText'), overVipLeft: $('overVipLeft'), vipCode: $('btnVipCode'), vipBuy: $('btnVipBuy'), fxBtn: $('btnFxPreview'), mute: $('btnMute'),
     };
     this.fxOn = false;
     this.skinTab = 'player';
@@ -89,6 +91,10 @@ export class UIManager {
       this._renderSkins();
     });
     this.el.mute.addEventListener('click', () => this.h.onMute && this.h.onMute());
+    // 结算页 / 体验结束的“激活 VIP Code”：直接打开商店并聚焦兑换码输入框
+    const goCode = () => { this._saveNick(); this.openSkins(); setTimeout(() => this.el.redeemInput.focus({ preventScroll: true }), 80); };
+    this.el.vipCode.addEventListener('click', goCode);
+    this.el.trialCta.addEventListener('click', () => { this.hideTrial(); goCode(); });
     this.el.fxBtn.addEventListener('click', () => {
       if (this.fxOn) { this._stopFx(); return; }
       if (this.h.onPreviewFx && this.h.onPreviewFx(this.skinPick)) { this.fxOn = true; this._syncFxBtn(); }
@@ -154,6 +160,67 @@ export class UIManager {
   }
   hideCharge() { this.el.charge.classList.add('hidden'); this.el.chargeFill.style.transform = 'scaleX(0)'; }
 
+  /* ---------- 试驾体验条（踩中 24K 星号方块） ---------- */
+  showTrial(name, sec) {
+    clearTimeout(this._trialT);
+    const b = this.el.trial;
+    this.el.trialText.textContent = t('trial_on', { name });
+    this.el.trialCta.classList.add('hidden');
+    b.classList.remove('hidden', 'ended');
+    b.style.setProperty('--sec', sec + 's');
+    b.classList.remove('run'); void b.offsetWidth; b.classList.add('run');
+  }
+  hideTrial() { clearTimeout(this._trialT); this.el.trial.classList.add('hidden'); this.el.trial.classList.remove('run', 'ended'); }
+  /** 体验结束：给一个“落差”提示和直达兑换码的按钮 */
+  showTrialEnd(name) {
+    clearTimeout(this._trialT);
+    const b = this.el.trial;
+    this.el.trialText.textContent = t('trial_end', { name });
+    this.el.trialCta.textContent = t('trial_cta');
+    this.el.trialCta.classList.remove('hidden');
+    b.classList.remove('hidden', 'run'); b.classList.add('ended');
+    this._trialT = setTimeout(() => this.hideTrial(), 4500);
+  }
+
+  /* ---------- 结算页：高分时的身份提示（只用真实名次，不编造数据） ---------- */
+  _hideVipHint() {
+    clearInterval(this._offerT);
+    this.el.overVip.classList.add('hidden');
+  }
+
+  async _vipHint(score) {
+    this._hideVipHint();
+    if (this.skins.isVip || !LEADERBOARD_API.baseUrl || score <= 0) return;
+    const token = (this._vipTok = (this._vipTok || 0) + 1);
+    await syncPlayer();
+    const p = await fetchPlayer(Storage.getPlayer().id);
+    if (token !== this._vipTok || !p || this.el.over.classList.contains('hidden')) return;
+    const total = p.totalPlayers || 0;
+    const pct = total >= 20 ? Math.floor(((total - p.rank) / total) * 100) : 0;
+    let html = '';
+    if (p.rank <= 10) html = t('vip_warn', { score: Number(p.score), rank: Number(p.rank) });
+    else if (pct >= 80) html = t('vip_beat', { pct }) + '<br>' + escapeHtml(t('vip_locked'));
+    else return;
+    this.el.overVipText.innerHTML = html;
+    this.el.vipCode.textContent = t('vip_code');
+    this.el.vipBuy.textContent = t('vip_buy', { price: SHOP.price });
+    this.el.vipBuy.href = SHOP.buyUrl;
+    // 只有填写了真实截止时间才显示倒计时
+    const end = SHOP.offerEndsAt ? Date.parse(SHOP.offerEndsAt) : NaN;
+    const left = this.el.overVipLeft;
+    if (isFinite(end) && end > Date.now()) {
+      const fmt = () => {
+        const ms = Math.max(0, end - Date.now()), d = Math.floor(ms / 864e5), h = Math.floor(ms / 36e5) % 24, m = Math.floor(ms / 6e4) % 60, sec = Math.floor(ms / 1e3) % 60;
+        const pad = (n) => String(n).padStart(2, '0');
+        left.textContent = t('vip_left', { t: (d ? d + 'd ' : '') + `${pad(h)}:${pad(m)}:${pad(sec)}` });
+        if (ms <= 0) { clearInterval(this._offerT); left.classList.add('hidden'); }
+      };
+      fmt(); left.classList.remove('hidden');
+      this._offerT = setInterval(fmt, 1000);
+    } else left.classList.add('hidden');
+    this.el.overVip.classList.remove('hidden');
+  }
+
   /** 专属飘字（稀有度越高越大） */
   popWord(text, x, y, color, rarity) {
     const d = document.createElement('div');
@@ -187,6 +254,7 @@ export class UIManager {
   showGameOver(data) {
     this.lastOver = data;
     this._fillGameOver(data);
+    this._vipHint(data.score);
     this.el.hud.classList.add('hidden');
     this._openModal(this.el.over);
     setTimeout(() => $('btnRestart').focus({ preventScroll: true }), 50);
@@ -200,7 +268,7 @@ export class UIManager {
       this.el.overUnlocked.classList.remove('hidden');
     } else this.el.overUnlocked.classList.add('hidden');
   }
-  hideGameOver() { this._closeModal(this.el.over); this.lastOver = null; }
+  hideGameOver() { this._hideVipHint(); this._vipTok = (this._vipTok || 0) + 1; this._closeModal(this.el.over); this.lastOver = null; }
 
   _saveNick() { Storage.setNickname(this.el.nick.value.trim()); }
 
@@ -306,7 +374,9 @@ export class UIManager {
         ? `<img class="avatar" src="${escapeHtml(r.avatarUrl)}" alt="">`
         : `<span class="avatar" style="background:${escapeHtml(r.color || '#ddd')}">${escapeHtml(r.avatar || '🙂')}</span>`;
       const attrs = clickable ? ` data-rid="${escapeHtml(r.id)}" tabindex="0" role="button" aria-label="${escapeHtml(t('pl_view'))}"` : '';
-      return `<li class="${r.isMe ? 'me' : ''}${clickable ? ' clickable' : ''}"${attrs}><span class="rk">${medal}</span>${avatar}<span class="nm"><bdi>${escapeHtml(r.nickname)}</bdi>${r.isMe ? ` <em>(${escapeHtml(t('me'))})</em>` : ''}</span><span class="sc">${r.score}</span>${clickable ? '<span class="chev" aria-hidden="true">›</span>' : ''}</li>`;
+      const vip = r.isMe ? this.skins.isVip : !!r.vip;
+      const tag = vip ? `<b class="owner-badge">${escapeHtml(t('owner'))}</b>` : `<i class="guest-tag">${escapeHtml(t('guest'))}</i>`;
+      return `<li class="${r.isMe ? 'me' : ''}${vip ? ' vip' : ' guest'}${clickable ? ' clickable' : ''}"${attrs}><span class="rk">${medal}</span>${avatar}<span class="nm"><bdi>${escapeHtml(r.nickname)}</bdi>${r.isMe ? ` <em>(${escapeHtml(t('me'))})</em>` : ''}<br>${tag}</span><span class="sc">${r.score}</span>${clickable ? '<span class="chev" aria-hidden="true">›</span>' : ''}</li>`;
     };
     this.el.rankList.innerHTML = top.map(row).join('');
     this.el.rankMine.innerHTML = mineRow ? `<ol class="rank-list">${row(mineRow)}</ol>` : '';

@@ -1,14 +1,101 @@
 [
-  { "id": "u1001", "nickname": "跳跳虎", "avatar": "🐯", "avatarUrl": "", "color": "#ffb347", "score": 628 },
-  { "id": "u1002", "nickname": "Nile Runner", "avatar": "🦊", "avatarUrl": "", "color": "#ff8a65", "score": 517 },
-  { "id": "u1003", "nickname": "小方块", "avatar": "🧊", "avatarUrl": "", "color": "#84b6f4", "score": 433 },
-  { "id": "u1004", "nickname": "Sara", "avatar": "🐱", "avatarUrl": "", "color": "#ffc4dd", "score": 389 },
-  { "id": "u1005", "nickname": "完美主义者", "avatar": "🎯", "avatarUrl": "", "color": "#ff6f61", "score": 342 },
-  { "id": "u1006", "nickname": "Omar", "avatar": "🚀", "avatarUrl": "", "color": "#c3a6ff", "score": 276 },
-  { "id": "u1007", "nickname": "柠檬汽水", "avatar": "🍋", "avatarUrl": "", "color": "#ffe680", "score": 231 },
-  { "id": "u1008", "nickname": "Mona", "avatar": "🐼", "avatarUrl": "", "color": "#d6d6d6", "score": 188 },
-  { "id": "u1009", "nickname": "一跳到底", "avatar": "🐸", "avatarUrl": "", "color": "#7fdc8f", "score": 142 },
-  { "id": "u1010", "nickname": "Youssef", "avatar": "🦁", "avatarUrl": "", "color": "#f7a072", "score": 97 },
-  { "id": "u1011", "nickname": "新手上路", "avatar": "🐣", "avatarUrl": "", "color": "#fff1a8", "score": 45 },
-  { "id": "u1012", "nickname": "Layla", "avatar": "🦋", "avatarUrl": "", "color": "#8fe3df", "score": 21 }
+  {
+    "id": "u1001",
+    "nickname": "跳跳虎",
+    "avatar": "🐯",
+    "avatarUrl": "",
+    "color": "#ffb347",
+    "score": 628,
+    "vip": true
+  },
+  {
+    "id": "u1002",
+    "nickname": "Nile Runner",
+    "avatar": "🦊",
+    "avatarUrl": "",
+    "color": "#ff8a65",
+    "score": 517,
+    "vip": true
+  },
+  {
+    "id": "u1003",
+    "nickname": "小方块",
+    "avatar": "🧊",
+    "avatarUrl": "",
+    "color": "#84b6f4",
+    "score": 433,
+    "vip": true
+  },
+  {
+    "id": "u1004",
+    "nickname": "Sara",
+    "avatar": "🐱",
+    "avatarUrl": "",
+    "color": "#ffc4dd",
+    "score": 389
+  },
+  {
+    "id": "u1005",
+    "nickname": "完美主义者",
+    "avatar": "🎯",
+    "avatarUrl": "",
+    "color": "#ff6f61",
+    "score": 342
+  },
+  {
+    "id": "u1006",
+    "nickname": "Omar",
+    "avatar": "🚀",
+    "avatarUrl": "",
+    "color": "#c3a6ff",
+    "score": 276
+  },
+  {
+    "id": "u1007",
+    "nickname": "柠檬汽水",
+    "avatar": "🍋",
+    "avatarUrl": "",
+    "color": "#ffe680",
+    "score": 231
+  },
+  {
+    "id": "u1008",
+    "nickname": "Mona",
+    "avatar": "🐼",
+    "avatarUrl": "",
+    "color": "#d6d6d6",
+    "score": 188
+  },
+  {
+    "id": "u1009",
+    "nickname": "一跳到底",
+    "avatar": "🐸",
+    "avatarUrl": "",
+    "color": "#7fdc8f",
+    "score": 142
+  },
+  {
+    "id": "u1010",
+    "nickname": "Youssef",
+    "avatar": "🦁",
+    "avatarUrl": "",
+    "color": "#f7a072",
+    "score": 97
+  },
+  {
+    "id": "u1011",
+    "nickname": "新手上路",
+    "avatar": "🐣",
+    "avatarUrl": "",
+    "color": "#fff1a8",
+    "score": 45
+  },
+  {
+    "id": "u1012",
+    "nickname": "Layla",
+    "avatar": "🦋",
+    "avatarUrl": "",
+    "color": "#8fe3df",
+    "score": 21
+  }
 ]

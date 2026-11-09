@@ -73,6 +73,9 @@ export class SkinManager {
   get playerSkin() { return PLAYER_SKINS.find((s) => s.id === this.state.player) || PLAYER_SKINS[0]; }
   get blockStyle() { return BLOCK_STYLES.find((s) => s.id === this.state.block) || BLOCK_STYLES[0]; }
 
+  /** 有任何一款兑换码罐子 = VIP（Official Owner） */
+  get isVip() { return PLAYER_SKINS.some((k) => k.unlock === 'code' && this.isUnlocked('player', k.id)); }
+
   isUnlocked(kind, id) { return this.state.unlocked.includes(kind + ':' + id); }
 
   select(kind, id) {

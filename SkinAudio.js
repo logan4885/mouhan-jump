@@ -165,6 +165,18 @@ function noise(ctx, out, { t, dur = 0.1, vol = 0.1, type = 'highpass', f0 = 6000
 /* ------------------------- 专属完美音效 ------------------------- */
 // rate：连击越高音越高（最多升约 7 个半音），越打越爽
 export const SFX = {
+  // 冰镇易拉罐开罐：Pssssht（气体喷出）+ Pop!（拉环脆响）
+  popcan(ctx, out, t, rate) {
+    noise(ctx, out, { t, dur: 0.34, vol: 0.2, f0: 6500 });
+    noise(ctx, out, { t: t + 0.04, dur: 0.22, vol: 0.12, f0: 3800 });
+    tone(ctx, out, { type: 'sine', f0: 1250 * rate, f1: 260, t: t + 0.3, dur: 0.1, vol: 0.5 });
+    noise(ctx, out, { t: t + 0.3, dur: 0.05, vol: 0.28, f0: 2400 });
+  },
+  // 普通罐：沉闷的木头 tock
+  tock(ctx, out, t) {
+    tone(ctx, out, { type: 'triangle', f0: 230, f1: 120, t, dur: 0.07, vol: 0.45 });
+    noise(ctx, out, { t, dur: 0.02, vol: 0.12, f0: 900 });
+  },
   coin(c, o, t, r) {
     tone(c, o, { type: 'square', f0: 988 * r, t, dur: 0.09, vol: 0.07 });
     tone(c, o, { type: 'square', f0: 1319 * r, t: t + 0.08, dur: 0.4, vol: 0.07 });
@@ -360,7 +372,7 @@ export class Music {
 }
 
 /** 试听专属音效（不依赖 Game） */
-export function playSfx(sound, id, combo = 1, volume = 1) {
+export function playSfx(sound, id, combo = 1, volume = 1, delay = 0) {
   const fn = SFX[id];
   const ctx = sound._ensure();
   if (!fn || !ctx) return;
@@ -368,7 +380,7 @@ export function playSfx(sound, id, combo = 1, volume = 1) {
   const g = ctx.createGain();
   g.gain.value = volume;
   g.connect(ctx.destination);
-  fn(ctx, g, ctx.currentTime + 0.01, rate);
+  fn(ctx, g, ctx.currentTime + 0.01 + delay, rate);
 }
 
 // 让主题带上自己的 id，方便内部判断

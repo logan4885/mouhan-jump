@@ -66,6 +66,12 @@
         <div class="over-score" id="overScore">0</div>
         <div class="over-best" id="overLine"></div>
         <div class="unlocked hidden" id="overUnlocked"></div>
+        <div class="over-vip hidden" id="overVip">
+          <p id="overVipText"></p>
+          <div class="over-vip-left hidden" id="overVipLeft"></div>
+          <button type="button" class="btn vip-btn" id="btnVipCode"></button>
+          <a class="btn vip-btn buy" id="btnVipBuy" target="_blank" rel="noopener"></a>
+        </div>
         <label class="nick">
           <span data-i18n="nick_label">排行榜昵称</span>
           <input id="nickInput" maxlength="12" placeholder="给自己起个名字" data-i18n-ph="nick_ph" autocomplete="off">
@@ -127,6 +133,7 @@
       </div>
     </div>
 
+    <div id="trialBar" class="trial-bar hidden" role="status"><b id="trialText"></b><button type="button" id="trialCta" class="trial-cta hidden"></button><i></i></div>
     <canvas id="fxCanvas" aria-hidden="true"></canvas>
     <button type="button" id="btnMute" class="mute-btn" aria-pressed="false" data-i18n-aria="mute">🔊</button>
 

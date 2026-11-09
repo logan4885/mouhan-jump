@@ -17,6 +17,7 @@ export class BlockManager {
     this.tweens = tweens;
     this.blocks = [];
     this.currentIndex = 0;
+    this.trialRoll = null; // Game 注入：() => boolean，决定下一个方块是不是“24K 星号方块”
   }
 
   get current() { return this.blocks[this.currentIndex]; }
@@ -46,6 +47,7 @@ export class BlockManager {
     const gap = rand(minGap, Math.max(minGap + 0.3, CONFIG.BLOCK_MAX_GAP));
     const block = this._create({ x: cur.x + dir.x * gap, z: cur.z + dir.z * gap, shape, size, animate });
     block.dirKey = dirKey;
+    if (this.trialRoll && this.trialRoll(score)) this._markTrial(block);
     this.blocks.push(block);
     return block;
   }
@@ -93,6 +95,40 @@ export class BlockManager {
     });
   }
 
+  /** 把方块变成“24K 金色星号方块”：金属金色 + 顶面一颗发光的星 */
+  _markTrial(block) {
+    block.trial = true;
+    this._goldify(block);
+  }
+
+  _goldify(block) {
+    const gold = new THREE.MeshStandardMaterial({ color: '#ffc83d', metalness: 0.85, roughness: 0.22, emissive: '#8a5a00', emissiveIntensity: 0.55 });
+    block.mesh.material = gold;
+    if (block.star) { block.root.remove(block.star); disposeObject(block.star); }
+    const cv = document.createElement('canvas'); cv.width = cv.height = 128;
+    const g = cv.getContext('2d');
+    g.font = '104px "Segoe UI Symbol","Apple Symbols",sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.shadowColor = '#fff4b0'; g.shadowBlur = 18; g.fillStyle = '#fffbe0'; g.fillText('★', 64, 68);
+    const tex = new THREE.CanvasTexture(cv);
+    const sz = block.size * 0.8;
+    const star = new THREE.Mesh(new THREE.PlaneGeometry(sz, sz), new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false }));
+    star.rotation.x = -Math.PI / 2;
+    star.position.y = CONFIG.BLOCK_HEIGHT + 0.03;
+    block.root.add(star);
+    block.star = star;
+  }
+
+  /** 被踩过之后恢复成普通方块外观 */
+  clearTrial(block) {
+    if (!block || !block.trial) return;
+    block.trial = false;
+    if (block.star) { block.root.remove(block.star); disposeObject(block.star); block.star = null; }
+    const old = block.mesh;
+    const fresh = this._buildMesh(block.shape, block.size);
+    block.root.remove(old); disposeObject(old);
+    block.root.add(fresh); block.mesh = fresh;
+  }
+
   /** 方块风格切换后，重建现有方块的材质 */
   restyleAll() {
     this.blocks.forEach((b) => {
@@ -100,6 +136,7 @@ export class BlockManager {
       const fresh = this._buildMesh(b.shape, b.size);
       b.root.remove(old); disposeObject(old);
       b.root.add(fresh); b.mesh = fresh;
+      if (b.trial) this._goldify(b);
     });
   }
 

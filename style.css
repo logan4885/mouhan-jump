@@ -372,3 +372,43 @@ body.theme-neon #hud .perk { background: rgba(20,18,43,.8); color: #f2f0ff; bord
 .rar-epic { --rc: #a855f7; }
 .rar-rare { --rc: #38a3ff; }
 .skin-card { position: relative; }
+
+/* ===== 试驾体验条 ===== */
+.trial-bar {
+  position: absolute; left: 50%; top: max(64px, calc(env(safe-area-inset-top, 0px) + 56px)); transform: translateX(-50%); z-index: 14;
+  display: flex; align-items: center; gap: 10px; padding: 9px 16px 13px; width: max-content; max-width: min(92vw, 460px);
+  background: linear-gradient(135deg, #fff1a8, #ffc83d); color: #5a3a00; border: 3px solid var(--ink); border-radius: 16px;
+  box-shadow: 0 4px 0 var(--ink), 0 0 26px 4px rgba(255, 200, 61, .65); font-weight: 900; font-size: 14px; overflow: hidden; pointer-events: none;
+}
+.trial-bar > i { position: absolute; left: 0; bottom: 0; height: 5px; width: 100%; background: #b36b00; transform-origin: left; }
+[dir="rtl"] .trial-bar > i { transform-origin: right; }
+.trial-bar.run > i { animation: trialDrain var(--sec, 3s) linear forwards; }
+.trial-bar.ended { background: linear-gradient(135deg, #e7e5ee, #c9c7d6); color: #3e3a55; box-shadow: 0 4px 0 var(--ink); pointer-events: auto; }
+.trial-bar.ended > i { display: none; }
+.trial-cta { pointer-events: auto; cursor: pointer; font: inherit; font-weight: 900; padding: 6px 12px; border-radius: 999px; border: 2px solid var(--ink); background: #ffc83d; color: var(--ink); white-space: nowrap; }
+@keyframes trialDrain { from { transform: scaleX(1); } to { transform: scaleX(0); } }
+
+/* ===== 排行榜：身份阶级 ===== */
+.rank-list li.guest .nm { color: #8f8ca3; }
+.rank-list li.guest .sc { color: #9a97ad; }
+.guest-tag { font-style: normal; font-size: 10.5px; font-weight: 800; color: #9a97ad; border: 1px dashed #c3c0d3; border-radius: 6px; padding: 0 6px; }
+.rank-list li.vip {
+  background: linear-gradient(135deg, #fff9dc, #ffecaa); border-color: #e0a800;
+  box-shadow: 0 0 0 2px #ffd24a inset, 0 0 14px 2px rgba(255, 196, 40, .55); animation: vipGlow 2.2s ease-in-out infinite alternate;
+}
+.rank-list li.vip .nm { color: #7a4d00; text-shadow: 0 0 8px rgba(255, 200, 40, .8); }
+.rank-list li.vip .sc { color: #c88a00; text-shadow: 0 0 6px rgba(255, 200, 40, .7); font-weight: 900; }
+.owner-badge {
+  display: inline-block; font-size: 10.5px; font-weight: 900; letter-spacing: .02em; color: #5a3a00; padding: 1px 8px; border-radius: 999px; border: 1.5px solid #b36b00;
+  background: linear-gradient(100deg, #ffd24a 20%, #fff7c2 45%, #ffd24a 70%); background-size: 200% 100%; animation: badgeShine 2.4s linear infinite;
+}
+@keyframes vipGlow { from { filter: brightness(1); } to { filter: brightness(1.08); } }
+@keyframes badgeShine { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+@media (prefers-reduced-motion: reduce) { .rank-list li.vip, .owner-badge { animation: none; } }
+
+/* ===== 结算页：身份提示 ===== */
+.over-vip { margin: 10px 0 4px; padding: 12px; border-radius: 14px; border: 2px solid #e0a800; background: #fff8df; text-align: center; display: grid; gap: 8px; }
+.over-vip p { margin: 0; font-size: 13.5px; line-height: 1.5; color: #5a3a00; font-weight: 700; }
+.over-vip-left { font-size: 13px; font-weight: 900; color: #b24a00; font-variant-numeric: tabular-nums; }
+.vip-btn { font-size: 14px; }
+.vip-btn.buy { text-decoration: none; background: #25d366; color: #fff; border-color: var(--ink); display: block; }

@@ -11,6 +11,7 @@ import { Sound } from './Sound.js';
 import { t, L } from './i18n.js';
 import { getPerk } from './canPerks.js';
 import { getSignature, RARITY } from './canSignature.js';
+import { PLAYER_SKINS } from './SkinManager.js';
 import { Music, playSfx } from './SkinAudio.js';
 import { SignatureFX } from './SignatureFX.js';
 
@@ -41,6 +42,9 @@ export class Game {
     this.skins.checkUnlocks(this.best);
     this.blocks = new BlockManager(this.scene, this.skins, this.tweens);
     this.player = new Player(this.scene, this.skins);
+    this.trial = null;
+    this._sinceTrial = 0; this._trialsThisRound = 0;
+    this.blocks.trialRoll = (score) => this._rollTrial(score);
     this.ui = new UIManager({
       onStart: () => this.startRound(),
       onRestart: () => this.startRound(),
@@ -229,6 +233,8 @@ export class Game {
   _onLand(result) {
     this.sound.land();
     if (result === 'stay') { this.state = 'ready'; return; }
+    const landed = this.blocks.next;
+    if (landed && landed.trial) this._startTrial(landed);
     let gain;
     const perfect = result === 'perfect';
     if (perfect) {
@@ -244,7 +250,7 @@ export class Game {
       this.blocks.ripple(this.blocks.next);
       const sp0 = this._toScreen(this.player.root.position, 0); // 落点：罐底与方块顶面的接触处
       if (this.sig) this._signatureBurst(this.sig, sp0.x, sp0.y, this.combo);
-      else this.sound.perfect();
+      else playSfx(this.sound, 'tock', 1, 1);
     } else {
       this.combo = 0;
       this.thunderCount = 0;
@@ -332,6 +338,7 @@ export class Game {
 
   _gameOver() {
     this.state = 'over';
+    this._endTrial(false);
     this._stopMusic(0.9);
     const record = this.score > this.bestAtStart;
     Storage.saveHighScore(this.score);
@@ -346,8 +353,8 @@ export class Game {
 
   /* ================= 专属特效 / 音乐（纯外观，不影响得分与判定） ================= */
   _refreshSig() {
-    const id = this.skins.state.player;
-    this.sig = this.skins.isUnlocked('player', id) ? getSignature(id) : null;
+    const id = (this.trial && this.trial.id) || this.skins.state.player;
+    this.sig = (this.trial || this.skins.isUnlocked('player', id)) ? getSignature(id) : null;
     if (this.state === 'ready' || this.state === 'charging' || this.state === 'jumping') this._startMusic();
     this._comboFx();
   }
@@ -356,6 +363,60 @@ export class Game {
     if (!this.sig) { this.music.stop(0.3); return; }
     this.music.play(this.sig.theme, { boost: RARITY[this.sig.rarity].comboMusicBoost, level: this.combo > 0 ? 1 : 0 });
     this.music.setCombo(this.combo);
+  }
+
+  _vibrate(pat) {
+    try { if (!this.sound.muted && navigator.vibrate) navigator.vibrate(pat); } catch (e) { /* 部分浏览器不支持 */ }
+  }
+
+  /* ---------- “试驾体验”：踩中 24K 星号方块，免费体验 3 秒金罐 ---------- */
+  /** 挑一款玩家还没有的兑换款（优先黄金罐）；全都有了就返回 null（不再出现星号方块） */
+  _trialSkin() {
+    const locked = PLAYER_SKINS.filter((k) => k.unlock === 'code' && !this.skins.isUnlocked('player', k.id));
+    if (!locked.length) return null;
+    return locked.find((k) => k.id === 'gold') || locked[Math.floor(Math.random() * locked.length)];
+  }
+
+  _rollTrial(score) {
+    this._sinceTrial++;
+    if (this.state === 'menu' || score < 4 || this.trial || this._trialsThisRound >= 3) return false;
+    if (this._sinceTrial < 8 || Math.random() > 0.35) return false;
+    if (!this._trialSkin()) return false;
+    this._sinceTrial = 0; this._trialsThisRound++;
+    return true;
+  }
+
+  _startTrial(block) {
+    this.blocks.clearTrial(block);
+    const skin = this._trialSkin();
+    if (!skin) return;
+    this._endTrial(false);
+    this.trial = { id: skin.id, timer: setTimeout(() => this._endTrial(true), 3000) };
+    this.player.setSkin(skin.id);
+    this.sig = getSignature(skin.id);
+    this._startMusic();
+    const sp = this._toScreen(this.player.root.position, 0);
+    if (this.fx) { this.fx.burst('coins', sp.x, sp.y, { color: '#ffc83d', mul: 2.2, flash: true, combo: 3 }); this.fx.fizz(sp.x, sp.y, 2); }
+    playSfx(this.sound, 'popcan', 3, 1);
+    this._vibrate([30, 40, 40]);
+    this.ui.showTrial(L(skin.name), 3);
+  }
+
+  /** 3 秒到了（或回合结束）：金罐消失，变回原来的罐子 */
+  _endTrial(announce) {
+    const tr = this.trial;
+    if (!tr) return;
+    clearTimeout(tr.timer);
+    this.trial = null;
+    this.ui.hideTrial();
+    this.player.setSkin(this.skins.state.player);
+    this._refreshSig();
+    if (announce && this.state !== 'menu' && this.state !== 'over') {
+      const sp = this._toScreen(this.player.root.position, 0);
+      if (this.fx) this.fx.poof(sp.x, sp.y);
+      playSfx(this.sound, 'tock', 1, 1);
+      this.ui.showTrialEnd(L(PLAYER_SKINS.find((k) => k.id === tr.id).name));
+    }
   }
 
   _stopMusic(fade = 0.5) { this.music.stop(fade); }
@@ -372,8 +433,10 @@ export class Game {
 
   _signatureBurst(sig, x, y, combo) {
     const r = RARITY[sig.rarity];
-    if (this.fx) this.fx.burst(sig.burst, x, y, { color: sig.color, mul: r.burstMul, flash: r.flash, combo });
-    playSfx(this.sound, sig.sfx, combo, 0.9);
+    if (this.fx) { this.fx.burst(sig.burst, x, y, { color: sig.color, mul: r.burstMul, flash: r.flash, combo }); this.fx.fizz(x, y, r.burstMul); }
+    playSfx(this.sound, 'popcan', combo, 0.9);          // Pssssht - Pop!
+    playSfx(this.sound, sig.sfx, combo, 0.9, 0.34);     // 开罐之后再接专属音效
+    if (!this._pv) this._vibrate([18, 40, 26]);
     this.ui.popWord(L(sig.word), x, y - 70, sig.color, sig.rarity);
   }
 
@@ -443,6 +506,8 @@ export class Game {
     this.reset();
     this.bestAtStart = this.best;
     this.stopPreview();
+    this._endTrial(false);
+    this._sinceTrial = 0; this._trialsThisRound = 0;
     this.ui.setBest(this.best);
     this.ui.hideStart();
     this._startMusic();
@@ -450,6 +515,7 @@ export class Game {
   }
 
   goHome() {
+    this._endTrial(false);
     this._stopMusic(0.6);
     this.ui.hideGameOver();
     this.reset();
