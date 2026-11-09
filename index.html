@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
   <meta name="theme-color" content="#cfe9ff">
   <title>跳一跳 3D</title>
-  <link rel="stylesheet" href="style.css?v=20261110b">
+  <link rel="stylesheet" href="style.css?v=20261110c">
   <!-- Three.js 以 ES Module 方式从 CDN 引入 -->
   <script type="importmap">
     { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }
@@ -73,6 +73,11 @@
           <button type="button" class="btn vip-btn" id="btnVipCode"></button>
           <a class="btn vip-btn buy" id="btnVipBuy" target="_blank" rel="noopener"></a>
         </div>
+        <div class="avatar-row">
+          <button type="button" class="avatar-cur" id="avatarCur" aria-expanded="false"></button>
+          <span class="avatar-hint" data-i18n="av_hint">点头像换一个动物</span>
+        </div>
+        <div class="avatar-grid hidden" id="avatarGrid" role="listbox"></div>
         <label class="nick">
           <span data-i18n="nick_label">排行榜昵称</span>
           <input id="nickInput" maxlength="12" placeholder="给自己起个名字" data-i18n-ph="nick_ph" autocomplete="off">
@@ -175,7 +180,7 @@
     </div>
   </div>
 
-  <script type="module" src="main.js?v=20261110b"></script>
+  <script type="module" src="main.js?v=20261110c"></script>
   <!-- 兜底：Three.js 或模块加载失败时给出提示 -->
   <script>
     setTimeout(function () { if (!window.__jumpReady) document.getElementById('nogl').classList.remove('hidden'); }, 9000);
