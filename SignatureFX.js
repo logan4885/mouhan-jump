@@ -207,6 +207,43 @@ export class SignatureFX {
         c.beginPath(); p.pts.forEach((pt, i) => (i ? c.lineTo(pt[0], pt[1]) : c.moveTo(pt[0], pt[1]))); c.stroke();
         c.shadowBlur = 0; break;
       }
+      case 'eye': {
+        // 荷鲁斯之眼：弹出、发金光、慢慢淡出
+        const g = Math.min(1, (p.age || 0) / 0.2), pop = g < 1 ? 1 + 0.35 * Math.sin(g * Math.PI) * (1 - g) + (g - 1) * 0 : 1;
+        const sc = (p.size / 62) * (0.2 + 0.8 * g) * pop;
+        c.save(); c.translate(p.x, p.y); c.scale(sc, sc);
+        c.shadowColor = '#ffd23a'; c.shadowBlur = 22; c.lineJoin = 'round'; c.lineCap = 'round';
+        const almond = () => { c.beginPath(); c.moveTo(-62, 0); c.quadraticCurveTo(0, -48, 62, 0); c.quadraticCurveTo(0, 30, -62, 0); };
+        const line = (fn, col, w) => { fn(); c.lineWidth = w + 6; c.strokeStyle = '#4a3200'; c.stroke(); c.lineWidth = w; c.strokeStyle = col; c.stroke(); };
+        almond(); c.fillStyle = '#fff3b0'; c.fill(); c.shadowBlur = 0;
+        line(almond, '#ffd23a', 5);
+        c.fillStyle = '#2f6b00'; c.beginPath(); c.arc(0, -4, 15, 0, TAU); c.fill();
+        c.fillStyle = '#10240a'; c.beginPath(); c.arc(0, -4, 6.5, 0, TAU); c.fill();
+        line(() => { c.beginPath(); c.moveTo(-68, -26); c.quadraticCurveTo(0, -62, 70, -28); }, '#ffd23a', 7);
+        line(() => { c.beginPath(); c.moveTo(-12, 16); c.lineTo(-12, 46); c.quadraticCurveTo(-12, 62, 12, 58); }, '#ffd23a', 7);
+        line(() => { c.beginPath(); c.moveTo(46, 12); c.quadraticCurveTo(76, 24, 66, 52); }, '#ffd23a', 7);
+        c.restore(); break;
+      }
+      case 'ankh': {
+        c.save(); c.translate(p.x, p.y); c.rotate(p.rot || 0); c.scale(p.size / 40, p.size / 40); c.lineCap = 'round';
+        const shape = () => { c.beginPath(); c.ellipse(0, -22, 11, 15, 0, 0, TAU); c.moveTo(0, -7); c.lineTo(0, 38); c.moveTo(-18, 3); c.lineTo(18, 3); };
+        shape(); c.lineWidth = 12; c.strokeStyle = '#4a3200'; c.stroke();
+        shape(); c.lineWidth = 6; c.strokeStyle = p.color || '#ffd23a'; c.stroke();
+        c.restore(); break;
+      }
+      case 'glyphring': {
+        // 一圈缓缓转动的象形符号刻痕（长条 / 三角交替），沿地面椭圆扩散
+        const r = p.r0 + (p.r1 - p.r0) * (1 - k), N = 16;
+        for (let i = 0; i < N; i++) {
+          const a = (i / N) * TAU + (p.age || 0) * 1.2;
+          const gx = p.x + Math.cos(a) * r, gy = p.y + Math.sin(a) * r * (p.squash || 0.5);
+          c.save(); c.translate(gx, gy); c.rotate(a + Math.PI / 2); c.fillStyle = i % 2 ? '#ffd23a' : '#fff1a0'; c.strokeStyle = '#4a3200'; c.lineWidth = 1.5;
+          c.beginPath();
+          if (i % 2) { c.moveTo(0, -9); c.lineTo(6, 6); c.lineTo(-6, 6); c.closePath(); } else c.rect(-3, -8, 6, 16);
+          c.fill(); c.stroke(); c.restore();
+        }
+        break;
+      }
       case 'pyramid': {
         // 石砌金字塔：从地面升起（被底面菱形裁掉地下部分），砂岩渐变 + 层层石块线 + 受光/背光面 + 接触阴影
         const g = Math.min(1, (p.age || 0) / 0.35), e = 1 - Math.pow(1 - g, 3);
@@ -314,6 +351,15 @@ const BURSTS = {
     const cols = ['#ffe600', '#ff4f9a', '#3b2fd1', '#00e5ff', '#7dff4f'];
     for (let i = 0; i < n(36, mul); i++) fx.add({ shape: 'pixel', x, y, ...ground(rnd(0, TAU), rnd(140, 460), rnd(40, 160)), g: 900, color: pick(cols), size: pick([6, 6, 12]), life: rnd(0.45, 0.8) });
     shock(fx, x, y, '#ffe600', 120, 6);
+  },
+  pharaoh(fx, x, y, { mul }) {
+    // 法老的祝福：地面扩散一圈象形刻痕和金环，荷鲁斯之眼在罐子上方亮起，安卡符号向上飞散，一阵金沙吹过
+    shock(fx, x, y, '#ffd23a', 200, 9);
+    fx.add({ shape: 'glyphring', x, y, r0: 24, r1: 150, squash: FLAT, life: 0.9 });
+    fx.add({ shape: 'eye', x, y: y - 105, size: 46, life: 1.05 });
+    for (let i = 0; i < 5; i++) { const a = -Math.PI / 2 + (i - 2) * 0.5 + rnd(-0.1, 0.1), s = rnd(260, 380); fx.add({ shape: 'ankh', x, y: y - 30, vx: Math.cos(a) * s, vy: Math.sin(a) * s, g: 520, drag: 0.985, size: rnd(15, 22), rot: rnd(-0.6, 0.6), vr: rnd(-2.5, 2.5), color: pick(['#ffd23a', '#fff1a0']), life: rnd(0.8, 1.1) }); }
+    for (let i = 0; i < n(7, mul); i++) { const a = rnd(0, TAU), r = rnd(20, 90); fx.add({ shape: 'dust', x: x + Math.cos(a) * r, y: y + Math.sin(a) * r * FLAT, vx: Math.cos(a) * 40 + 30, vy: rnd(-40, -10), drag: 0.97, size: rnd(18, 30), life: rnd(0.6, 1.0), delay: rnd(0, 0.15) }); }
+    for (let i = 0; i < n(30, mul); i++) fx.add({ shape: 'spark', x: x + rnd(-110, 40), y: y + rnd(-60, 20), vx: rnd(260, 620), vy: rnd(-30, 50), color: pick(['#ffd23a', '#fff1a0', '#c99a4b']), size: rnd(1.5, 3.5), life: rnd(0.4, 0.9), delay: rnd(0, 0.3) });
   },
   pyramid(fx, x, y, { mul }) {
     // 吉萨三塔：远处两座小而偏白（先画，垫在后面），主塔从落点升起；脚下卷起沙尘，一阵风沙吹过

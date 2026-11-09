@@ -10,10 +10,10 @@ import { UIManager } from './UIManager.js?v=20261110k';
 import { Sound } from './Sound.js?v=20261110k';
 import { t, L } from './i18n.js?v=20261110k';
 import { getPerk } from './canPerks.js?v=20261110k';
-import { getSignature, RARITY } from './canSignature.js?v=20261110k';
+import { getSignature, RARITY } from './canSignature.js?v=20261110l';
 import { PLAYER_SKINS } from './SkinManager.js?v=20261110k';
 import { Music, playSfx } from './SkinAudio.js?v=20261110k';
-import { SignatureFX } from './SignatureFX.js?v=20261110k';
+import { SignatureFX } from './SignatureFX.js?v=20261110l';
 
 // 踩中星号方块后的免费体验时长（秒）
 const TRIAL_SEC = 8;

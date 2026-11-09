@@ -76,10 +76,10 @@ export const SIGNATURE = {
     },
   },
   chrono: {
-    rarity: 'epic', burst: 'pyramid', color: '#ffd23a', theme: 'egypt', sfx: 'ping',
+    rarity: 'epic', burst: 'pharaoh', color: '#ffd23a', theme: 'egypt', sfx: 'ping',
     word: { zh: '定格！', en: 'FREEZE!', ar: 'تجمّد!' },
     desc: {
-      zh: '🎵 埃及风格音乐 · ✨ 金字塔升起', en: '🎵 Egyptian-style music · ✨ Pyramid rises', ar: '🎵 موسيقى بطابع مصري · ✨ ارتفاع الأهرام',
+      zh: '🎵 埃及风格音乐 · ✨ 荷鲁斯之眼与安卡金光', en: '🎵 Egyptian-style music · ✨ Eye of Horus & golden ankhs', ar: '🎵 موسيقى بطابع مصري · ✨ عين حورس وعلامات عنخ ذهبية',
     },
   },
   chrome: {
