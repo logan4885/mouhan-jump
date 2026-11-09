@@ -18,6 +18,8 @@
 //   bonusEvery       分数每跨过这个数，额外 +1
 //   perfectRing      在下一个方块上显示完美区域
 //   thunderStreak    连续几次完美后，下一次只要落在方块上就算完美
+//   timeStop         每局一次：点 ⏱ 按钮时停这么多秒（时停期间蓄力速度变为 freezeChargeMul 倍，更好控制）
+//   freezeChargeMul  时停期间的蓄力速度倍率
 
 export const DEFAULT_PERK = { chargeMul: 1, floatMul: 1, perfectMul: 1, edgeGrace: 0, perfectBase: 2, streakStep: 2, streakCap: 32 };
 
@@ -66,6 +68,15 @@ export const PERKS = {
     icon: '👾', revive: 'any', reviveAfter: 30,
     name: { zh: '1UP', en: '1UP', ar: 'حياة إضافية' },
     desc: { zh: '分数到 30 后获得一次复活', en: 'Earn one extra life after reaching 30 points', ar: 'تحصل على حياة إضافية بعد الوصول إلى 30 نقطة' },
+  },
+  chrono: {
+    icon: '⏱', timeStop: 5, freezeChargeMul: 0.4, perfectMul: 0.9,
+    name: { zh: '时停', en: 'Time Stop', ar: 'إيقاف الزمن' },
+    desc: {
+      zh: '每局一次：点 ⏱ 时停 5 秒，期间蓄力速度只有 40%，更好控制；代价：完美范围小 10%',
+      en: 'Once per game: tap ⏱ to stop time for 5 s, charging runs at 40% speed for finer control; cost: perfect zone 10% smaller',
+      ar: 'مرة في كل جولة: اضغط ⏱ لإيقاف الزمن 5 ثوانٍ، يصبح الشحن بسرعة 40% لتحكم أدق؛ الثمن: منطقة المثالي أصغر 10%',
+    },
   },
   thunder: {
     icon: '⚡', thunderStreak: 3,

@@ -438,3 +438,10 @@ body.theme-neon #hud .perk { background: rgba(20,18,43,.8); color: #f2f0ff; bord
 .link-btn { margin-top: 8px; background: none; border: 0; color: var(--muted); font: inherit; font-weight: 800; font-size: 13px; text-decoration: underline; cursor: pointer; padding: 6px 10px; }
 .modal.rank .rank-list#rankList { max-height: 52vh; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; padding: 2px 4px 2px 2px; }
 .rank-list li.loading.more { justify-content: center; }
+/* 时停罐：⏱ 按钮 + 时停期间的冷色氛围和 5 秒倒计时条 */
+.freeze-btn { position: absolute; left: 50%; bottom: max(24px, calc(env(safe-area-inset-bottom, 0px) + 18px)); transform: translateX(-50%); z-index: 15; font: inherit; font-weight: 900; font-size: 15px; padding: 10px 18px; border-radius: 999px; border: 3px solid var(--ink); background: #14213d; color: #fca311; box-shadow: 0 4px 0 var(--ink), 0 0 18px 2px rgba(252, 163, 17, .45); cursor: pointer; pointer-events: auto; }
+.freeze-btn:active { transform: translateX(-50%) translateY(2px); }
+.freeze-fx { position: absolute; inset: 0; z-index: 12; pointer-events: none; background: radial-gradient(ellipse at center, rgba(180, 225, 255, .08) 35%, rgba(40, 90, 160, .38) 100%); backdrop-filter: grayscale(.55) contrast(1.05); -webkit-backdrop-filter: grayscale(.55) contrast(1.05); }
+.freeze-fx > i { position: absolute; left: 0; top: 0; height: 6px; width: 100%; background: #fca311; transform-origin: left; }
+[dir="rtl"] .freeze-fx > i { transform-origin: right; }
+.freeze-fx.run > i { animation: trialDrain var(--sec, 5s) linear forwards; }

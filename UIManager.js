@@ -1,22 +1,22 @@
 // UI 层：开始界面、计分板、蓄力条、飘字、结算弹窗、皮肤商店（含兑换码）、排行榜、语言切换
-import { PLAYER_SKINS, BLOCK_STYLES, SkinPreview } from './SkinManager.js?v=20261110f';
-import { fetchTop, fetchPlayer, syncPlayer, buildBoard, LEADERBOARD_API } from './Leaderboard.js?v=20261110f';
-import { Storage } from './Storage.js?v=20261110f';
-import { escapeHtml } from './utils.js?v=20261110f';
-import { t, L, setLang, getLang, onLangChange, applyStatic } from './i18n.js?v=20261110f';
-import { PERKS } from './canPerks.js?v=20261110f';
-import { SIGNATURE, RARITY, getSignature } from './canSignature.js?v=20261110f';
-import { SHOP } from './shop.js?v=20261110f';
-import { recoveryAvailable, makeCode, makeLink, restore } from './Recovery.js?v=20261110f';
-import { accountAvailable, PROVIDER_NAME, completeLogin, renderGoogleButton, prepareFacebook, facebookLogin, logout } from './Account.js?v=20261110f';
-import { AUTH } from './authConfig.js?v=20261110f';
+import { PLAYER_SKINS, BLOCK_STYLES, SkinPreview } from './SkinManager.js?v=20261110g';
+import { fetchTop, fetchPlayer, syncPlayer, buildBoard, LEADERBOARD_API } from './Leaderboard.js?v=20261110g';
+import { Storage } from './Storage.js?v=20261110g';
+import { escapeHtml } from './utils.js?v=20261110g';
+import { t, L, setLang, getLang, onLangChange, applyStatic } from './i18n.js?v=20261110g';
+import { PERKS } from './canPerks.js?v=20261110g';
+import { SIGNATURE, RARITY, getSignature } from './canSignature.js?v=20261110g';
+import { SHOP } from './shop.js?v=20261110g';
+import { recoveryAvailable, makeCode, makeLink, restore } from './Recovery.js?v=20261110g';
+import { accountAvailable, PROVIDER_NAME, completeLogin, renderGoogleButton, prepareFacebook, facebookLogin, logout } from './Account.js?v=20261110g';
+import { AUTH } from './authConfig.js?v=20261110g';
 
 const $ = (id) => document.getElementById(id);
 
 export class UIManager {
   /**
    * @param {object} handlers { onStart, onRestart, onHome }
-   * @param {import('./SkinManager.js?v=20261110f').SkinManager} skins
+   * @param {import('./SkinManager.js?v=20261110g').SkinManager} skins
    */
   constructor(handlers, skins) {
     this.h = handlers;
@@ -44,6 +44,7 @@ export class UIManager {
     this._bind();
     this.el.nick.value = Storage.getNickname();
     this._initAvatar();
+    $('btnFreeze').addEventListener('click', () => this.h.onFreeze && this.h.onFreeze());
     onLangChange(() => this._refreshLang());
   }
 
@@ -227,6 +228,19 @@ export class UIManager {
     this.el.chargeFill.style.background = k < 0.95 ? '' : '#ff4d5e';
   }
   hideCharge() { this.el.charge.classList.add('hidden'); this.el.chargeFill.style.transform = 'scaleX(0)'; }
+
+  /* ---------- 时停罐：⏱ 按钮和时停期间的氛围 ---------- */
+  setFreezeBtn(show) {
+    const b = $('btnFreeze');
+    b.textContent = '⏱ ' + t('freeze_btn');
+    b.classList.toggle('hidden', !show);
+  }
+  showFreeze(sec) {
+    const f = $('freezeFx');
+    f.style.setProperty('--sec', sec + 's');
+    f.classList.remove('hidden', 'run'); void f.offsetWidth; f.classList.add('run');
+  }
+  hideFreeze() { const f = $('freezeFx'); f.classList.add('hidden'); f.classList.remove('run'); }
 
   /* ---------- 试驾体验条（踩中 24K 星号方块） ---------- */
   showTrial(name, sec) {

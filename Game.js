@@ -1,19 +1,19 @@
 // 游戏主控：渲染器 / 场景 / 正交相机 / 灯光、输入、状态机、计分与落点判定
 import * as THREE from 'three';
-import { CONFIG } from './config.js?v=20261110f';
-import { Storage } from './Storage.js?v=20261110f';
-import { Tweens, clamp, Ease } from './utils.js?v=20261110f';
-import { SkinManager } from './SkinManager.js?v=20261110f';
-import { BlockManager } from './BlockManager.js?v=20261110f';
-import { Player } from './Player.js?v=20261110f';
-import { UIManager } from './UIManager.js?v=20261110f';
-import { Sound } from './Sound.js?v=20261110f';
-import { t, L } from './i18n.js?v=20261110f';
-import { getPerk } from './canPerks.js?v=20261110f';
-import { getSignature, RARITY } from './canSignature.js?v=20261110f';
-import { PLAYER_SKINS } from './SkinManager.js?v=20261110f';
-import { Music, playSfx } from './SkinAudio.js?v=20261110f';
-import { SignatureFX } from './SignatureFX.js?v=20261110f';
+import { CONFIG } from './config.js?v=20261110g';
+import { Storage } from './Storage.js?v=20261110g';
+import { Tweens, clamp, Ease } from './utils.js?v=20261110g';
+import { SkinManager } from './SkinManager.js?v=20261110g';
+import { BlockManager } from './BlockManager.js?v=20261110g';
+import { Player } from './Player.js?v=20261110g';
+import { UIManager } from './UIManager.js?v=20261110g';
+import { Sound } from './Sound.js?v=20261110g';
+import { t, L } from './i18n.js?v=20261110g';
+import { getPerk } from './canPerks.js?v=20261110g';
+import { getSignature, RARITY } from './canSignature.js?v=20261110g';
+import { PLAYER_SKINS } from './SkinManager.js?v=20261110g';
+import { Music, playSfx } from './SkinAudio.js?v=20261110g';
+import { SignatureFX } from './SignatureFX.js?v=20261110g';
 
 // 踩中星号方块后的免费体验时长（秒）
 const TRIAL_SEC = 8;
@@ -55,6 +55,7 @@ export class Game {
       onPreviewFx: (id) => this.previewSignature(id),
       onStopFx: () => this.stopPreview(),
       onMute: () => this.setMuted(!this.sound.muted),
+      onFreeze: () => this.activateFreeze(),
     }, this.skins);
     try { this.fx = new SignatureFX(document.getElementById('fxCanvas'), document.getElementById('fxGlow')); } catch (e) { this.fx = null; }
     this._syncMuteBtn();
@@ -210,6 +211,7 @@ export class Game {
     else result = 'miss';
 
     this.state = 'jumping';
+    if (this.perk && this.perk.timeStop) this.ui.setFreezeBtn(false);
     this.lastResult = result;
     const opts = { onFallen: () => this._onFallen(), durMul: perk.floatMul };
     if (result === 'perfect' || result === 'hit' || result === 'stay') {
@@ -324,12 +326,37 @@ export class Game {
     }, 550);
   }
 
+  /** 时停罐：每局一次，时停 N 秒。期间蓄力速度变慢（更好控制），不改变地图、方块和判定范围之外的任何东西 */
+  activateFreeze() {
+    const pk = this.perk;
+    if (!pk || !pk.timeStop || this.freezeUsed || this.freezeLeft > 0) return;
+    if (this.state !== 'ready' && this.state !== 'charging') return;
+    this.freezeUsed = true;
+    this.freezeLeft = pk.timeStop;
+    this.ui.showFreeze(pk.timeStop);
+    this.ui.setFreezeBtn(false);
+    playSfx(this.sound, 'icechime', 1, 1);
+    this._vibrate([20, 30, 20]);
+    this._updatePerkHud();
+  }
+
+  _endFreeze(announce) {
+    const was = this.freezeLeft > 0;
+    this.freezeLeft = 0;
+    if (this.ui) { this.ui.hideFreeze(); }
+    if (was && announce) { playSfx(this.sound, 'tock', 1, 1); this._updatePerkHud(); }
+  }
+
   /** 计分板下方的能力状态 */
   _updatePerkHud() {
     const pk = this.perk;
     if (!pk || !pk.id) { this.ui.setPerk(null); return; }
     let status = '';
-    if (pk.revive) {
+    const canFreeze = !!pk.timeStop && !this.freezeUsed && (this.state === 'ready' || this.state === 'charging');
+    this.ui.setFreezeBtn(canFreeze && !(this.freezeLeft > 0));
+    if (pk.timeStop) {
+      status = this.freezeLeft > 0 ? t('perk_freeze_on') : this.freezeUsed ? t('perk_used') : t('perk_ready');
+    } else if (pk.revive) {
       if (this.reviveUsed) status = t('perk_used');
       else if (pk.reviveAfter && this.score < pk.reviveAfter) status = t('perk_after', { n: pk.reviveAfter });
       else status = t('perk_ready');
@@ -341,6 +368,8 @@ export class Game {
 
   _gameOver() {
     this.state = 'over';
+    this._endFreeze(false);
+    this.ui.setFreezeBtn(false);
     this._endTrial(false);
     this._stopMusic(0.9);
     const record = this.score > this.bestAtStart;
@@ -499,6 +528,7 @@ export class Game {
     this.player.place(0, CONFIG.BLOCK_HEIGHT, 0);
     this.score = 0; this.combo = 0; this.perfects = 0; this.chargeT = 0;
     this.reviveUsed = false; this.thunderReady = false; this.thunderCount = 0; this.lastResult = null;
+    this.freezeUsed = false; this.freezeLeft = 0; this._endFreeze(false);
     if (this.skins) this._refreshPerk();
     this.ui && (this.ui.setScore(0), this.ui.setCombo(0), this.ui.hideCharge());
     this._comboFx();
@@ -518,6 +548,7 @@ export class Game {
     this.ui.hideStart();
     this._startMusic();
     this.state = 'ready';
+    this._updatePerkHud();
   }
 
   goHome() {
@@ -616,10 +647,11 @@ export class Game {
 
   update(dt) {
     this.tweens.update(dt);
+    if (this.freezeLeft > 0) { this.freezeLeft -= dt; if (this.freezeLeft <= 0) this._endFreeze(true); }
     this._autoPlay(dt);
 
     if (this.state === 'charging') {
-      this.chargeT = Math.min(CONFIG.CHARGE_MAX_TIME, this.chargeT + dt * this.perk.chargeMul);
+      this.chargeT = Math.min(CONFIG.CHARGE_MAX_TIME, this.chargeT + dt * this.perk.chargeMul * (this.freezeLeft > 0 ? this.perk.freezeChargeMul : 1));
       const k = this.chargeT / CONFIG.CHARGE_MAX_TIME;
       const cur = this.blocks.current;
       this.blocks.squash(cur, k);

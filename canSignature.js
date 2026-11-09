@@ -75,6 +75,13 @@ export const SIGNATURE = {
       zh: '🎵 8-bit 芯片音乐 · ✨ 像素方块爆裂', en: '🎵 8-bit chiptune · ✨ Pixel burst', ar: '🎵 موسيقى 8-بت · ✨ انفجار بكسلات',
     },
   },
+  chrono: {
+    rarity: 'epic', burst: 'shards', color: '#fca311', theme: 'chrome', sfx: 'ping',
+    word: { zh: '定格！', en: 'FREEZE!', ar: 'تجمّد!' },
+    desc: {
+      zh: '🎵 清爽浩室 · ✨ 琥珀碎片闪光', en: '🎵 Clean house groove · ✨ Amber shard glints', ar: '🎵 هاوس منعش · ✨ شظايا كهرمانية',
+    },
+  },
   chrome: {
     rarity: 'rare', burst: 'shards', color: '#dfe6f3', theme: 'chrome', sfx: 'ping',
     word: { zh: '镜面闪耀！', en: 'SHINY!', ar: 'لامع!' },
