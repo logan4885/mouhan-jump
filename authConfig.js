@@ -3,6 +3,6 @@
 //  facebookAppId  : Meta for Developers -> 你的应用 -> 应用 ID（一串数字）
 // 后端（Render 环境变量）也要填同样的值：GOOGLE_CLIENT_ID、FB_APP_ID。
 export const AUTH = {
-  googleClientId: '',
+  googleClientId: '686344606277-5phkdisjahi6r53q74ki2j6c93dh9k1k.apps.googleusercontent.com',
   facebookAppId: '',
 };
