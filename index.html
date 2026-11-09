@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
   <meta name="theme-color" content="#cfe9ff">
   <title>跳一跳 3D</title>
-  <link rel="stylesheet" href="style.css?v=20261109f">
+  <link rel="stylesheet" href="style.css?v=20261110a">
   <!-- Three.js 以 ES Module 方式从 CDN 引入 -->
   <script type="importmap">
     { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }
@@ -51,6 +51,7 @@
         <button class="btn" id="btnSkinsStart" data-i18n="skins">🎨 皮肤</button>
         <button class="btn" id="btnRankStart" data-i18n="rank">🏆 排行榜</button>
       </div>
+      <button class="link-btn" id="btnAcctStart" data-i18n="ac_start">👤 登录，保存进度</button>
       <p class="start-best"><span data-i18n="my_best">我的最高分</span> <b id="startBest">0</b></p>
       <p class="controls">
         <span class="only-desktop" data-i18n="ctl_desktop">电脑：按住鼠标左键或空格键</span>
@@ -112,6 +113,36 @@
           <button class="btn" type="submit" data-i18n="redeem_btn">兑换</button>
         </form>
         <p class="redeem-msg" id="redeemMsg" role="status" aria-live="polite"></p>
+        <details class="backup" id="backupBox">
+          <summary data-i18n="bk_title">👤 账号登录 / 备份进度</summary>
+          <div id="acctBox">
+            <p class="bk-hint" data-i18n="ac_hint">登录后，换手机或清除浏览器也能找回最高分、解锁的罐子和 VIP。不登录照常能玩。我们不保存你的邮箱和密码。</p>
+            <div id="acctOut" class="auth-btns">
+              <div id="authGoogle"></div>
+              <button type="button" class="btn fb hidden" id="authFb" data-i18n="ac_fb">用 Facebook 登录</button>
+            </div>
+            <div id="acctIn" class="hidden">
+              <p class="acct-name" id="acctName"></p>
+              <div class="bk-row">
+                <button type="button" class="btn" id="acctLogout" data-i18n="ac_logout">退出登录</button>
+                <button type="button" class="btn danger" id="acctDelete" data-i18n="ac_delete">删除我的数据</button>
+              </div>
+            </div>
+            <p class="redeem-msg" id="acctMsg" role="status" aria-live="polite"></p>
+            <p class="bk-hint"><a href="privacy.html" target="_blank" rel="noopener" data-i18n="ac_privacy">隐私政策</a></p>
+          </div>
+          <p class="bk-sub" data-i18n="bk_sub">备用方式：恢复码（不用登录）</p>
+          <p class="bk-hint" data-i18n="bk_hint">换手机或清除浏览器前，先复制恢复码；在新设备上粘贴，就能找回最高分和已解锁的罐子。恢复码相当于你的密码，不要发给别人。</p>
+          <div class="bk-row">
+            <button type="button" class="btn" id="bkCopy" data-i18n="bk_copy">复制恢复码</button>
+            <button type="button" class="btn" id="bkLink" data-i18n="bk_link">复制恢复链接</button>
+          </div>
+          <form class="redeem" id="bkForm" autocomplete="off">
+            <input id="bkInput" placeholder="粘贴恢复码" data-i18n-ph="bk_ph" spellcheck="false" autocapitalize="off" dir="ltr">
+            <button class="btn" type="submit" data-i18n="bk_btn">恢复</button>
+          </form>
+          <p class="redeem-msg" id="bkMsg" role="status" aria-live="polite"></p>
+        </details>
       </div>
     </div>
 
@@ -145,7 +176,7 @@
     </div>
   </div>
 
-  <script type="module" src="main.js?v=20261109f"></script>
+  <script type="module" src="main.js?v=20261110a"></script>
   <!-- 兜底：Three.js 或模块加载失败时给出提示 -->
   <script>
     setTimeout(function () { if (!window.__jumpReady) document.getElementById('nogl').classList.remove('hidden'); }, 9000);

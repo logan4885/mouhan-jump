@@ -1,19 +1,22 @@
 // UI 层：开始界面、计分板、蓄力条、飘字、结算弹窗、皮肤商店（含兑换码）、排行榜、语言切换
-import { PLAYER_SKINS, BLOCK_STYLES, SkinPreview } from './SkinManager.js?v=20261109f';
-import { fetchTop, fetchPlayer, syncPlayer, buildBoard, LEADERBOARD_API } from './Leaderboard.js?v=20261109f';
-import { Storage } from './Storage.js?v=20261109f';
-import { escapeHtml } from './utils.js?v=20261109f';
-import { t, L, setLang, onLangChange, applyStatic } from './i18n.js?v=20261109f';
-import { PERKS } from './canPerks.js?v=20261109f';
-import { SIGNATURE, RARITY, getSignature } from './canSignature.js?v=20261109f';
-import { SHOP } from './shop.js?v=20261109f';
+import { PLAYER_SKINS, BLOCK_STYLES, SkinPreview } from './SkinManager.js?v=20261110a';
+import { fetchTop, fetchPlayer, syncPlayer, buildBoard, LEADERBOARD_API } from './Leaderboard.js?v=20261110a';
+import { Storage } from './Storage.js?v=20261110a';
+import { escapeHtml } from './utils.js?v=20261110a';
+import { t, L, setLang, getLang, onLangChange, applyStatic } from './i18n.js?v=20261110a';
+import { PERKS } from './canPerks.js?v=20261110a';
+import { SIGNATURE, RARITY, getSignature } from './canSignature.js?v=20261110a';
+import { SHOP } from './shop.js?v=20261110a';
+import { recoveryAvailable, makeCode, makeLink, restore } from './Recovery.js?v=20261110a';
+import { accountAvailable, PROVIDER_NAME, completeLogin, renderGoogleButton, prepareFacebook, facebookLogin, logout, deleteMyData } from './Account.js?v=20261110a';
+import { AUTH } from './authConfig.js?v=20261110a';
 
 const $ = (id) => document.getElementById(id);
 
 export class UIManager {
   /**
    * @param {object} handlers { onStart, onRestart, onHome }
-   * @param {import('./SkinManager.js?v=20261109f').SkinManager} skins
+   * @param {import('./SkinManager.js?v=20261110a').SkinManager} skins
    */
   constructor(handlers, skins) {
     this.h = handlers;
@@ -109,6 +112,74 @@ export class UIManager {
       this._redeem(this.el.redeemInput.value);
     });
     window.addEventListener('resize', () => { if (this.preview && !this.el.skin.classList.contains('hidden')) this.preview.resize(); });
+    this._initBackup();
+  }
+
+  /* ---------- 账号登录（Google / Facebook，可选） ---------- */
+  _initAccount(box) {
+    const wrap = $('acctBox');
+    if (!accountAvailable()) { wrap.classList.add('hidden'); return; }
+    const msg = $('acctMsg');
+    const say = (text, cls = '') => { msg.textContent = text; msg.className = 'redeem-msg ' + cls; };
+    const finish = async (provider, token) => {
+      say('…');
+      const r = await completeLogin(provider, token);
+      if (r.status === 'ok') { say(t('ac_ok'), 'ok'); setTimeout(() => location.reload(), 900); return; }
+      say(t('ac_' + r.status), 'err');
+    };
+    this._renderAccount = () => {
+      const acc = Storage.getAccount();
+      $('acctOut').classList.toggle('hidden', !!acc);
+      $('acctIn').classList.toggle('hidden', !acc);
+      if (acc) $('acctName').textContent = t('ac_in', { name: acc.name || '—', p: PROVIDER_NAME[acc.provider] || acc.provider });
+    };
+    this._renderAccount();
+    $('authFb').classList.toggle('hidden', !AUTH.facebookAppId);
+    let prepared = false;
+    box.addEventListener('toggle', () => {       // 展开时才加载第三方脚本，不拖慢游戏启动
+      if (!box.open || prepared || Storage.getAccount()) return;
+      prepared = true;
+      if (AUTH.googleClientId) renderGoogleButton($('authGoogle'), getLang(), (tok) => finish('google', tok)).catch(() => say(t('ac_net'), 'err'));
+      if (AUTH.facebookAppId) prepareFacebook().catch(() => { /* 点击时再提示 */ });
+    });
+    $('authFb').addEventListener('click', () => { if (!facebookLogin((tok) => finish('facebook', tok))) say(t('ac_net'), 'err'); });
+    $('acctLogout').addEventListener('click', () => { if (window.confirm(t('ac_logout_q'))) { logout(); location.reload(); } });
+    $('acctDelete').addEventListener('click', async () => {
+      if (!window.confirm(t('ac_delete_q'))) return;
+      const r = await deleteMyData();
+      if (r.status === 'ok') { say(t('ac_deleted'), 'ok'); setTimeout(() => location.reload(), 700); } else say(t('ac_net'), 'err');
+    });
+  }
+
+  /* ---------- 备份 / 恢复进度 ---------- */
+  _initBackup() {
+    const box = $('backupBox');
+    $('btnAcctStart').addEventListener('click', () => { this._saveNick(); box.open = true; this.openSkins(); setTimeout(() => box.scrollIntoView({ block: 'center' }), 120); });
+    if (!recoveryAvailable()) { box.classList.add('hidden'); $('btnAcctStart').classList.add('hidden'); return; }
+    this._initAccount(box);
+    const input = $('bkInput'), msg = $('bkMsg');
+    const say = (text, cls = '') => { msg.textContent = text; msg.className = 'redeem-msg ' + cls; };
+    const copy = async (text) => {
+      try { await navigator.clipboard.writeText(text); say(t('bk_copied'), 'ok'); }
+      catch (e) { input.value = text; input.focus(); input.select(); say(t('bk_manual')); }
+    };
+    $('bkCopy').addEventListener('click', () => copy(makeCode()));
+    $('bkLink').addEventListener('click', () => copy(makeLink()));
+    $('bkForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = e.target.querySelector('button'); btn.disabled = true;
+      const r = await restore(input.value);
+      btn.disabled = false;
+      if (r.status === 'ok') { say(t('bk_ok'), 'ok'); setTimeout(() => location.reload(), 900); return; }
+      say(t('bk_' + r.status), 'err');
+    });
+    // 通过“恢复链接”打开：自动展开并填好，让玩家点一下确认（不会自动覆盖本机进度）
+    const m = location.hash.match(/^#restore=(.+)$/i);
+    if (m) {
+      input.value = m[1];
+      try { history.replaceState(null, '', location.pathname + location.search); } catch (e) { /* 忽略 */ }
+      setTimeout(() => { box.open = true; this.openSkins(); say(t('bk_found')); }, 400);
+    }
   }
 
   /** 是否有弹窗 / 菜单遮挡（遮挡时不响应游戏操作） */
@@ -125,6 +196,7 @@ export class UIManager {
     if (!this.el.rank.classList.contains('hidden')) this.openRank();
     if (!this.el.player.classList.contains('hidden')) this._closeModal(this.el.player);
     this.el.redeemMsg.textContent = '';
+    if (this._renderAccount) this._renderAccount();
   }
 
   /* ---------- 开始 / HUD ---------- */

@@ -38,6 +38,18 @@ export const Storage = {
     }
     return p;
   },
+  /** 恢复进度时换成另一个身份（来自恢复码） */
+  setPlayer(id, secret) { write('player', { id, secret }); },
+  /** 当前登录的第三方账号 { provider, name }；没登录为 null */
+  getAccount() { const v = read('account', null); return v && v.provider ? v : null; },
+  setAccount(a) { write('account', a); },
+  /** 退出登录 / 删除数据后：清空本机进度和身份（语言、静音保留），下次打开会生成全新的玩家 */
+  clearLocalProgress() {
+    ['player', 'highScore', 'skins:v2', 'nickname', 'stats', 'usedCodes', 'account'].forEach((k) => {
+      delete memory[k];
+      try { localStorage.removeItem(PREFIX + k); } catch (e) { /* 忽略 */ }
+    });
+  },
   /** 数据变化时的回调（最高分 / 皮肤 / 昵称 / 统计），用于同步到服务器 */
   onChange(fn) { changeListeners.push(fn); },
 

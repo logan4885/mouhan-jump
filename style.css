@@ -414,3 +414,19 @@ body.theme-neon #hud .perk { background: rgba(20,18,43,.8); color: #f2f0ff; bord
 .over-vip-left { font-size: 13px; font-weight: 900; color: #b24a00; font-variant-numeric: tabular-nums; }
 .vip-btn { font-size: 14px; }
 .vip-btn.buy { text-decoration: none; background: #25d366; color: #fff; border-color: var(--ink); display: block; }
+
+/* 备份 / 恢复进度 */
+.backup { margin-top: 14px; border-top: 2px dashed #d9d3ee; padding-top: 10px; text-align: start; }
+.backup summary { cursor: pointer; font-weight: 800; font-size: 14px; color: var(--muted); list-style: none; text-align: center; }
+.backup summary::-webkit-details-marker { display: none; }
+.backup .bk-hint { font-size: 12.5px; line-height: 1.5; color: var(--muted); margin: 8px 0; -webkit-user-select: text; user-select: text; }
+.backup .bk-row { display: flex; gap: 8px; margin-bottom: 4px; }
+.backup .bk-row .btn { flex: 1; padding: 9px 8px; font-size: 13px; }
+.backup input { -webkit-user-select: text; user-select: text; }
+.backup .bk-sub { margin: 12px 0 6px; font-size: 12.5px; font-weight: 800; color: var(--muted); text-align: center; }
+.auth-btns { display: flex; flex-direction: column; align-items: center; gap: 8px; margin: 8px 0 2px; min-height: 44px; }
+.btn.fb { background: #1877f2; color: #fff; width: 240px; max-width: 100%; border-radius: 999px; padding: 11px 14px; font-size: 14px; }
+.btn.danger { color: #d8343f; }
+.acct-name { margin: 6px 0 8px; font-weight: 800; text-align: center; font-size: 14px; }
+.backup a { color: var(--muted); font-weight: 700; }
+.link-btn { margin-top: 8px; background: none; border: 0; color: var(--muted); font: inherit; font-weight: 800; font-size: 13px; text-decoration: underline; cursor: pointer; padding: 6px 10px; }
