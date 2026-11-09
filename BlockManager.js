@@ -1,15 +1,15 @@
 // 方块管理：生成（正方体 / 圆柱体，随机颜色与方向）、落点判定、挤压回弹、回收
 import * as THREE from 'three';
-import { CONFIG } from './config.js?v=20261110c';
-import { rand, clamp, Ease, disposeObject } from './utils.js?v=20261110c';
+import { CONFIG } from './config.js?v=20261110f';
+import { rand, clamp, Ease, disposeObject } from './utils.js?v=20261110f';
 
 const DIRS = { x: new THREE.Vector3(1, 0, 0), z: new THREE.Vector3(0, 0, -1) };
 
 export class BlockManager {
   /**
    * @param {THREE.Scene} scene
-   * @param {import('./SkinManager.js?v=20261110c').SkinManager} skins
-   * @param {import('./utils.js?v=20261110c').Tweens} tweens
+   * @param {import('./SkinManager.js?v=20261110f').SkinManager} skins
+   * @param {import('./utils.js?v=20261110f').Tweens} tweens
    */
   constructor(scene, skins, tweens) {
     this.scene = scene;
