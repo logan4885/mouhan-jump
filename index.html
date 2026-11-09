@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
   <meta name="theme-color" content="#cfe9ff">
   <title>跳一跳 3D</title>
-  <link rel="stylesheet" href="style.css?v=20261110a">
+  <link rel="stylesheet" href="style.css?v=20261110b">
   <!-- Three.js 以 ES Module 方式从 CDN 引入 -->
   <script type="importmap">
     { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }
@@ -125,7 +125,6 @@
               <p class="acct-name" id="acctName"></p>
               <div class="bk-row">
                 <button type="button" class="btn" id="acctLogout" data-i18n="ac_logout">退出登录</button>
-                <button type="button" class="btn danger" id="acctDelete" data-i18n="ac_delete">删除我的数据</button>
               </div>
             </div>
             <p class="redeem-msg" id="acctMsg" role="status" aria-live="polite"></p>
@@ -176,7 +175,7 @@
     </div>
   </div>
 
-  <script type="module" src="main.js?v=20261110a"></script>
+  <script type="module" src="main.js?v=20261110b"></script>
   <!-- 兜底：Three.js 或模块加载失败时给出提示 -->
   <script>
     setTimeout(function () { if (!window.__jumpReady) document.getElementById('nogl').classList.remove('hidden'); }, 9000);
