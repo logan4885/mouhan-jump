@@ -8,14 +8,14 @@
 //   GET  {baseUrl}/api/player/:id
 //        -> { ok, player: { id, nickname, score, rank, perfects, games, equipped, unlocked[], total, avatar, color } }
 
-import { Storage } from './Storage.js';
+import { Storage } from './Storage.js?v=20261109c';
 
 export const LEADERBOARD_API = {
   baseUrl: 'https://mouhan-jump-api.onrender.com',            // 部署后端后填这里，例如 'https://jump3d-api.onrender.com'；为空则使用 Mock 数据
   topPath: '/api/leaderboard/top',
   syncPath: '/api/sync',
   playerPath: '/api/player/',
-  timeoutMs: 8000,
+  timeoutMs: 15000,          // Render 免费服务器休眠后首次唤醒较慢
   syncDelayMs: 1500,
 };
 
@@ -74,6 +74,11 @@ export async function syncPlayer() {
   } catch (e) {
     return { ok: false, error: e.message };
   }
+}
+
+// 页面一打开就先“叫醒”后端（免费服务器闲置会休眠），等玩完一局时它已经醒了
+if (typeof window !== 'undefined' && LEADERBOARD_API.baseUrl) {
+  fetch(LEADERBOARD_API.baseUrl + '/api/health').catch(() => {});
 }
 
 // 数据一变就稍等片刻再同步（合并短时间内的多次改动）
