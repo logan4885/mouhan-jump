@@ -203,7 +203,7 @@ export class UIManager {
     else return;
     this.el.overVipText.innerHTML = html;
     this.el.vipCode.textContent = t('vip_code');
-    this.el.vipBuy.textContent = t('vip_buy', { price: SHOP.price });
+    this.el.vipBuy.textContent = t('vip_buy');
     this.el.vipBuy.href = SHOP.buyUrl;
     // 只有填写了真实截止时间才显示倒计时
     const end = SHOP.offerEndsAt ? Date.parse(SHOP.offerEndsAt) : NaN;

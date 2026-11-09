@@ -15,6 +15,9 @@ import { PLAYER_SKINS } from './SkinManager.js';
 import { Music, playSfx } from './SkinAudio.js';
 import { SignatureFX } from './SignatureFX.js';
 
+// 踩中星号方块后的免费体验时长（秒）
+const TRIAL_SEC = 8;
+
 // 状态：menu 首页 | ready 等待按压 | charging 蓄力 | jumping 空中 | falling 摔落 | over 结算
 export class Game {
   constructor(canvas) {
@@ -394,7 +397,7 @@ export class Game {
     const skin = this._trialSkin();
     if (!skin) return;
     this._endTrial(false);
-    this.trial = { id: skin.id, timer: setTimeout(() => this._endTrial(true), 3000) };
+    this.trial = { id: skin.id, timer: setTimeout(() => this._endTrial(true), TRIAL_SEC * 1000) };
     this.player.setSkin(skin.id);
     this.sig = getSignature(skin.id);
     this._startMusic();
@@ -402,7 +405,7 @@ export class Game {
     if (this.fx) { this.fx.burst('coins', sp.x, sp.y, { color: '#ffc83d', mul: 2.2, flash: true, combo: 3 }); this.fx.fizz(sp.x, sp.y, 2); }
     playSfx(this.sound, 'popcan', 3, 1);
     this._vibrate([30, 40, 40]);
-    this.ui.showTrial(L(skin.name), 3);
+    this.ui.showTrial(L(skin.name), TRIAL_SEC);
   }
 
   /** 3 秒到了（或回合结束）：金罐消失，变回原来的罐子 */
