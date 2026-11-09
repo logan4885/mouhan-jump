@@ -11,6 +11,8 @@ export const REDEEM_CODES = {
   'f1a39f8740a91f3f': '*',
   // 测试码：清空本机已解锁的兑换罐、已用兑换码，回到“新玩家”状态（测完同样可以删掉）
   '9a4b0a0c795e94d2': '!reset',
+  // Holo Rainbow 专属码（指定解锁 holo）
+  '93a731d48777ae6a': 'holo',
   'f6ac43b49f0c6d22': 'random',
   '25fcf710ec039f3a': 'random',
   'f8d48ec479605412': 'random',

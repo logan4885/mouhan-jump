@@ -1,11 +1,11 @@
 // 皮肤系统：角色外观 / 方块材质的定义、解锁规则、本地存储、预览渲染
 import * as THREE from 'three';
-import { Storage } from './Storage.js?v=20261109c';
-import { CONFIG } from './config.js?v=20261109c';
-import { pick } from './utils.js?v=20261109c';
-import { CAN_SKINS } from './canSkins.js?v=20261109c';
-import { buildCan, tickCan } from './CanModel.js?v=20261109c';
-import { lookupCode, hashCode } from './codes.js?v=20261109c';
+import { Storage } from './Storage.js?v=20261109e';
+import { CONFIG } from './config.js?v=20261109e';
+import { pick } from './utils.js?v=20261109e';
+import { CAN_SKINS } from './canSkins.js?v=20261109e';
+import { buildCan, tickCan } from './CanModel.js?v=20261109e';
+import { lookupCode, hashCode } from './codes.js?v=20261109e';
 
 /* ================= 角色皮肤：易拉罐（数据在 canSkins.js） ================= */
 export const PLAYER_SKINS = CAN_SKINS.map((s) => ({ ...s, build: () => buildCan(s) }));
