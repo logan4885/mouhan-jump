@@ -379,9 +379,12 @@ export class Game {
 
   _rollTrial(score) {
     this._sinceTrial++;
-    if (this.state === 'menu' || score < 4 || this.trial || this._trialsThisRound >= 3) return false;
-    if (this._sinceTrial < 8 || Math.random() > 0.35) return false;
-    if (!this._trialSkin()) return false;
+    if (this.state === 'menu' || this.trial || this._trialsThisRound >= 3 || !this._trialSkin()) return false;
+    // 网址加 #trial：第 2 个方块起必出星号方块，方便自己测试
+    const force = (location.hash || '').includes('trial') && this._trialsThisRound < 3 && this._sinceTrial >= 2;
+    // 正常节奏：每局第一个在 3~6 分左右出现；之后每隔 5 个方块起开始 50% 抽取，12 个方块内必出
+    const due = score >= 3 && this._sinceTrial >= 5 && (Math.random() < 0.5 || this._sinceTrial >= 12);
+    if (!force && !due) return false;
     this._sinceTrial = 0; this._trialsThisRound++;
     return true;
   }
@@ -507,7 +510,7 @@ export class Game {
     this.bestAtStart = this.best;
     this.stopPreview();
     this._endTrial(false);
-    this._sinceTrial = 0; this._trialsThisRound = 0;
+    this._sinceTrial = 3; this._trialsThisRound = 0;
     this.ui.setBest(this.best);
     this.ui.hideStart();
     this._startMusic();
