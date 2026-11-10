@@ -1,7 +1,8 @@
 // 入口：创建游戏实例
-import { Game } from './Game.js?v=20261110q';
-import { Storage } from './Storage.js?v=20261110q';
-import { pullProgress } from './Account.js?v=20261110q';
+import { Game } from './Game.js?v=20261110r';
+import { Storage } from './Storage.js?v=20261110r';
+import { pullProgress } from './Account.js?v=20261110r';
+import { Room } from './Room.js?v=20261110r';
 
 function showError(err) {
   console.error(err);
@@ -11,6 +12,7 @@ function showError(err) {
 try {
   const game = new Game(document.getElementById('game'));
   game.start();
+  window.__room = new Room(game);   // 同图比赛
   window.__game = game;      // 方便在控制台调试
   window.__jumpReady = true;
 
