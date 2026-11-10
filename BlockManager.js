@@ -1,7 +1,7 @@
 // 方块管理：生成（正方体 / 圆柱体，随机颜色与方向）、落点判定、挤压回弹、回收
 import * as THREE from 'three';
-import { CONFIG } from './config.js?v=20261110u';
-import { rand, clamp, Ease, disposeObject } from './utils.js?v=20261110u';
+import { CONFIG } from './config.js?v=20261110v';
+import { rand, clamp, Ease, disposeObject } from './utils.js?v=20261110v';
 
 function mulberry32(a) {
   return () => {
@@ -17,8 +17,8 @@ const DIRS = { x: new THREE.Vector3(1, 0, 0), z: new THREE.Vector3(0, 0, -1) };
 export class BlockManager {
   /**
    * @param {THREE.Scene} scene
-   * @param {import('./SkinManager.js?v=20261110u').SkinManager} skins
-   * @param {import('./utils.js?v=20261110u').Tweens} tweens
+   * @param {import('./SkinManager.js').SkinManager} skins
+   * @param {import('./utils.js').Tweens} tweens
    */
   constructor(scene, skins, tweens) {
     this.scene = scene;
@@ -28,6 +28,9 @@ export class BlockManager {
     this.currentIndex = 0;
     this.seed = null;      // 同图比赛：非空时用固定种子生成地图（所有人拿到一模一样的方块）
     this.rng = null;
+    this.sizeBoostLeft = 0;  // Roguelike：接下来 N 个方块变宽（绝对防御）
+    this.diamondLeft = 0;    // Roguelike：接下来 N 个方块是 2 倍积分的钻石方块
+    this.nearNext = false;   // Roguelike：下一个方块用最近距离（安全气囊）
     this.trialRoll = null; // Game 注入：() => boolean，决定下一个方块是不是“24K 星号方块”
   }
 
@@ -36,6 +39,7 @@ export class BlockManager {
 
   /** 清空并生成开局的两个方块 */
   reset() {
+    this.sizeBoostLeft = 0; this.diamondLeft = 0; this.nearNext = false;
     this.rng = this.seed == null ? null : mulberry32(this.seed);
     this.blocks.forEach((b) => this._destroy(b));
     this.blocks = [];
@@ -56,13 +60,16 @@ export class BlockManager {
     const shrink = score * CONFIG.SIZE_SHRINK_PER_SCORE;
     const maxSize = clamp(CONFIG.BLOCK_MAX_SIZE - shrink, 1.25, CONFIG.BLOCK_MAX_SIZE);
     const minSize = clamp(CONFIG.BLOCK_MIN_SIZE - shrink * 0.6, 1.0, CONFIG.BLOCK_MIN_SIZE);
-    const size = rnd(minSize, maxSize);
+    let size = rnd(minSize, maxSize);
+    if (this.sizeBoostLeft > 0) { size = Math.min(size * 1.3, 3.4); this.sizeBoostLeft--; }
     // 保证两个方块之间至少留出一点空隙
     const minGap = Math.max(CONFIG.BLOCK_MIN_GAP, cur.size / 2 + size / 2 + 0.5);
-    const gap = rnd(minGap, Math.max(minGap + 0.3, CONFIG.BLOCK_MAX_GAP));
+    let gap = rnd(minGap, Math.max(minGap + 0.3, CONFIG.BLOCK_MAX_GAP));
+    if (this.nearNext) { gap = minGap; this.nearNext = false; }
     const block = this._create({ x: cur.x + dir.x * gap, z: cur.z + dir.z * gap, shape, size, animate });
     block.dirKey = dirKey;
     if (this.trialRoll && this.trialRoll(score)) this._markTrial(block);
+    if (this.diamondLeft > 0) { this.diamondLeft--; this.markDiamond(block); }
     this.blocks.push(block);
     return block;
   }
@@ -116,6 +123,56 @@ export class BlockManager {
     this._goldify(block);
   }
 
+  /** Roguelike：钻石方块（落上去 2 倍积分）——青色发光 + 顶面一颗 ◆ */
+  markDiamond(block) {
+    if (!block || block.diamond || block.trial) return;
+    block.diamond = true;
+    this._glow(block, '#5fe7ff', '#0a6a8a', '◆', '#e8fdff');
+  }
+
+  /** Roguelike：量子方块（位置偏移，命中 3 倍积分）——紫色发光 + 顶面一颗 ✦ */
+  markQuantum(block) {
+    if (!block || block.quantum || block.trial) return;
+    block.quantum = true;
+    this._glow(block, '#b08cff', '#4a2a9a', '✦', '#f3ebff');
+  }
+
+  /** 把下一个方块沿“与跳跃方向垂直”的方向偏移 frac × 间距（量子纠缠）；方向随机 */
+  offsetNext(frac) {
+    const n = this.next, c = this.current;
+    if (!n || !c) return;
+    const gap = Math.hypot(n.x - c.x, n.z - c.z);
+    const s = (Math.random() < 0.5 ? -1 : 1) * frac * gap;
+    if (n.dirKey === 'x') n.z += s; else n.x += s;
+    n.root.position.x = n.x; n.root.position.z = n.z;
+    this.markQuantum(n);
+  }
+
+  /** 踩过之后去掉钻石 / 量子外观 */
+  clearMark(block) {
+    if (!block || (!block.diamond && !block.quantum)) return;
+    block.diamond = false; block.quantum = false;
+    if (block.star) { block.root.remove(block.star); disposeObject(block.star); block.star = null; }
+    const old = block.mesh;
+    const fresh = this._buildMesh(block.shape, block.size);
+    block.root.remove(old); disposeObject(old);
+    block.root.add(fresh); block.mesh = fresh;
+  }
+
+  _glow(block, color, emissive, sym, symColor) {
+    block.mesh.material = new THREE.MeshStandardMaterial({ color, metalness: 0.55, roughness: 0.2, emissive, emissiveIntensity: 0.6 });
+    if (block.star) { block.root.remove(block.star); disposeObject(block.star); }
+    const cv = document.createElement('canvas'); cv.width = cv.height = 128;
+    const g = cv.getContext('2d');
+    g.font = '96px "Segoe UI Symbol","Apple Symbols",sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.shadowColor = symColor; g.shadowBlur = 16; g.fillStyle = symColor; g.fillText(sym, 64, 68);
+    const star = new THREE.Mesh(new THREE.PlaneGeometry(block.size * 0.7, block.size * 0.7), new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(cv), transparent: true, depthWrite: false }));
+    star.rotation.x = -Math.PI / 2;
+    star.position.y = CONFIG.BLOCK_HEIGHT + 0.03;
+    block.root.add(star);
+    block.star = star;
+  }
+
   _goldify(block) {
     const gold = new THREE.MeshStandardMaterial({ color: '#ffc83d', metalness: 0.85, roughness: 0.22, emissive: '#8a5a00', emissiveIntensity: 0.55 });
     block.mesh.material = gold;
@@ -152,6 +209,8 @@ export class BlockManager {
       b.root.remove(old); disposeObject(old);
       b.root.add(fresh); b.mesh = fresh;
       if (b.trial) this._goldify(b);
+      else if (b.diamond) { b.diamond = false; this.markDiamond(b); }
+      else if (b.quantum) { b.quantum = false; this.markQuantum(b); }
     });
   }
 

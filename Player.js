@@ -1,10 +1,10 @@
 // 角色：外观、蓄力压缩、抛物线跳跃 + 空翻、落地缓冲、摔落动画
 import * as THREE from 'three';
-import { CONFIG } from './config.js?v=20261110u';
-import { Ease, disposeObject } from './utils.js?v=20261110u';
-import { PLAYER_SKINS } from './SkinManager.js?v=20261110u';
-import { tickCan } from './CanModel.js?v=20261110u';
-import { Particles } from './Particles.js?v=20261110u';
+import { CONFIG } from './config.js?v=20261110v';
+import { Ease, disposeObject } from './utils.js?v=20261110v';
+import { PLAYER_SKINS } from './SkinManager.js?v=20261110v';
+import { tickCan } from './CanModel.js?v=20261110v';
+import { Particles } from './Particles.js?v=20261110v';
 
 const UP = new THREE.Vector3(0, 1, 0);
 const GRAVITY = 26;
@@ -78,7 +78,7 @@ export class Player {
     this.dir = new THREE.Vector3(target.x - this.start.x, 0, target.z - this.start.z).normalize();
     if (!isFinite(this.dir.x)) this.dir.set(1, 0, 0);
     this.axis = new THREE.Vector3().crossVectors(UP, this.dir).normalize();
-    this.duration = (CONFIG.JUMP_BASE_TIME + dist * CONFIG.JUMP_TIME_PER_UNIT) * ((opts && opts.durMul) || 1);
+    this.duration = (CONFIG.JUMP_BASE_TIME + dist * CONFIG.JUMP_TIME_PER_UNIT) * ((opts && opts.durMul) || 1) + ((opts && opts.durAdd) || 0);
     this.height = CONFIG.JUMP_BASE_HEIGHT + dist * CONFIG.JUMP_HEIGHT_PER_UNIT;
     this.t = 0;
     this.opts = opts;

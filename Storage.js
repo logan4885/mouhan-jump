@@ -48,7 +48,7 @@ export const Storage = {
   setSynced(o) { write('synced', o); },
   /** 退出登录 / 删除数据后：清空本机进度和身份（语言、静音保留），下次打开会生成全新的玩家 */
   clearLocalProgress() {
-    ['player', 'highScore', 'skins:v2', 'nickname', 'avatar', 'stats', 'usedCodes', 'account', 'synced'].forEach((k) => {
+    ['player', 'highScore', 'skins:v2', 'nickname', 'avatar', 'stats', 'usedCodes', 'account', 'synced', 'rogueBest'].forEach((k) => {
       delete memory[k];
       try { localStorage.removeItem(PREFIX + k); } catch (e) { /* 忽略 */ }
     });
@@ -63,6 +63,10 @@ export const Storage = {
     if (score > this.getHighScore()) { write('highScore', score); return true; }
     return false;
   },
+
+  // ---- Roguelike 模式最高分（单独记录，不同步到总榜）----
+  getRogueBest() { return Number(read('rogueBest', 0)) || 0; },
+  saveRogueBest(score) { if (score > this.getRogueBest()) { write('rogueBest', score); return true; } return false; },
 
   // ---- 皮肤 ----
   getSkinState() {

@@ -1,8 +1,9 @@
 // 入口：创建游戏实例
-import { Game } from './Game.js?v=20261110u';
-import { Storage } from './Storage.js?v=20261110u';
-import { pullProgress } from './Account.js?v=20261110u';
-import { Room } from './Room.js?v=20261110u';
+import { Game } from './Game.js?v=20261110v';
+import { Storage } from './Storage.js?v=20261110v';
+import { pullProgress } from './Account.js?v=20261110v';
+import { Room } from './Room.js?v=20261110v';
+import { RogueUI } from './RogueUI.js?v=20261110v';
 
 function showError(err) {
   console.error(err);
@@ -13,6 +14,7 @@ try {
   const game = new Game(document.getElementById('game'));
   game.start();
   window.__room = new Room(game);   // 同图比赛
+  window.__rogueUI = new RogueUI(game);   // Roguelike 模式
   window.__game = game;      // 方便在控制台调试
   window.__jumpReady = true;
 

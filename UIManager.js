@@ -1,22 +1,23 @@
 // UI 层：开始界面、计分板、蓄力条、飘字、结算弹窗、皮肤商店（含兑换码）、排行榜、语言切换
-import { PLAYER_SKINS, BLOCK_STYLES, SkinPreview } from './SkinManager.js?v=20261110u';
-import { fetchTop, fetchPlayer, syncPlayer, buildBoard, LEADERBOARD_API } from './Leaderboard.js?v=20261110u';
-import { Storage } from './Storage.js?v=20261110u';
-import { escapeHtml } from './utils.js?v=20261110u';
-import { t, L, setLang, getLang, onLangChange, applyStatic } from './i18n.js?v=20261110u';
-import { PERKS } from './canPerks.js?v=20261110u';
-import { SIGNATURE, RARITY, getSignature } from './canSignature.js?v=20261110u';
-import { SHOP } from './shop.js?v=20261110u';
-import { recoveryAvailable, makeCode, makeLink, restore } from './Recovery.js?v=20261110u';
-import { accountAvailable, pullProgress, PROVIDER_NAME, completeLogin, renderGoogleButton, prepareFacebook, facebookLogin, logout } from './Account.js?v=20261110u';
-import { AUTH } from './authConfig.js?v=20261110u';
+import { PLAYER_SKINS, BLOCK_STYLES, SkinPreview } from './SkinManager.js?v=20261110v';
+import { fetchTop, fetchPlayer, syncPlayer, buildBoard, LEADERBOARD_API } from './Leaderboard.js?v=20261110v';
+import { Storage } from './Storage.js?v=20261110v';
+import { escapeHtml } from './utils.js?v=20261110v';
+import { t, L, setLang, getLang, onLangChange, applyStatic } from './i18n.js?v=20261110v';
+import { PERKS } from './canPerks.js?v=20261110v';
+import { SIGNATURE, RARITY, getSignature } from './canSignature.js?v=20261110v';
+import { SHOP } from './shop.js?v=20261110v';
+import { recoveryAvailable, makeCode, makeLink, restore } from './Recovery.js?v=20261110v';
+import { accountAvailable, pullProgress, PROVIDER_NAME, completeLogin, renderGoogleButton, prepareFacebook, facebookLogin, logout } from './Account.js?v=20261110v';
+import { AUTH } from './authConfig.js?v=20261110v';
+import { BUFF_BY_ID, rt } from './Roguelike.js?v=20261110v';
 
 const $ = (id) => document.getElementById(id);
 
 export class UIManager {
   /**
    * @param {object} handlers { onStart, onRestart, onHome }
-   * @param {import('./SkinManager.js?v=20261110u').SkinManager} skins
+   * @param {import('./SkinManager.js').SkinManager} skins
    */
   constructor(handlers, skins) {
     this.h = handlers;
@@ -390,10 +391,19 @@ export class UIManager {
   showGameOver(data) {
     this.lastOver = data;
     this._fillGameOver(data);
-    this._vipHint(data.score);
+    if (data.rogue) this._rogueOverExtras(data.rogue);
+    else { $('overTitle').textContent = t('over_title'); this._vipHint(data.score); }
     this.el.hud.classList.add('hidden');
     this._openModal(this.el.over);
     setTimeout(() => $('btnRestart').focus({ preventScroll: true }), 50);
+  }
+  /** Roguelike 结算：标题、到达层数、本局 Build；不弹“想当 VIP”的提示 */
+  _rogueOverExtras(r) {
+    this._hideVipHint();
+    $('overTitle').textContent = rt('over');
+    const build = r.picks.length ? r.picks.map((id) => BUFF_BY_ID[id].icon).join(' ') : rt('none');
+    this.el.overUnlocked.innerHTML = `<b>${escapeHtml(rt('floors', { n: r.layers }))}</b><br>${escapeHtml(rt('build'))}${escapeHtml(build)}${r.king ? '<br><b>' + escapeHtml(rt('king')) + '</b>' : ''}`;
+    this.el.overUnlocked.classList.remove('hidden');
   }
   _fillGameOver({ score, best, record, perfects, unlocked }) {
     this.el.overScore.textContent = score;

@@ -502,3 +502,41 @@ body.timestop #game { filter: grayscale(.55) contrast(1.1); }
 .btn.pulse { animation: roompulse 1.1s ease-in-out infinite; }
 @keyframes roompulse { 50% { transform: scale(1.03); } }
 .modal.room h2 small { font-size: 13px; color: var(--muted); }
+
+/* ---------- Roguelike 模式 ---------- */
+#btnRogueStart { width: 100%; margin-top: 10px; }
+.rg-bar { position: absolute; z-index: 4; right: 12px; top: calc(16px + var(--safe-top)); display: flex; flex-direction: column; align-items: flex-end; gap: 6px; pointer-events: none; max-width: 46vw; }
+.rg-chip { padding: 3px 10px; border-radius: 999px; background: rgba(43,37,64,.82); color: #fff; font-size: 13px; font-weight: 800; white-space: nowrap; }
+.rg-chip.vip { background: linear-gradient(90deg,#e0a800,#ffd24a); color: #3a2800; }
+.rg-chip.shield { background: #2f7be0; }
+.rg-chip.wind { background: #5a6bd8; }
+.rg-icons { display: flex; flex-wrap: wrap; gap: 4px; justify-content: flex-end; }
+.rg-ic { position: relative; width: 30px; height: 30px; display: grid; place-items: center; font-size: 17px; background: rgba(255,255,255,.88); border: 2.5px solid; border-radius: 10px; }
+.rg-ic small { position: absolute; right: -4px; bottom: -4px; background: var(--ink); color: #fff; border-radius: 999px; font-size: 10px; font-weight: 900; padding: 0 4px; }
+.modal.rgpick { width: min(100%, 420px); padding: 18px 14px 16px; }
+.rg-cards { display: flex; flex-direction: column; gap: 10px; }
+.rg-card { position: relative; display: flex; align-items: center; gap: 12px; text-align: start; padding: 12px 12px 12px 14px; font: inherit; color: var(--ink); background: #fff; border: 3px solid var(--c, var(--ink)); border-radius: 16px; box-shadow: 0 4px 0 var(--c, var(--ink)); cursor: pointer; }
+.rg-card:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--c, var(--ink)); }
+.rg-card .ic { font-size: 34px; line-height: 1; flex: none; }
+.rg-card .tx { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.rg-card .tx b { font-size: 17px; }
+.rg-card .tx em { font-style: normal; font-size: 11px; font-weight: 900; color: var(--c); }
+.rg-card .tx span { font-size: 13px; color: var(--muted); font-weight: 700; line-height: 1.35; }
+.rg-card .k { position: absolute; top: 6px; right: 10px; font-size: 12px; font-weight: 900; color: var(--muted); }
+.rg-reroll { width: 100%; margin-top: 12px; }
+.rg-vipbox { margin: 8px 0 14px; padding: 10px; border: 3px dashed var(--muted); border-radius: 14px; font-size: 13px; font-weight: 800; color: var(--muted); }
+.rg-vipbox.on { border-color: #e0a800; background: #fff8dc; color: #6b4a00; }
+.rg-vipbox div { font-size: 22px; letter-spacing: 4px; margin-bottom: 4px; opacity: .55; }
+.rg-vipbox.on div { opacity: 1; }
+.rg-vipbox p { margin: 0; }
+.rg-mark { position: absolute; top: -2px; bottom: -2px; width: 4px; margin-left: -2px; background: #fff; border-radius: 2px; box-shadow: 0 0 6px 2px rgba(255,215,0,.95); pointer-events: none; }
+.charge-track { position: relative; }
+.rg-flash { position: absolute; inset: 0; z-index: 6; pointer-events: none; opacity: 0; }
+.rg-flash.gold { background: radial-gradient(circle, rgba(255,240,170,.95), rgba(255,200,60,.5) 60%, rgba(255,200,60,0)); animation: rgfl .9s ease-out; }
+.rg-flash.disco { background: radial-gradient(circle at 50% 70%, rgba(255,215,64,.45), rgba(255,64,200,.18) 55%, rgba(0,0,0,0)); animation: rgfl .6s ease-out; }
+@keyframes rgfl { 0% { opacity: 1; } 100% { opacity: 0; } }
+.rg-king { position: absolute; inset: 0; z-index: 12; display: flex; flex-direction: column; align-items: center; justify-content: center; pointer-events: none; background: radial-gradient(circle, rgba(255,225,120,.9), rgba(255,180,0,.55) 70%); animation: rgking 2.6s ease-out forwards; text-align: center; padding: 20px; }
+.rg-king div { font-size: 96px; line-height: 1; }
+.rg-king b { font-size: 30px; color: #4a3200; text-shadow: 0 2px 0 #fff6c8; }
+@keyframes rgking { 0% { opacity: 0; transform: scale(.8); } 15% { opacity: 1; transform: scale(1.05); } 80% { opacity: 1; } 100% { opacity: 0; } }
+body.rg-slow #game { filter: saturate(.7) brightness(.92); }

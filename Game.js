@@ -1,19 +1,21 @@
 // 游戏主控：渲染器 / 场景 / 正交相机 / 灯光、输入、状态机、计分与落点判定
 import * as THREE from 'three';
-import { CONFIG } from './config.js?v=20261110u';
-import { Storage } from './Storage.js?v=20261110u';
-import { Tweens, clamp, Ease } from './utils.js?v=20261110u';
-import { SkinManager } from './SkinManager.js?v=20261110u';
-import { BlockManager } from './BlockManager.js?v=20261110u';
-import { Player } from './Player.js?v=20261110u';
-import { UIManager } from './UIManager.js?v=20261110u';
-import { Sound } from './Sound.js?v=20261110u';
-import { t, L } from './i18n.js?v=20261110u';
-import { getPerk } from './canPerks.js?v=20261110u';
-import { getSignature, RARITY } from './canSignature.js?v=20261110u';
-import { PLAYER_SKINS } from './SkinManager.js?v=20261110u';
-import { Music, playSfx } from './SkinAudio.js?v=20261110u';
-import { SignatureFX } from './SignatureFX.js?v=20261110u';
+import { CONFIG } from './config.js?v=20261110v';
+import { Storage } from './Storage.js?v=20261110v';
+import { Tweens, clamp, Ease } from './utils.js?v=20261110v';
+import { SkinManager } from './SkinManager.js?v=20261110v';
+import { BlockManager } from './BlockManager.js?v=20261110v';
+import { Player } from './Player.js?v=20261110v';
+import { UIManager } from './UIManager.js?v=20261110v';
+import { Sound } from './Sound.js?v=20261110v';
+import { t, L } from './i18n.js?v=20261110v';
+import { getPerk } from './canPerks.js?v=20261110v';
+import { getSignature, RARITY } from './canSignature.js?v=20261110v';
+import { PLAYER_SKINS } from './SkinManager.js?v=20261110v';
+import { Music, playSfx } from './SkinAudio.js?v=20261110v';
+import { SignatureFX } from './SignatureFX.js?v=20261110v';
+import { RunState, rt, chargeTimeFor } from './Roguelike.js?v=20261110v';
+import { fetchTop } from './Leaderboard.js?v=20261110v';
 
 // 踩中星号方块后的免费体验时长（秒）
 const TRIAL_SEC = 8;
@@ -28,6 +30,11 @@ export class Game {
     this.perfects = 0;
     this.match = null;        // 同图比赛：{ code, seed, finished }；非空时不计入最高分/总榜，且关闭罐子能力
     this.onMatchOver = null;
+    this.rogueMode = false;   // Roguelike 模式：每 10 层三选一 Buff；成绩单独统计，不进总榜
+    this.rogue = null;        // 当前这一局的 RunState
+    this.rogueUI = null;
+    this.rogueBest = Storage.getRogueBest();
+    this.camTwist = 0; this._mirror = false; this._invisT = 0;
     this.best = Storage.getHighScore();
     this.chargeT = 0;
     this.tweens = new Tweens();
@@ -206,7 +213,15 @@ export class Game {
     let dx = next.x - p.x, dz = next.z - p.z;
     const len = Math.hypot(dx, dz) || 1;
     dx /= len; dz /= len;
-    const lx = p.x + dx * dist, lz = p.z + dz * dist;
+    let lx = p.x + dx * dist, lz = p.z + dz * dist;
+    const rg = this.rogue; let rocket = false;
+    if (rg) {
+      if (rg.has('BUFF_15') && Math.random() < 0.1) { lx = next.x; lz = next.z; rocket = true; this.ui.toast(rt('rocket')); }   // 火箭推力：直达正中心
+      if (!rocket) {
+        if (rg.wind) { lx += -dz * rg.wind; lz += dx * rg.wind; }                                                              // 气流干扰：侧风把落点吹偏
+        if (rg.has('BUFF_03')) { const ex = next.x - lx, ez = next.z - lz; if (Math.hypot(ex, ez) < 1.2) { lx += ex * 0.35; lz += ez * 0.35; } }   // 羽毛缓降：空中微调
+      }
+    }
     const top = CONFIG.BLOCK_HEIGHT;
     let target = new THREE.Vector3(lx, top, lz);
 
@@ -232,10 +247,25 @@ export class Game {
       target = new THREE.Vector3(p.x, p.y, p.z);
       this.ui.toast(this._tr('freeze_safe'));
     }
+    if (rg) {
+      const failing = (r) => r === 'tip-next' || r === 'tip-cur' || r === 'miss';
+      if (rg.has('BUFF_04') && Math.random() < 0.8) {            // 弹性垫圈：80% 弹回平台
+        if (result === 'tip-next') { result = 'hit'; target = new THREE.Vector3(next.x + (lx - next.x) * 0.6, top, next.z + (lz - next.z) * 0.6); this.ui.toast(rt('spring')); }
+        else if (result === 'tip-cur') { result = 'stay'; target = new THREE.Vector3(p.x, p.y, p.z); this.ui.toast(rt('spring')); }
+      }
+      if (failing(result) && rg.useShield()) {                    // 气泡护盾：挡下一次失误
+        result = 'stay'; target = new THREE.Vector3(p.x, p.y, p.z); this.ui.toast(rt('shieldUsed'));
+        playSfx(this.sound, 'icechime', 1, 0.8);
+      }
+      rg.invis = rg.has('BUFF_20');                                // 隐形罐体：起跳后隐形 1 秒
+      if (rg.invis) { this.player.root.visible = false; this._invisT = 1.0; }
+      if (rg.has('BUFF_10') && this.fx) { const g = getSignature('gold'), sp = this._toScreen(p, 0.6); this.fx.burst(g.burst, sp.x, sp.y, { color: g.color, mul: 0.7, flash: false, combo: 1 }); }   // 金币雨
+      this.rogueUI.refresh(rg);
+    }
     this.state = 'jumping';
     this._updatePerkHud();
     this.lastResult = result;
-    const opts = { onFallen: () => this._onFallen(), durMul: perk.floatMul };
+    const opts = { onFallen: () => this._onFallen(), durMul: perk.floatMul, durAdd: rg ? rg.floatAdd() : 0 };
     if (result === 'perfect' || result === 'hit' || result === 'stay') {
       opts.after = 'stand';
       opts.onLand = () => this._onLand(result);
@@ -259,9 +289,11 @@ export class Game {
 
   _onLand(result) {
     this.sound.land();
-    if (result === 'stay') { this.state = 'ready'; this._updatePerkHud(); return; }
+    if (result === 'stay') { this.state = 'ready'; this._rogueReady(); this._updatePerkHud(); return; }
     const landed = this.blocks.next;
     if (landed && landed.trial) this._startTrial(landed);
+    let diamond = false, quantum = false;
+    if (this.rogue && landed) { diamond = !!landed.diamond; quantum = !!landed.quantum; this.blocks.clearMark(landed); }
     let gain;
     const perfect = result === 'perfect';
     if (perfect) {
@@ -283,6 +315,7 @@ export class Game {
       this.thunderCount = 0;
       gain = CONFIG.SCORE_NORMAL;
     }
+    if (this.rogue) gain = this.rogue.gain(gain, { perfect, combo: this.combo, diamond, quantum, invisible: this.rogue.invis });
     const before = this.score;
     this.score += gain;
     // “爆发”：分数每跨过 10 的倍数额外 +1
@@ -296,15 +329,19 @@ export class Game {
     this.ui.popScore(perfect ? t('perfect', { n: gain }) : `+${gain}`, sp.x, sp.y, perfect);
     if (bonus) setTimeout(() => this.ui.popScore(`${this.perk.icon} +1`, sp.x + 40, sp.y + 10, true), 250);
     this._updatePerkHud();
+    if (this.rogue) this._rogueAfterLand(perfect, before);
 
-    // 最高分实时刷新并写入本地
-    if (this.score > this.best) {
+    // 最高分实时刷新并写入本地（Roguelike 单独记录，不进总榜）
+    if (this.rogue) this._rogueBestCheck();
+    else if (this.score > this.best) {
       this.best = this.score;
       Storage.saveHighScore(this.best);
       this.ui.setBest(this.best);
     }
     this.blocks.advance(this.score);
+    if (this.rogue && this.rogue.layers % 10 === 0) { this._rogueChoose(); return; }   // 每 10 层三选一
     this.state = 'ready';
+    this._rogueReady();
     this._updatePerkHud();
   }
 
@@ -314,12 +351,14 @@ export class Game {
     this.sound.fall();
     this.shake = 0.25;
     if (this._canRevive()) { this._revive(); return; }
+    if (this.rogue && this.rogue.rollRevive()) { this._revive(rt('revived')); return; }   // 原地复苏
     setTimeout(() => this._gameOver(), 650);
   }
 
   /* ================= 罐子能力 ================= */
   _refreshPerk() {
-    this.perk = getPerk(this.match ? null : this.skins.state.player);   // 同图比赛里大家都没有罐子能力，才公平
+    this.perk = getPerk(this.match || this.rogueMode ? null : this.skins.state.player);   // 同图比赛里大家都没有罐子能力，才公平；Roguelike 里能力来自 Buff
+    if (this.rogue) Object.assign(this.perk, this.rogue.perkMods());
     this._updatePerkHud();
   }
 
@@ -331,12 +370,12 @@ export class Game {
   }
 
   /** 弹回起跳的方块，连击清零，继续游戏 */
-  _revive() {
+  _revive(msg) {
     this.reviveUsed = true;
     this.combo = 0; this.thunderReady = false; this.thunderCount = 0;
     this.ui.setCombo(0);
     this._comboFx();
-    this.ui.toast(t('perk_saved', { icon: this.perk.icon, name: L(this.perk.name) }));
+    this.ui.toast(msg || t('perk_saved', { icon: this.perk.icon, name: L(this.perk.name) }));
     this._updatePerkHud();
     setTimeout(() => {
       if (this.state !== 'falling') return;
@@ -417,6 +456,7 @@ export class Game {
     this.ui.setFreezeBtn(false);
     this._endTrial(false);
     this._stopMusic(0.9);
+    if (this.rogue) { this._rogueOver(); return; }
     if (this.match) {                       // 同图比赛：成绩同样计入最高分、统计和总排行榜，只是不弹普通结算框
       this.match.finished = true;
       this.ui.el.hud.classList.add('hidden');
@@ -442,6 +482,123 @@ export class Game {
     Storage.saveStats(stats);
     const unlocked = this.skins.checkUnlocks(this.best);
     this.ui.showGameOver({ score: this.score, best: this.best, record, perfects: this.perfects, unlocked });
+  }
+
+  /* ================= Roguelike 模式 ================= */
+  /** VIP = 拥有任一兑换罐（沿用游戏现有的 VIP 判断） */
+  _isVip() { return PLAYER_SKINS.some((k) => k.unlock === 'code' && this.skins.isUnlocked('player', k.id)); }
+
+  _setMirror(on) {
+    this._mirror = !!on;
+    if (this.canvas) this.canvas.style.transform = on ? 'scaleX(-1)' : '';
+  }
+
+  _rogueBegin() {
+    const rg = this.rogue;
+    this._rogueReady();
+    if (rg.vip) {            // 降维打击：把排行榜第 10 名当作挑战目标
+      fetchTop(10).then((list) => {
+        if (this.rogue !== rg || !Array.isArray(list) || !list.length) return;
+        rg.target10 = (list[9] || list[list.length - 1]).score;
+        this.rogueUI.refresh(rg);
+      }).catch(() => {});
+    }
+  }
+
+  /** 每次回到“等待起跳”：掷这一跳的侧风、刷新 Buff 栏 */
+  _rogueReady() {
+    const rg = this.rogue; if (!rg) return;
+    rg.rollWind();
+    this.player.root.visible = this._invisT <= 0;
+    this.rogueUI.refresh(rg);
+  }
+
+  /** 每帧：时间类 Buff（滚雪球、空间扭曲、隐形） */
+  _rogueTick(dt) {
+    const rg = this.rogue;
+    if (this._invisT > 0) { this._invisT -= dt; if (this._invisT <= 0) this.player.root.visible = true; }
+    if (!['ready', 'charging', 'jumping'].includes(this.state)) return;
+    if (rg.twistT > 0) rg.twistT = Math.max(0, rg.twistT - dt);
+    if (rg.has('BUFF_13')) {
+      rg.snowT += dt;
+      if (rg.snowT >= 10) { rg.snowT -= 10; rg.bonusBase += 1; this.ui.toast(rt('snow', { n: rg.bonusBase })); this.rogueUI.refresh(rg); }
+    }
+    // 先知之眼（VIP）：蓄力条上标出刚好落在中心的蓄力位置
+    if (rg.vip && (this.state === 'ready' || this.state === 'charging') && this.blocks.next) {
+      const p = this.player.root.position, n = this.blocks.next;
+      const k = chargeTimeFor(Math.hypot(n.x - p.x, n.z - p.z), CONFIG) / CONFIG.CHARGE_MAX_TIME;
+      this.rogueUI.setMark(k > 0 && k < 1 ? k : null);
+    } else this.rogueUI.setMark(null);
+  }
+
+  _rogueAfterLand(perfect, before) {
+    const rg = this.rogue;
+    rg.layers++;
+    if (perfect && rg.has('BUFF_05') && this.combo > 0 && this.combo % 5 === 0) { rg.shield++; this.ui.toast(rt('vamp')); }   // 吸血易拉罐
+    if (rg.has('BUFF_06') && Math.floor(this.score / 50) > Math.floor(before / 50)) { this.blocks.nearNext = true; this.ui.toast(rt('airbag')); }   // 安全气囊
+    if (rg.vip && perfect) {
+      const g = getSignature('gold'), sp = this._toScreen(this.player.root.position, 0);
+      if (this.fx) this.fx.burst(g.burst, sp.x, sp.y, { color: g.color, mul: RARITY[g.rarity].burstMul * 1.3, flash: false, combo: this.combo });   // 迪斯科狂欢
+      this.rogueUI.disco();
+      if (this.combo > 0 && this.combo % 10 === 0) {                      // 共鸣：+100 分并清除所有负面效果
+        this.score += 100; this.ui.setScore(this.score);
+        rg.clearCurses(); this._setMirror(false);
+        this.rogueUI.flash();
+        playSfx(this.sound, 'icechime', 1, 1);
+        this.ui.toast(rt('resonance'));
+      }
+    }
+    if (rg.mirrorLeft > 0 && --rg.mirrorLeft === 0) { this._setMirror(false); this.ui.toast(rt('mirrorEnd')); }
+    if (rg.vip && rg.target10 != null && !rg.beat10 && this.score > rg.target10) { rg.beat10 = true; this.ui.toast(rt('beat')); }
+    this.rogueUI.refresh(rg);
+  }
+
+  _rogueBestCheck() {
+    if (this.score > this.rogueBest) {
+      this.rogueBest = this.score;
+      Storage.saveRogueBest(this.score);
+      this.ui.setBest(this.rogueBest);
+    }
+  }
+
+  /** 每 10 层：停下来三选一 */
+  _rogueChoose() {
+    const rg = this.rogue;
+    const opts = rg.choices(3);
+    if (!opts.length) { this.state = 'ready'; this._rogueReady(); this._updatePerkHud(); return; }
+    this.state = 'choosing';
+    this._updatePerkHud();
+    this.rogueUI.choose(rg.layers, opts, rg.vip, () => rg.choices(3), (id) => this._roguePick(id));
+  }
+
+  _roguePick(id) {
+    const rg = this.rogue; if (!rg || this.state !== 'choosing') return;
+    rg.take(id);
+    if (id === 'BUFF_07') { this.blocks.sizeBoostLeft = 10; this.ui.toast(rt('wall')); }
+    else if (id === 'BUFF_14') { this.blocks.diamondLeft = 4; this.blocks.markDiamond(this.blocks.next); this.ui.toast(rt('diamond')); }
+    else if (id === 'BUFF_16') { this.blocks.offsetNext(0.2); this._updateCamGoal(); this.ui.toast(rt('quantum')); }
+    else if (id === 'BUFF_17') { rg.twistT = 5; rg.twistDir = Math.random() < 0.5 ? -1 : 1; this.ui.toast(rt('warp')); }
+    else if (id === 'BUFF_19') {
+      if (Math.random() < 0.5) { this.score += 50; this.ui.setScore(this.score); this._rogueBestCheck(); this.ui.toast(rt('coinWin')); }
+      else { this.combo = 0; this.ui.setCombo(0); this._comboFx(); this.ui.toast(rt('coinLose')); }
+    } else if (id === 'BUFF_22') { rg.mirrorLeft = 10; this._setMirror(true); this.ui.toast(rt('mirror')); }
+    this._refreshPerk();
+    this.state = 'ready';
+    this._rogueReady();
+    this._updatePerkHud();
+  }
+
+  _rogueOver() {
+    const rg = this.rogue;
+    this.ui.setFreezeBtn(false);
+    document.body.classList.remove('rg-slow');
+    this._setMirror(false);
+    this.player.root.visible = true;
+    const record = this.score > this.rogueBestAtStart;
+    this._rogueBestCheck();
+    this.rogueUI.hide();
+    if (rg.vip && record) this.rogueUI.king();       // 王者降临：VIP 破 Roguelike 纪录
+    this.ui.showGameOver({ score: this.score, best: this.rogueBest, record, perfects: this.perfects, unlocked: [], rogue: { layers: rg.layers, picks: rg.picks, vip: rg.vip, king: rg.vip && record } });
   }
 
   /* ================= 专属特效 / 音乐（纯外观，不影响得分与判定） ================= */
@@ -472,7 +629,7 @@ export class Game {
 
   _rollTrial(score) {
     this._sinceTrial++;
-    if (this.match || this.state === 'menu' || this.trial || this._trialsThisRound >= 3 || !this._trialSkin()) return false;
+    if (this.match || this.rogueMode || this.state === 'menu' || this.trial || this._trialsThisRound >= 3 || !this._trialSkin()) return false;
     // 网址加 #trial：第 2 个方块起必出星号方块，方便自己测试
     const force = (location.hash || '').includes('trial') && this._trialsThisRound < 3 && this._sinceTrial >= 2;
     // 正常节奏：每局第一个在 3~6 分左右出现；之后每隔 5 个方块起开始 50% 抽取，12 个方块内必出
@@ -590,6 +747,10 @@ export class Game {
     this.score = 0; this.combo = 0; this.perfects = 0; this.chargeT = 0;
     this.reviveUsed = false; this.thunderReady = false; this.thunderCount = 0; this.lastResult = null;
     this.freezeCredit = 0; this._creditScore = 0; this.freezeLeft = 0; this._endFreeze(false);
+    this.rogue = this.rogueMode && this.skins ? new RunState(this._isVip()) : null;
+    this.camTwist = 0; this._invisT = 0; this._setMirror(false);
+    if (this.player) this.player.root.visible = true;
+    if (this.rogueUI) this.rogueUI.reset(this.rogue);
     if (this.skins) this._refreshPerk();
     this.ui && (this.ui.setScore(0), this.ui.setCombo(0), this.ui.hideCharge());
     this._comboFx();
@@ -606,15 +767,26 @@ export class Game {
     this.stopPreview();
     this._endTrial(false);
     this._sinceTrial = 3; this._trialsThisRound = 0;
-    this.ui.setBest(this.best);
+    this.rogueBestAtStart = this.rogueBest;
+    this.ui.setBest(this.rogueMode ? this.rogueBest : this.best);
     this.ui.hideStart();
     this._startMusic();
     this.state = 'ready';
+    if (this.rogue) this._rogueBegin();
     this._updatePerkHud();
+  }
+
+  /** 进入 Roguelike 模式（独立模式：不影响普通模式、同图比赛和总排行榜） */
+  enterRogue() {
+    this.match = null; this.blocks.seed = null;
+    this.rogueMode = true;
+    this._refreshPerk();
+    this.startRound();
   }
 
   /** 进入同图比赛：地图由种子决定，所有人一模一样 */
   enterMatch(code, seed) {
+    this.rogueMode = false;
     this.match = { code, seed, finished: false };
     this.blocks.seed = seed;
     this._refreshPerk();
@@ -629,6 +801,8 @@ export class Game {
   }
 
   goHome() {
+    this.rogueMode = false;
+    if (this.rogueUI) this.rogueUI.hide();
     this._endTrial(false);
     this._stopMusic(0.6);
     this.ui.hideGameOver();
@@ -665,7 +839,8 @@ export class Game {
 
   _toScreen(pos, lift = 0) {
     const v = new THREE.Vector3(pos.x, pos.y + lift, pos.z).project(this.camera);
-    return { x: (v.x + 1) / 2 * this.viewW, y: (1 - v.y) / 2 * this.viewH };
+    const x = (v.x + 1) / 2 * this.viewW;
+    return { x: this._mirror ? this.viewW - x : x, y: (1 - v.y) / 2 * this.viewH };
   }
 
   /** 特效画在屏幕上，镜头平移后要同步移动，才能一直贴在落点上 */
@@ -726,9 +901,12 @@ export class Game {
     this.tweens.update(dt);
     if (this.freezeLeft > 0) { this.freezeLeft -= dt; if (this.freezeLeft <= 0) this._endFreeze(true, true); }
     this._autoPlay(dt);
+    if (this.rogue) this._rogueTick(dt);
 
     if (this.state === 'charging') {
-      this.chargeT = Math.min(CONFIG.CHARGE_MAX_TIME, this.chargeT + dt * this.perk.chargeMul * (this.freezeLeft > 0 ? this.perk.freezeChargeMul : 1));
+      const slow = this.rogue && this.rogue.has('BUFF_18') && this.chargeT > 1.0 ? 0.5 : 1;     // 子弹时间：蓄力过 1 秒后进入慢动作
+      document.body.classList.toggle('rg-slow', slow < 1);
+      this.chargeT = Math.min(CONFIG.CHARGE_MAX_TIME, this.chargeT + dt * this.perk.chargeMul * slow * (this.freezeLeft > 0 ? this.perk.freezeChargeMul : 1));
       const k = this.chargeT / CONFIG.CHARGE_MAX_TIME;
       const cur = this.blocks.current;
       this.blocks.squash(cur, k);
@@ -773,12 +951,16 @@ export class Game {
     if (this.state !== 'jumping') this._updateCamGoal();
     this.camTarget.lerp(this.camGoal, 1 - Math.exp(-CONFIG.CAM_LERP * dt));
     const o = CONFIG.CAM_OFFSET;
+    const tw = this.rogue && this.rogue.twistT > 0 ? this.rogue.twistDir * 15 * Math.PI / 180 : 0;   // 空间扭曲：相机绕着转 15 度
+    this.camTwist += (tw - this.camTwist) * (1 - Math.exp(-6 * dt));
+    const cs = Math.cos(this.camTwist), sn = Math.sin(this.camTwist);
+    const ox = o[0] * cs + o[2] * sn, oz = -o[0] * sn + o[2] * cs;
     let sx = 0, sy = 0;
     if (this.shake > 0) {
       this.shake = Math.max(0, this.shake - dt);
       sx = (Math.random() - 0.5) * this.shake * 0.8; sy = (Math.random() - 0.5) * this.shake * 0.8;
     }
-    this.camera.position.set(this.camTarget.x + o[0] + sx, this.camTarget.y + o[1] + sy, this.camTarget.z + o[2]);
+    this.camera.position.set(this.camTarget.x + ox + sx, this.camTarget.y + o[1] + sy, this.camTarget.z + oz);
     this.camera.lookAt(this.camTarget.x + sx, this.camTarget.y + sy, this.camTarget.z);
 
     // 阴影光源与地面跟着相机走
