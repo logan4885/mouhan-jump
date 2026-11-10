@@ -1,16 +1,16 @@
 // UI 层：开始界面、计分板、蓄力条、飘字、结算弹窗、皮肤商店（含兑换码）、排行榜、语言切换
-import { PLAYER_SKINS, BLOCK_STYLES, SkinPreview } from './SkinManager.js?v=20261110v';
-import { fetchTop, fetchPlayer, syncPlayer, buildBoard, LEADERBOARD_API } from './Leaderboard.js?v=20261110v';
-import { Storage } from './Storage.js?v=20261110v';
-import { escapeHtml } from './utils.js?v=20261110v';
-import { t, L, setLang, getLang, onLangChange, applyStatic } from './i18n.js?v=20261110v';
-import { PERKS } from './canPerks.js?v=20261110v';
-import { SIGNATURE, RARITY, getSignature } from './canSignature.js?v=20261110v';
-import { SHOP } from './shop.js?v=20261110v';
-import { recoveryAvailable, makeCode, makeLink, restore } from './Recovery.js?v=20261110v';
-import { accountAvailable, pullProgress, PROVIDER_NAME, completeLogin, renderGoogleButton, prepareFacebook, facebookLogin, logout } from './Account.js?v=20261110v';
-import { AUTH } from './authConfig.js?v=20261110v';
-import { BUFF_BY_ID, rt } from './Roguelike.js?v=20261110v';
+import { PLAYER_SKINS, BLOCK_STYLES, SkinPreview } from './SkinManager.js?v=20261110w';
+import { fetchTop, fetchPlayer, syncPlayer, buildBoard, LEADERBOARD_API, lastSync } from './Leaderboard.js?v=20261110w';
+import { Storage } from './Storage.js?v=20261110w';
+import { escapeHtml } from './utils.js?v=20261110w';
+import { t, L, setLang, getLang, onLangChange, applyStatic } from './i18n.js?v=20261110w';
+import { PERKS } from './canPerks.js?v=20261110w';
+import { SIGNATURE, RARITY, getSignature } from './canSignature.js?v=20261110w';
+import { SHOP } from './shop.js?v=20261110w';
+import { recoveryAvailable, makeCode, makeLink, restore } from './Recovery.js?v=20261110w';
+import { accountAvailable, pullProgress, PROVIDER_NAME, completeLogin, renderGoogleButton, prepareFacebook, facebookLogin, logout } from './Account.js?v=20261110w';
+import { AUTH } from './authConfig.js?v=20261110w';
+import { BUFF_BY_ID, rt } from './Roguelike.js?v=20261110w';
 
 const $ = (id) => document.getElementById(id);
 
@@ -54,7 +54,7 @@ export class UIManager {
     $('btnRestart').addEventListener('click', () => { this._saveNick(); this.h.onRestart(); });
     $('btnHome').addEventListener('click', () => { this._saveNick(); this.h.onHome(); });
     ['btnSkinsStart', 'btnSkinsOver'].forEach((id) => $(id).addEventListener('click', () => { this._saveNick(); this.openSkins(); }));
-    ['btnRankStart', 'btnRankOver'].forEach((id) => $(id).addEventListener('click', () => { this._saveNick(); this.openRank(); }));
+    ['btnRankStart', 'btnRankOver'].forEach((id) => $(id).addEventListener('click', () => { this._saveNick(); this.openRank(id === 'btnRankOver' && this.lastOver && this.lastOver.rogue ? 'rogue' : 'all'); }));
     this.el.nick.addEventListener('change', () => this._saveNick());
     // 点击排行榜里的头像 / 名字，查看这位玩家解锁的皮肤
     const onRow = (e) => {
@@ -534,20 +534,30 @@ export class UIManager {
     return `<li class="${r.isMe ? 'me' : ''}${vip ? ' vip' : ' guest'}${clickable ? ' clickable' : ''}"${attrs}><span class="rk">${medal}</span>${avatar}<span class="nm"><bdi>${escapeHtml(r.nickname)}</bdi>${r.isMe ? ` <em>(${escapeHtml(t('me'))})</em>` : ''}<br>${tag}</span><span class="sc">${r.score}</span>${clickable ? '<span class="chev" aria-hidden="true">›</span>' : ''}</li>`;
   }
 
-  async openRank() {
+  async openRank(mode = 'all') {
+    const rogue = mode === 'rogue';
+    this._rankMode = rogue ? 'rogue' : 'all';
     this._openModal(this.el.rank);
+    // 顶部切换：总榜 / Roguelike 榜
+    let tabs = $('rankTabs');
+    if (!tabs) {
+      tabs = document.createElement('div'); tabs.id = 'rankTabs'; tabs.className = 'rank-tabs';
+      this.el.rankList.parentNode.insertBefore(tabs, this.el.rankList);
+      tabs.addEventListener('click', (e) => { const b = e.target.closest('[data-rk]'); if (b && b.dataset.rk !== this._rankMode) this.openRank(b.dataset.rk); });
+    }
+    tabs.innerHTML = ['all', 'rogue'].map((m) => `<button type="button" class="${m === this._rankMode ? 'on' : ''}" data-rk="${m}">${escapeHtml(t(m === 'all' ? 'rk_tab_all' : 'rk_tab_rogue'))}</button>`).join('');
     const PAGE = 50;
     const token = (this._rankToken = (this._rankToken || 0) + 1);   // 重新打开时作废旧的加载
     this.el.rankList.innerHTML = `<li class="loading">${escapeHtml(t('loading'))}</li>`;
     this.el.rankList.scrollTop = 0;
     this.el.rankMine.innerHTML = '';
-    const sub = $('rankSub'); if (sub) sub.textContent = t('rank_all');
+    const sub = $('rankSub'); if (sub) sub.textContent = rogue ? '' : t('rank_all');
     const live = !!LEADERBOARD_API.baseUrl;
     if (live) await syncPlayer(); // 先把我最新的数据传上去，榜单里才有最新的我
-    const data = await fetchTop(PAGE, 0);
+    const data = await fetchTop(PAGE, 0, rogue ? 'rogue' : '');
     if (token !== this._rankToken) return;
     const meId = Storage.getPlayer().id;
-    const me = { id: meId, nickname: Storage.getNickname() || t('me'), score: Storage.getHighScore() };
+    const me = { id: meId, nickname: Storage.getNickname() || t('me'), score: rogue ? Storage.getRogueBest() : Storage.getHighScore() };
     const list = Array.isArray(data) ? data : [];
     this._rankRows = {};
     // 真实后端：整页就是这一页；Mock：一次给全部
@@ -556,7 +566,7 @@ export class UIManager {
     if (live && (!mineRow || mineRow.local) && me.score > 0 && !top.some((r) => r.isMe)) {
       const p = await fetchPlayer(meId); // 我不在已加载的名次里：向服务器问我的真实名次
       if (token !== this._rankToken) return;
-      if (p) mineRow = { id: p.id, nickname: p.nickname, avatar: p.avatar, color: p.color, score: p.score, rank: p.rank, isMe: true };
+      if (p) mineRow = { id: p.id, nickname: p.nickname, avatar: p.avatar, color: p.color, score: rogue ? me.score : p.score, rank: rogue ? (lastSync && lastSync.rogueRank) || p.rank : p.rank, isMe: true };
     }
     this.el.rankList.innerHTML = top.map((r) => this._rankRowHtml(r, live)).join('');
     const showMine = () => { this.el.rankMine.innerHTML = mineRow ? `<ol class="rank-list">${this._rankRowHtml(mineRow, live)}</ol>` : ''; };
@@ -573,7 +583,7 @@ export class UIManager {
       if (el.scrollTop + el.clientHeight < el.scrollHeight - 80) return;
       busy = true;
       el.insertAdjacentHTML('beforeend', `<li class="loading more">${escapeHtml(t('loading'))}</li>`);
-      const more = await fetchTop(PAGE, loaded);
+      const more = await fetchTop(PAGE, loaded, rogue ? 'rogue' : '');
       if (token !== this._rankToken) return;
       el.querySelectorAll('li.more').forEach((n) => n.remove());
       if (!Array.isArray(more)) { busy = false; return; }       // 网络失败：下次滑动再试
@@ -603,6 +613,7 @@ export class UIManager {
       info = await fetchPlayer(r.id);
     }
     if (this.el.player.classList.contains('hidden')) return; // 加载期间已关闭
+    if (info && this._rankMode === 'rogue' && r.score != null) info = { ...info, score: r.score, rank: r.rank };   // Roguelike 榜里点开：显示的是这个榜上的分数和名次
     if (!info) { this.el.playerBody.innerHTML = `<p class="loading-line">${escapeHtml(t('pl_fail'))}</p>`; return; }
 
     const have = new Set(info.unlocked || []);

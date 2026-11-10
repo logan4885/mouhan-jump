@@ -540,3 +540,8 @@ body.timestop #game { filter: grayscale(.55) contrast(1.1); }
 .rg-king b { font-size: 30px; color: #4a3200; text-shadow: 0 2px 0 #fff6c8; }
 @keyframes rgking { 0% { opacity: 0; transform: scale(.8); } 15% { opacity: 1; transform: scale(1.05); } 80% { opacity: 1; } 100% { opacity: 0; } }
 body.rg-slow #game { filter: saturate(.7) brightness(.92); }
+
+/* ---- 排行榜切换：总榜 / Roguelike 榜 ---- */
+.rank-tabs { display: flex; gap: 8px; margin: 0 0 12px; }
+.rank-tabs button { flex: 1; font: inherit; font-weight: 800; font-size: 14px; padding: 8px 10px; border-radius: 12px; border: 2px solid var(--ink, #2a2540); background: #fff; color: var(--ink, #2a2540); cursor: pointer; }
+.rank-tabs button.on { background: var(--accent, #ff6f4a); color: #fff; }

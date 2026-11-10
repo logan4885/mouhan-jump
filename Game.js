@@ -1,21 +1,21 @@
 // 游戏主控：渲染器 / 场景 / 正交相机 / 灯光、输入、状态机、计分与落点判定
 import * as THREE from 'three';
-import { CONFIG } from './config.js?v=20261110v';
-import { Storage } from './Storage.js?v=20261110v';
-import { Tweens, clamp, Ease } from './utils.js?v=20261110v';
-import { SkinManager } from './SkinManager.js?v=20261110v';
-import { BlockManager } from './BlockManager.js?v=20261110v';
-import { Player } from './Player.js?v=20261110v';
-import { UIManager } from './UIManager.js?v=20261110v';
-import { Sound } from './Sound.js?v=20261110v';
-import { t, L } from './i18n.js?v=20261110v';
-import { getPerk } from './canPerks.js?v=20261110v';
-import { getSignature, RARITY } from './canSignature.js?v=20261110v';
-import { PLAYER_SKINS } from './SkinManager.js?v=20261110v';
-import { Music, playSfx } from './SkinAudio.js?v=20261110v';
-import { SignatureFX } from './SignatureFX.js?v=20261110v';
-import { RunState, rt, chargeTimeFor } from './Roguelike.js?v=20261110v';
-import { fetchTop } from './Leaderboard.js?v=20261110v';
+import { CONFIG } from './config.js?v=20261110w';
+import { Storage } from './Storage.js?v=20261110w';
+import { Tweens, clamp, Ease } from './utils.js?v=20261110w';
+import { SkinManager } from './SkinManager.js?v=20261110w';
+import { BlockManager } from './BlockManager.js?v=20261110w';
+import { Player } from './Player.js?v=20261110w';
+import { UIManager } from './UIManager.js?v=20261110w';
+import { Sound } from './Sound.js?v=20261110w';
+import { t, L } from './i18n.js?v=20261110w';
+import { getPerk } from './canPerks.js?v=20261110w';
+import { getSignature, RARITY } from './canSignature.js?v=20261110w';
+import { PLAYER_SKINS } from './SkinManager.js?v=20261110w';
+import { Music, playSfx } from './SkinAudio.js?v=20261110w';
+import { SignatureFX } from './SignatureFX.js?v=20261110w';
+import { RunState, rt, chargeTimeFor } from './Roguelike.js?v=20261110w';
+import { fetchTop } from './Leaderboard.js?v=20261110w';
 
 // 踩中星号方块后的免费体验时长（秒）
 const TRIAL_SEC = 8;
@@ -501,8 +501,8 @@ export class Game {
   _rogueBegin() {
     const rg = this.rogue;
     this._rogueReady();
-    if (rg.vip) {            // 降维打击：把排行榜第 10 名当作挑战目标
-      fetchTop(10).then((list) => {
+    if (rg.vip) {            // 降维打击：把 Roguelike 榜第 10 名当作挑战目标
+      fetchTop(10, 0, 'rogue').then((list) => {
         if (this.rogue !== rg || !Array.isArray(list) || !list.length) return;
         rg.target10 = (list[9] || list[list.length - 1]).score;
         this.rogueUI.refresh(rg);

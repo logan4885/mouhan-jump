@@ -8,7 +8,7 @@
 //   GET  {baseUrl}/api/player/:id
 //        -> { ok, player: { id, nickname, score, rank, perfects, games, equipped, unlocked[], total, avatar, color } }
 
-import { Storage } from './Storage.js?v=20261110v';
+import { Storage } from './Storage.js?v=20261110w';
 
 export const LEADERBOARD_API = {
   baseUrl: 'https://mouhan-jump-api.onrender.com',            // 部署后端后填这里，例如 'https://jump3d-api.onrender.com'；为空则使用 Mock 数据
@@ -43,17 +43,21 @@ async function fetchJson(url, options = {}) {
 }
 
 /** 获取榜单原始数据 */
-export async function fetchTop(limit = 10, offset = 0) {
+export async function fetchTop(limit = 10, offset = 0, mode = '') {
   try {
     if (LEADERBOARD_API.baseUrl) {
-      return await fetchJson(`${LEADERBOARD_API.baseUrl}${LEADERBOARD_API.topPath}?limit=${limit}&offset=${offset}`);
+      return await fetchJson(`${LEADERBOARD_API.baseUrl}${LEADERBOARD_API.topPath}?limit=${limit}&offset=${offset}${mode === 'rogue' ? '&mode=rogue' : ''}`);
     }
+    if (mode === 'rogue') return [];     // 本地示例模式：Roguelike 榜只有“我”
     return await fetchJson(MOCK_URL.href);
   } catch (e) {
     console.warn('[Leaderboard] 使用兜底数据：', e.message);
     return FALLBACK;
   }
 }
+
+/** 最近一次成功同步的结果（含 rogueRank 等） */
+export let lastSync = null;
 
 /** 把本机的玩家数据（昵称/最高分/皮肤/统计）同步到服务器；失败不影响游戏 */
 export async function syncPlayer() {
@@ -67,12 +71,13 @@ export async function syncPlayer() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         id: p.id, secret: p.secret, nickname: Storage.getNickname(), avatar: Storage.getAvatar(),
-        score: Storage.getHighScore(), perfects: stats.perfects || 0, games: stats.games || 0,
+        score: Storage.getHighScore(), rogueBest: Storage.getRogueBest(), perfects: stats.perfects || 0, games: stats.games || 0,
         unlocked: skins.unlocked, equipped: 'player:' + skins.player,
       }),
     });
     // 还没选过头像：先记下服务器按 ID 随机分到的那个，之后可以随时更换
     if (j && j.avatar && !Storage.getAvatar()) Storage.setAvatar(j.avatar);
+    if (j && j.ok) lastSync = j;
     if (j && j.ok) Storage.setSynced({ nickname: Storage.getNickname(), avatar: Storage.getAvatar(), equipped: 'player:' + skins.player });
     return j;
   } catch (e) {

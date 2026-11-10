@@ -1,6 +1,6 @@
 // 多语言：中文 / English / العربية
 // 静态文字写在 index.html 的 data-i18n 属性里，动态文字用 t('key', { 变量 })
-import { Storage } from './Storage.js?v=20261110v';
+import { Storage } from './Storage.js?v=20261110w';
 
 export const LANGS = ['zh', 'en', 'ar'];
 
@@ -26,7 +26,7 @@ const DICT = {
     redeem_ok: '🎉 抽中了：{name}', redeem_bad: '兑换码无效，请检查后再试', redeem_have: '你已经拥有：{name}',
     redeem_empty: '请先输入兑换码',
     redeem_used: '这个兑换码在本设备上已经用过了', redeem_none: '所有易拉罐都已解锁，新款即将上线，兑换码先留着吧',
-    rank_title: '排行榜', loading: '加载中…', me: '我',
+    rank_title: '排行榜', rk_tab_all: '总榜', rk_tab_rogue: '🎲 Roguelike 榜', loading: '加载中…', me: '我',
     rank_mock: '示例数据 · 接入后端后显示真实排名', rank_live: '实时排行',
     pl_view: '查看这位玩家的皮肤', pl_tip: '点击玩家查看皮肤', pl_fail: '加载失败，请稍后再试',
     pl_stats: '第 {r} 名 · 最高分 {s}', pl_stats2: '完美落点 {p} 次 · 共玩 {g} 局',
@@ -75,7 +75,7 @@ const DICT = {
     redeem_ok: '🎉 You got: {name}', redeem_bad: 'That code is not valid. Check it and try again.', redeem_have: 'You already have {name}',
     redeem_empty: 'Type a code first',
     redeem_used: 'This code has already been used on this device', redeem_none: 'You have every can already. New ones are coming soon, so keep your code.',
-    rank_title: 'Ranking', loading: 'Loading…', me: 'Me',
+    rank_title: 'Ranking', rk_tab_all: 'Overall', rk_tab_rogue: '🎲 Roguelike', loading: 'Loading…', me: 'Me',
     rank_mock: 'Sample data · real rankings appear once a server is connected', rank_live: 'Live ranking',
     pl_view: "View this player's skins", pl_tip: 'Tap a player to see their skins', pl_fail: 'Could not load. Please try again later.',
     pl_stats: 'Rank #{r} · Best {s}', pl_stats2: 'Perfect landings {p} · Games {g}',
@@ -124,7 +124,7 @@ const DICT = {
     redeem_ok: '🎉 حصلت على: {name}', redeem_bad: 'الرمز غير صالح، تحقّق منه وحاول مرة أخرى', redeem_have: 'لديك بالفعل: {name}',
     redeem_empty: 'اكتب الرمز أولًا',
     redeem_used: 'تم استخدام هذا الرمز على هذا الجهاز من قبل', redeem_none: 'لديك كل العلب بالفعل. علب جديدة قريبًا، احتفظ بالرمز.',
-    rank_title: 'الترتيب', loading: 'جارٍ التحميل…', me: 'أنا',
+    rank_title: 'الترتيب', rk_tab_all: 'العام', rk_tab_rogue: '🎲 Roguelike', loading: 'جارٍ التحميل…', me: 'أنا',
     rank_mock: 'بيانات تجريبية · يظهر الترتيب الحقيقي بعد ربط الخادم', rank_live: 'ترتيب مباشر',
     pl_view: 'عرض أشكال هذا اللاعب', pl_tip: 'اضغط على لاعب لرؤية أشكاله', pl_fail: 'تعذّر التحميل، حاول لاحقًا',
     pl_stats: 'المركز {r} · الأفضل {s}', pl_stats2: 'هبوط مثالي {p} · الجولات {g}',

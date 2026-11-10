@@ -2,7 +2,7 @@
 // 规则（照 Excel《SodaJump_Phygital_Architecture_and_Buffs》）：
 //   BUFF_01~22 进入每 10 层的【三选一抽卡池】；BUFF_23~30 是 VIP 常驻被动，绝不占三选一的格子。
 //   VIP = 已经拥有任一兑换罐的玩家（沿用游戏里现有的 VIP 判断）。
-import { L } from './i18n.js?v=20261110v';
+import { L } from './i18n.js?v=20261110w';
 
 const tri = (zh, en, ar) => ({ zh, en, ar });
 const B = (id, cat, icon, name, desc, extra = {}) => ({ id: 'BUFF_' + String(id).padStart(2, '0'), cat, icon, name, desc, pool: id <= 22 ? 'run' : 'vip', ...extra });
@@ -56,7 +56,8 @@ const TXT = {
   pick: tri('第 {n} 层 · 选一个 Buff', 'Floor {n} · pick a buff', 'الطابق {n} · اختر ميزة'),
   reroll: tri('🧰 刷新重抽（无限）', '🧰 Reroll (unlimited)', '🧰 إعادة السحب (بلا حدود)'),
   title: tri('Roguelike 模式', 'Roguelike mode', 'وضع Roguelike'),
-  intro: tri('每跳 10 层，从 3 张 Buff 里选 1 张，越玩越强。成绩单独统计，不进总榜。', 'Every 10 floors pick 1 of 3 buffs and snowball your build. Scores are tracked separately and do not count for the main leaderboard.', 'كل 10 طوابق اختر ميزة من 3 وقوِّ بناءك. النتائج منفصلة ولا تدخل لوحة الصدارة.'),
+  intro: tri('每跳 10 层，从 3 张 Buff 里选 1 张，越玩越强。有自己的 Roguelike 排行榜，不进总榜。', 'Every 10 floors pick 1 of 3 buffs and snowball your build. It has its own Roguelike leaderboard, separate from the main one.', 'كل 10 طوابق اختر ميزة من 3 وقوِّ بناءك. لها لوحة صدارة خاصة منفصلة عن العامة.'),
+  rankBtn: tri('🏆 Roguelike 排行榜', '🏆 Roguelike leaderboard', '🏆 لوحة صدارة Roguelike'),
   start: tri('开始 Roguelike', 'Start Roguelike', 'ابدأ Roguelike'),
   vipOn: tri('👑 VIP 被动已生效：{n} 项', '👑 VIP passives active: {n}', '👑 مزايا VIP مفعّلة: {n}'),
   vipOff: tri('用兑换码解锁任意一款特效罐即成为 VIP，开局自带 8 项常驻被动。', 'Unlock any special can with a code to become VIP and start with 8 permanent passives.', 'افتح أي علبة خاصة بالرمز لتصبح VIP وتبدأ بـ 8 مزايا دائمة.'),
