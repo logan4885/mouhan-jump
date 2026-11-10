@@ -1,8 +1,8 @@
 // 备份 / 恢复进度：不需要注册登录。
 // 恢复码 = 本机的玩家 ID + 密钥（等于“密码”，不要发给别人）。在新设备上粘贴恢复码，
 // 就会从服务器取回最高分、已解锁的罐子和 VIP 身份，并把这台设备绑定到同一个账号。
-import { Storage } from './Storage.js?v=20261110k';
-import { LEADERBOARD_API } from './Leaderboard.js?v=20261110k';
+import { Storage } from './Storage.js?v=20261110p';
+import { LEADERBOARD_API } from './Leaderboard.js?v=20261110p';
 
 export const recoveryAvailable = () => !!LEADERBOARD_API.baseUrl;
 
@@ -67,14 +67,39 @@ export async function restore(input) {
 }
 
 /** 把服务器上的玩家进度并入本机（分数取较大值，罐子取并集） */
-export function mergeServerPlayer(sp) {
+export function mergeServerPlayer(sp, live = false) {
   Storage.saveHighScore(sp.score || 0);
   const st = Storage.getStats();
   Storage.saveStats({ ...st, games: Math.max(st.games || 0, sp.games || 0), perfects: Math.max(st.perfects || 0, sp.perfects || 0) });
   const sk = Storage.getSkinState();
   const unlocked = [...new Set([...(sk.unlocked || []), ...(sp.unlocked || [])])];
   const eq = String(sp.equipped || '');
-  Storage.saveSkinState({ ...sk, unlocked, player: eq.startsWith('player:') && unlocked.includes(eq) ? eq.slice(7) : sk.player });
-  if (!Storage.getAvatar() && sp.avatar) Storage.setAvatar(sp.avatar);
-  if (!Storage.getNickname() && sp.nickname && !/^Player[0-9A-F]{4}$/.test(sp.nickname)) Storage.setNickname(sp.nickname);
+  const real = (n) => n && !/^Player[0-9A-F]{4}$/.test(n);
+  if (!live) {
+    // 登录 / 恢复：沿用旧规则（罐子以服务器为准，昵称头像只补空缺）
+    Storage.saveSkinState({ ...sk, unlocked, player: eq.startsWith('player:') && unlocked.includes(eq) ? eq.slice(7) : sk.player });
+    if (!Storage.getAvatar() && sp.avatar) Storage.setAvatar(sp.avatar);
+    if (!Storage.getNickname() && real(sp.nickname)) Storage.setNickname(sp.nickname);
+    Storage.setSynced({ nickname: Storage.getNickname(), avatar: Storage.getAvatar(), equipped: 'player:' + Storage.getSkinState().player });
+    return;
+  }
+  // 日常同步（三方对比）：这一项我在本机没改过（等于上次对齐的值）→ 采用服务器上别的设备改的；改过 → 保留本机，稍后推送上去
+  const last = Storage.getSynced() || {};
+  const untouched = (cur, was) => was === undefined || cur === was;
+  const next = { ...last };            // 本机改过、还没推上去的项，保持“上次对齐值”不变，下次拉取时仍判定为“改过”
+  let player = sk.player;
+  if (untouched('player:' + sk.player, last.equipped)) {
+    if (eq.startsWith('player:') && unlocked.includes(eq)) player = eq.slice(7);
+    next.equipped = 'player:' + player;
+  }
+  Storage.saveSkinState({ ...sk, unlocked, player });
+  if (untouched(Storage.getAvatar() || '', last.avatar === undefined ? undefined : last.avatar || '')) {
+    if (sp.avatar) Storage.setAvatar(sp.avatar);
+    next.avatar = Storage.getAvatar();
+  }
+  if (untouched(Storage.getNickname() || '', last.nickname === undefined ? undefined : last.nickname || '')) {
+    if (real(sp.nickname)) Storage.setNickname(sp.nickname);
+    next.nickname = Storage.getNickname();
+  }
+  Storage.setSynced(next);
 }

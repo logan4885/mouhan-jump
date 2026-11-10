@@ -8,7 +8,7 @@
 //   GET  {baseUrl}/api/player/:id
 //        -> { ok, player: { id, nickname, score, rank, perfects, games, equipped, unlocked[], total, avatar, color } }
 
-import { Storage } from './Storage.js?v=20261110k';
+import { Storage } from './Storage.js?v=20261110p';
 
 export const LEADERBOARD_API = {
   baseUrl: 'https://mouhan-jump-api.onrender.com',            // 部署后端后填这里，例如 'https://jump3d-api.onrender.com'；为空则使用 Mock 数据
@@ -73,6 +73,7 @@ export async function syncPlayer() {
     });
     // 还没选过头像：先记下服务器按 ID 随机分到的那个，之后可以随时更换
     if (j && j.avatar && !Storage.getAvatar()) Storage.setAvatar(j.avatar);
+    if (j && j.ok) Storage.setSynced({ nickname: Storage.getNickname(), avatar: Storage.getAvatar(), equipped: 'player:' + skins.player });
     return j;
   } catch (e) {
     return { ok: false, error: e.message };

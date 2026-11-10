@@ -1,6 +1,6 @@
 // 多语言：中文 / English / العربية
 // 静态文字写在 index.html 的 data-i18n 属性里，动态文字用 t('key', { 变量 })
-import { Storage } from './Storage.js?v=20261110k';
+import { Storage } from './Storage.js?v=20261110p';
 
 export const LANGS = ['zh', 'en', 'ar'];
 
@@ -43,7 +43,7 @@ const DICT = {
     bk_ok: '✅ 恢复成功，正在刷新…', bk_found: '检测到恢复链接，点“恢复”确认',
     ac_hint: '登录后，换手机或清除浏览器也能找回最高分、解锁的罐子和 VIP。不登录照常能玩。我们不保存你的邮箱和密码。',
     ac_fb: '用 Facebook 登录', ac_logout: '退出登录', ac_delete: '删除我的数据', ac_privacy: '隐私政策', ac_start: '👤 登录，保存进度',
-    ac_in: '已登录：{name}（{p}）', ac_ok: '✅ 登录成功，正在刷新…', ac_bad: '登录验证失败，请重试', ac_linked: '这台设备已经绑定了另一个同类账号，请先退出登录',
+    ac_in: '已登录：{name}（{p}）', ac_sync: '🔄 立即同步', ac_synced: '✅ 已同步，这台设备和账号一致', ac_sync_new: '✅ 取回了其他设备的新进度，正在刷新…', ac_ok: '✅ 登录成功，正在刷新…', ac_bad: '登录验证失败，请重试', ac_linked: '这台设备已经绑定了另一个同类账号，请先退出登录',
     ac_cfg: '登录功能暂未开通', ac_net: '网络不通或服务器在唤醒，请稍后再试',
     ac_logout_q: '退出后，这台设备上的进度会清空（进度仍保存在你的账号里，重新登录即可找回）。确定退出吗？',
     ac_delete_q: '这会永久删除你在服务器上的全部数据（最高分、解锁的罐子、绑定的账号），不能恢复。确定删除吗？',
@@ -91,7 +91,7 @@ const DICT = {
     bk_ok: '✅ Restored. Reloading…', bk_found: 'Recovery link detected. Tap Restore to confirm.',
     ac_hint: 'Sign in to get your high score, unlocked cans and VIP back on any phone, even after clearing your browser. Playing without signing in still works. We never store your email or password.',
     ac_fb: 'Continue with Facebook', ac_logout: 'Sign out', ac_delete: 'Delete my data', ac_privacy: 'Privacy policy', ac_start: '👤 Sign in to save progress',
-    ac_in: 'Signed in: {name} ({p})', ac_ok: '✅ Signed in. Reloading…', ac_bad: 'Sign-in could not be verified. Please try again.', ac_linked: 'This device is already linked to another account of this kind. Sign out first.',
+    ac_in: 'Signed in: {name} ({p})', ac_sync: '🔄 Sync now', ac_synced: '✅ Synced. This device matches your account', ac_sync_new: '✅ Got new progress from another device. Reloading…', ac_ok: '✅ Signed in. Reloading…', ac_bad: 'Sign-in could not be verified. Please try again.', ac_linked: 'This device is already linked to another account of this kind. Sign out first.',
     ac_cfg: 'Sign-in is not available yet', ac_net: 'Network problem or the server is waking up. Try again shortly.',
     ac_logout_q: 'Signing out clears the progress on this device (it stays in your account, sign in again to get it back). Continue?',
     ac_delete_q: 'This permanently deletes all your data on the server (high score, unlocked cans, linked accounts). It cannot be undone. Continue?',
@@ -139,7 +139,7 @@ const DICT = {
     bk_ok: '✅ تمت الاستعادة، جارٍ إعادة التحميل…', bk_found: 'تم اكتشاف رابط استعادة. اضغط استعادة للتأكيد.',
     ac_hint: 'سجّل الدخول لاستعادة أعلى نتيجة والعلب المفتوحة وVIP على أي هاتف، حتى بعد مسح بيانات المتصفح. اللعب بدون تسجيل ما زال متاحًا. لا نحفظ بريدك الإلكتروني ولا كلمة المرور.',
     ac_fb: 'المتابعة عبر Facebook', ac_logout: 'تسجيل الخروج', ac_delete: 'حذف بياناتي', ac_privacy: 'سياسة الخصوصية', ac_start: '👤 سجّل الدخول لحفظ تقدّمك',
-    ac_in: 'تم تسجيل الدخول: {name} ({p})', ac_ok: '✅ تم تسجيل الدخول، جارٍ إعادة التحميل…', ac_bad: 'تعذّر التحقق من تسجيل الدخول، حاول مرة أخرى', ac_linked: 'هذا الجهاز مرتبط بحساب آخر من النوع نفسه، سجّل الخروج أولًا',
+    ac_in: 'تم تسجيل الدخول: {name} ({p})', ac_sync: '🔄 مزامنة الآن', ac_synced: '✅ تمت المزامنة، هذا الجهاز مطابق لحسابك', ac_sync_new: '✅ تم جلب تقدّم جديد من جهاز آخر، جارٍ إعادة التحميل…', ac_ok: '✅ تم تسجيل الدخول، جارٍ إعادة التحميل…', ac_bad: 'تعذّر التحقق من تسجيل الدخول، حاول مرة أخرى', ac_linked: 'هذا الجهاز مرتبط بحساب آخر من النوع نفسه، سجّل الخروج أولًا',
     ac_cfg: 'تسجيل الدخول غير متاح بعد', ac_net: 'مشكلة في الشبكة أو الخادم يستيقظ، حاول لاحقًا',
     ac_logout_q: 'تسجيل الخروج يمسح التقدّم على هذا الجهاز (يبقى محفوظًا في حسابك ويمكنك استعادته بتسجيل الدخول). متابعة؟',
     ac_delete_q: 'سيؤدي هذا إلى حذف جميع بياناتك نهائيًا من الخادم (أعلى نتيجة والعلب المفتوحة والحسابات المرتبطة) ولا يمكن التراجع. متابعة؟',

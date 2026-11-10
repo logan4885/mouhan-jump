@@ -1,9 +1,9 @@
 // 账号：用 Google / Facebook 登录，把本机进度绑定到账号；换设备登录就能找回最高分、罐子和 VIP。
 // 服务器只保存服务商给的用户标识，不保存邮箱和密码。登录是可选的，不登录照常能玩。
-import { Storage } from './Storage.js?v=20261110k';
-import { LEADERBOARD_API, syncPlayer, fetchPlayer } from './Leaderboard.js?v=20261110k';
-import { AUTH } from './authConfig.js?v=20261110k';
-import { mergeServerPlayer } from './Recovery.js?v=20261110k';
+import { Storage } from './Storage.js?v=20261110p';
+import { LEADERBOARD_API, syncPlayer, fetchPlayer } from './Leaderboard.js?v=20261110p';
+import { AUTH } from './authConfig.js?v=20261110p';
+import { mergeServerPlayer } from './Recovery.js?v=20261110p';
 
 export const accountAvailable = () => !!LEADERBOARD_API.baseUrl && (!!AUTH.googleClientId || !!AUTH.facebookAppId);
 export const PROVIDER_NAME = { google: 'Google', facebook: 'Facebook' };
@@ -45,6 +45,20 @@ export async function completeLogin(provider, token) {
   }
   Storage.setAccount({ provider, name: j.name || '' });
   return { status: 'ok' };
+}
+
+/**
+ * 从服务器拉取账号的最新进度并并入本机（别的设备上赢的分、解锁的罐子、换的头像昵称）。
+ * 返回 { status: 'none'|'net'|'ok', changed }；changed 为 true 时调用方应刷新页面让界面用上新数据。
+ */
+export async function pullProgress() {
+  if (!Storage.getAccount() || !LEADERBOARD_API.baseUrl) return { status: 'none', changed: false };
+  const sp = await fetchPlayer(Storage.getPlayer().id);
+  if (!sp) return { status: 'net', changed: false };
+  const snap = () => JSON.stringify([Storage.getHighScore(), Storage.getSkinState(), Storage.getAvatar(), Storage.getNickname(), Storage.getStats()]);
+  const before = snap();
+  mergeServerPlayer(sp, true);
+  return { status: 'ok', changed: snap() !== before };
 }
 
 /** 渲染 Google 官方登录按钮 */

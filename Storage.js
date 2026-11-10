@@ -43,9 +43,12 @@ export const Storage = {
   /** 当前登录的第三方账号 { provider, name }；没登录为 null */
   getAccount() { const v = read('account', null); return v && v.provider ? v : null; },
   setAccount(a) { write('account', a); },
+  /** 上一次和服务器对齐时的 昵称 / 头像 / 正在用的罐子（用来判断“这几项我在本机改过没有”） */
+  getSynced() { return read('synced', null); },
+  setSynced(o) { write('synced', o); },
   /** 退出登录 / 删除数据后：清空本机进度和身份（语言、静音保留），下次打开会生成全新的玩家 */
   clearLocalProgress() {
-    ['player', 'highScore', 'skins:v2', 'nickname', 'avatar', 'stats', 'usedCodes', 'account'].forEach((k) => {
+    ['player', 'highScore', 'skins:v2', 'nickname', 'avatar', 'stats', 'usedCodes', 'account', 'synced'].forEach((k) => {
       delete memory[k];
       try { localStorage.removeItem(PREFIX + k); } catch (e) { /* 忽略 */ }
     });
