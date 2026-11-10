@@ -357,7 +357,7 @@ export class Game {
 
   /* ================= 罐子能力 ================= */
   _refreshPerk() {
-    this.perk = getPerk(this.match ? null : this.skins.state.player);   // 同图比赛里大家都没有罐子能力，才公平；Roguelike 里保留罐子自带能力，Buff 叠加在上面
+    this.perk = getPerk(this.skins.state.player);   // 房间比赛和 Roguelike 里都保留罐子自带能力；Roguelike 里保留罐子自带能力，Buff 叠加在上面
     if (this.rogue) {
       const m = this.rogue.perkMods();
       this.perk.perfectMul = (this.perk.perfectMul || 1) * m.perfectMul;
