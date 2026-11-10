@@ -1,9 +1,9 @@
 // 账号：用 Google / Facebook 登录，把本机进度绑定到账号；换设备登录就能找回最高分、罐子和 VIP。
 // 服务器只保存服务商给的用户标识，不保存邮箱和密码。登录是可选的，不登录照常能玩。
-import { Storage } from './Storage.js?v=20261110s';
-import { LEADERBOARD_API, syncPlayer, fetchPlayer } from './Leaderboard.js?v=20261110s';
-import { AUTH } from './authConfig.js?v=20261110s';
-import { mergeServerPlayer } from './Recovery.js?v=20261110s';
+import { Storage } from './Storage.js?v=20261110t';
+import { LEADERBOARD_API, syncPlayer, fetchPlayer } from './Leaderboard.js?v=20261110t';
+import { AUTH } from './authConfig.js?v=20261110t';
+import { mergeServerPlayer } from './Recovery.js?v=20261110t';
 
 export const accountAvailable = () => !!LEADERBOARD_API.baseUrl && (!!AUTH.googleClientId || !!AUTH.facebookAppId);
 export const PROVIDER_NAME = { google: 'Google', facebook: 'Facebook' };

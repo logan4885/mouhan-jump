@@ -1,8 +1,8 @@
 // 同图比赛：开房间 / 加入 / 大厅 / 结果。服务器只发地图种子和收最终成绩，没有实时通信。
-import { Storage } from './Storage.js?v=20261110s';
-import { syncPlayer, LEADERBOARD_API } from './Leaderboard.js?v=20261110s';
+import { Storage } from './Storage.js?v=20261110t';
+import { syncPlayer, LEADERBOARD_API } from './Leaderboard.js?v=20261110t';
 import { t } from './i18n.js';
-import { escapeHtml } from './utils.js?v=20261110s';
+import { escapeHtml } from './utils.js?v=20261110t';
 
 const MAX = 8;
 const ALPHA = /[^A-HJ-NP-Z2-9]/g;
@@ -182,6 +182,7 @@ export class Room {
     this.pollTimer = setInterval(async () => {
       if (Date.now() - t0 > 20 * 60 * 1000) return this._stopPoll();
       try {
+        if (this.phase === 'result' && this.pending) await this._send();
         const j = await api('/api/room/' + code);
         if (this.phase === 'result' && j.room.round > this.round) { this.newer = j.room; paint(); return; }   // 结果页继续显示我打的那一局
         this.room = j.room; paint();
@@ -208,15 +209,25 @@ export class Room {
     await this._submit();
   }
 
+  /** 交成绩；失败也继续轮询，并在每次轮询时自动重交，不会卡在“还在玩…” */
   async _submit() {
-    if (!this.pending) return;
+    const ok = await this._send();
+    this._paintResult(!ok);
+    if (!this.pollTimer && this.phase === 'result') this._poll(() => this._paintResult(!!this.pending));
+  }
+
+  async _send() {
+    if (!this.pending) return true;
     try {
       const j = await api('/api/room/score', { code: this.pending.code, score: this.pending.score, round: this.pending.round });
-      this.room = j.room; this.pending = null;
+      this.pending = null; this._msg('');
+      if (!(j.room.round > this.round)) this.room = j.room;
+      return true;
     } catch (e) {
-      if (e.code === 'stale') { this.pending = null; this._msg(''); this._paintResult(false); return; } this._msg(t('rm_submit_fail')); this._paintResult(true); return; }
-    this._paintResult();
-    this._poll(() => this._paintResult());
+      if (e.code === 'stale') { this.pending = null; this._msg(''); return true; }
+      this._msg(t('rm_submit_fail'));
+      return false;
+    }
   }
 
   _result() {
