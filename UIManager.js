@@ -568,7 +568,7 @@ export class UIManager {
       if (token !== this._rankToken) return;
       if (p) mineRow = { id: p.id, nickname: p.nickname, avatar: p.avatar, color: p.color, score: rogue ? me.score : p.score, rank: rogue ? (lastSync && lastSync.rogueRank) || p.rank : p.rank, isMe: true };
     }
-    this.el.rankList.innerHTML = top.map((r) => this._rankRowHtml(r, live)).join('');
+    this.el.rankList.innerHTML = top.length ? top.map((r) => this._rankRowHtml(r, live)).join('') : `<li class="loading">${escapeHtml(t('rk_empty'))}</li>`;
     const showMine = () => { this.el.rankMine.innerHTML = mineRow ? `<ol class="rank-list">${this._rankRowHtml(mineRow, live)}</ol>` : ''; };
     showMine();
     this.el.rankNote.textContent = live ? t('rank_live') + ' · ' + t('pl_tip') : t('rank_mock');
