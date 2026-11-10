@@ -1,8 +1,8 @@
 // 同图比赛：开房间 / 加入 / 大厅 / 结果。服务器只发地图种子和收最终成绩，没有实时通信。
-import { Storage } from './Storage.js?v=20261110r';
-import { syncPlayer, LEADERBOARD_API } from './Leaderboard.js?v=20261110r';
+import { Storage } from './Storage.js?v=20261110s';
+import { syncPlayer, LEADERBOARD_API } from './Leaderboard.js?v=20261110s';
 import { t } from './i18n.js';
-import { escapeHtml } from './utils.js?v=20261110r';
+import { escapeHtml } from './utils.js?v=20261110s';
 
 const MAX = 8;
 const ALPHA = /[^A-HJ-NP-Z2-9]/g;
@@ -37,6 +37,8 @@ export class Room {
     this.pollTimer = null;
     this.myScore = null;
     this.pending = null;     // 待交的成绩（交失败时保留，可重试）
+    this.round = 1;          // 我正在玩 / 刚玩完的是第几局
+    this.newer = null;       // 别人在同一房间开了更新的一局时，存放那一局的房间信息
     this._build();
     game.onMatchOver = (r) => this._finished(r);
     window.addEventListener('hashchange', () => this._checkLink());
@@ -179,7 +181,11 @@ export class Room {
     const code = this.room.code; const t0 = Date.now();
     this.pollTimer = setInterval(async () => {
       if (Date.now() - t0 > 20 * 60 * 1000) return this._stopPoll();
-      try { const j = await api('/api/room/' + code); this.room = j.room; paint(); } catch (e) { /* 网络抖动，下次再试 */ }
+      try {
+        const j = await api('/api/room/' + code);
+        if (this.phase === 'result' && j.room.round > this.round) { this.newer = j.room; paint(); return; }   // 结果页继续显示我打的那一局
+        this.room = j.room; paint();
+      } catch (e) { /* 网络抖动，下次再试 */ }
     }, 3000);
   }
   _stopPoll() { if (this.pollTimer) { clearInterval(this.pollTimer); this.pollTimer = null; } }
@@ -187,15 +193,16 @@ export class Room {
   _start() {
     this._stopPoll();
     this._hide();
-    this.phase = 'playing'; this.myScore = null; this.pending = null;
-    this.chip.textContent = t('rm_chip', { code: this.room.code });
+    this.phase = 'playing'; this.myScore = null; this.pending = null; this.newer = null;
+    this.round = this.room.round;
+    this.chip.textContent = t('rm_chip', { code: this.room.code }) + ' · ' + t('rm_round', { n: this.round });
     this.chip.classList.remove('hidden');
     this.game.enterMatch(this.room.code, this.room.seed);
   }
 
   /* ---------- 结果 ---------- */
   async _finished({ code, score }) {
-    this.phase = 'result'; this.myScore = score; this.pending = { code, score };
+    this.phase = 'result'; this.myScore = score; this.pending = { code, score, round: this.round };
     this.chip.classList.add('hidden');
     this._result();
     await this._submit();
@@ -204,22 +211,23 @@ export class Room {
   async _submit() {
     if (!this.pending) return;
     try {
-      const j = await api('/api/room/score', { code: this.pending.code, score: this.pending.score });
+      const j = await api('/api/room/score', { code: this.pending.code, score: this.pending.score, round: this.pending.round });
       this.room = j.room; this.pending = null;
-    } catch (e) { this._msg(t('rm_submit_fail')); this._paintResult(true); return; }
+    } catch (e) {
+      if (e.code === 'stale') { this.pending = null; this._msg(''); this._paintResult(false); return; } this._msg(t('rm_submit_fail')); this._paintResult(true); return; }
     this._paintResult();
     this._poll(() => this._paintResult());
   }
 
   _result() {
     this.body.innerHTML = `
-      <h2>${escapeHtml(t('rm_result'))}</h2>
+      <h2>${escapeHtml(t('rm_result'))} <small>${escapeHtml(t('rm_round', { n: this.round }))}</small></h2>
       <p class="room-label">${escapeHtml(t('rm_code_label'))} <b>${escapeHtml(this.room.code)}</b></p>
       <div class="over-score">${this.myScore}</div>
       <p class="room-verdict" id="roomVerdict"></p>
       <div id="roomPlayers"></div>
       <div class="btn-row"><button type="button" class="btn" data-act="retry-submit" id="roomRetry" hidden>${escapeHtml(t('rm_retry'))}</button><button type="button" class="btn" data-act="copy">${escapeHtml(t('rm_copy_link'))}</button></div>
-      <button type="button" class="btn primary big" data-act="again">${escapeHtml(t('rm_again'))}</button>
+      <button type="button" class="btn primary big" data-act="again" id="roomAgain">${escapeHtml(t('rm_again'))}</button>
       <button type="button" class="link-btn" data-act="home">${escapeHtml(t('rm_home'))}</button>
       <p class="room-msg" id="roomMsg" role="status" aria-live="polite"></p>`;
     this._paintResult(false);
@@ -234,6 +242,8 @@ export class Room {
     const room = { ...this.room, players };
     $('roomPlayers').innerHTML = this._playersHtml(room, 'result');
     $('roomRetry').hidden = !failed;
+    const again = $('roomAgain');
+    if (again) { again.textContent = this.newer ? t('rm_join_next', { n: this.newer.round }) : t('rm_again'); again.classList.toggle('pulse', !!this.newer); }
     const done = players.filter((p) => p.score !== null);
     const best = Math.max(...done.map((p) => p.score));
     const ahead = done.filter((p) => p.score > this.myScore).length;
@@ -242,6 +252,17 @@ export class Room {
     if (players.length < 2) v.textContent = '';
     else if (done.length < players.length) v.textContent = ahead === 0 && this.myScore === best ? t('rm_waiting') : '';
     else v.textContent = ahead === 0 ? (tied ? t('rm_tie') : t('rm_win')) : t('rm_lose', { n: ahead + 1 });
+  }
+
+  /* ---------- 同一个房间再来一局 ---------- */
+  async _rematch() {
+    this._msg(t('rm_loading'));
+    try {
+      let room = this.newer;                                            // 别人已经开了新的一局：直接加入
+      if (!room) room = (await api('/api/room/rematch', { code: this.room.code, round: this.round })).room;
+      this._stopPoll();
+      this.room = room; this._start();
+    } catch (e) { this._msg(this._err(e)); }
   }
 
   /* ---------- 点击事件 ---------- */
@@ -256,7 +277,7 @@ export class Room {
     else if (a === 'start') this._start();
     else if (a === 'leave') { this._stopPoll(); this.room = null; this.phase = 'idle'; this._hide(); }
     else if (a === 'retry-submit') this._submit();
-    else if (a === 'again') { this._stopPoll(); this.game.leaveMatch(); this.room = null; this.open(); }
+    else if (a === 'again') this._rematch();
     else if (a === 'home') { this._stopPoll(); this.game.leaveMatch(); this.room = null; this.phase = 'idle'; this._hide(); }
     else if (a === 'copy' || a === 'share') {
       const link = this._link(this.room.code);
