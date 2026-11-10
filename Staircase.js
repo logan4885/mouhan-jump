@@ -1,41 +1,46 @@
-// Roguelike 模式的“5 万层阶梯式关卡”难度表（见 SodaJump_50000Floors_Staircase_Difficulty_Design.xlsx）
-// 表里的间距/宽度是设计稿数值，这里按比例换算到游戏里的世界单位：
-//   间距 6.25 → 17.03  对应  平均相邻方块中心距 3.2 → 8.4（最大跳距 9.5，留出余量）
-//   宽度 2.80 → 1.97   对应  方块最大边长 2.6 → 1.75、最小边长 1.5 → 1.05
-// 层数用连续插值（不是每 1000 层突然跳一档），同一阶段内逐层平滑过渡。
+// Roguelike 模式的关卡表：前 1000 个方块，每 20 个方块一档（见 SodaJump_1000Blocks_Every20_Hazard_Progression.xlsx）
+//  · 前 20 个方块是标准新手方块；之后每过 20 个方块解锁 1 种新的“机制方块”，加入随机池（共 19 种，第 400 个方块起全部混用）
+//  · 方块间距 6.25 → 15.07、平台宽度 2.80 → 2.02 按档位线性变化（这里平滑插值）
+//  · 第 501 个方块起出现下沉倒计时：6.0 秒逐档缩短，第 801 个方块起一口气收到 3.5 秒，最后 2.6 秒；1000 个方块之后保持最后一档
+// 表里的数字是设计稿单位，这里换算成游戏世界单位：
+//   间距 6.25 → 15.07  对应  平均相邻方块中心距 3.2 → 8.0（最大跳距 9.5，留出余量）
+//   宽度 2.80 → 2.02   对应  方块最大边长 2.6 → 1.8、最小边长 1.5 → 1.08
 
 export const STAIR = {
-  floorsPerStage: 1000,   // 表里每 1000 层一个阶段；想快速体验可临时改成 20
-  stages: 50,
+  step: 20,        // 每档多少个方块（表里是 20；想快速体验把它改小，比如 5，解锁节奏会按比例加快）
 };
 
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
 
+/** 19 种机制方块，按解锁顺序（第 N 档解锁第 N 种） */
+export const HZ_ORDER = ['repulsion', 'icy', 'sinking', 'moving', 'scaling', 'teleport', 'explosive', 'windy', 'mirrored',
+  'shocking', 'blackhole', 'stealth', 'fragile', 'reset', 'lava', 'bullseye', 'timedilate', 'doublecoin', 'chaos'];
+
+/** 落上去之后还会持续生效的机制（离开方块才恢复普通外观） */
+export const STAND_HZ = ['sinking', 'explosive', 'reset', 'lava', 'timedilate'];
+
 export const ZONES = [
-  { id: 'novice', icon: '🌱', from: 1, to: 1 },
-  { id: 'mid', icon: '⚡', from: 2, to: 10 },
-  { id: 'adv', icon: '🌪️', from: 11, to: 25 },
-  { id: 'peak', icon: '🔥', from: 26, to: 50 },
+  { id: 'novice', icon: '🌱' }, { id: 'mid', icon: '⚡' }, { id: 'adv', icon: '🌪️' }, { id: 'peak', icon: '🔥' },
 ];
 
-export function zoneOf(stage) { return ZONES.find((z) => stage >= z.from && stage <= z.to) || ZONES[3]; }
-
-/** 根据层数返回这一层的关卡参数（连续插值） */
-export function stairParams(floor) {
-  const per = STAIR.floorsPerStage;
-  const f = clamp(floor, 1, per * STAIR.stages);
-  const b = Math.min(STAIR.stages - 1, (f - 1) / per);            // 连续的“阶段进度” 0 ~ 49
-  const distance = Math.min(17.03, 6.25 + b * 0.22);               // 表：方块间距
-  const width = Math.max(1.97, 2.80 - b * 0.017);                  // 表：平台宽度
-  const timer = b >= 10 ? Math.max(2.6, 6.0 - (b - 10) * 0.088) : null;   // 表：下沉倒计时（秒），前 10 个阶段无
-  const hazard = Math.min(40, b * 0.85);                           // 表：阴间机制概率（%）
-  const gapMean = 3.2 + ((distance - 6.25) / (17.03 - 6.25)) * 5.2;
-  const k = (2.80 - width) / (2.80 - 1.97);                        // 0 ~ 1：方块缩小的进度
-  const stage = Math.floor(b) + 1;
+/** 第 idx 个方块（1 起）对应的关卡参数 */
+export function stairParams(idx) {
+  const i = Math.max(1, (idx - 1) * 20 / STAIR.step + 1);          // 折算成“每档 20 块”的位置
+  const b = Math.min(49, (i - 1) / 20);                            // 连续档位 0 ~ 49
+  const k = Math.min(49, Math.floor((i - 1) / 20));                // 当前所在档位（整数）
+  const distance = 6.25 + 0.18 * b;
+  const width = 2.80 - (0.78 / 49) * b;
+  const timer = k >= 40 ? 3.5 - (k - 40) * 0.1 : k >= 25 ? 6.0 - (k - 25) * 0.1 : null;
+  const unlocked = Math.min(19, k);
+  const kk = (2.80 - width) / 0.78;
+  const zoneIdx = i <= 200 ? 0 : i <= 500 ? 1 : i <= 800 ? 2 : 3;
+  const gapMean = 3.2 + ((distance - 6.25) / (15.07 - 6.25)) * 4.8;
   return {
-    stage, zone: zoneOf(stage),
-    distance, width, timer, hazard,
+    k, stage: k + 1, zone: ZONES[zoneIdx], zoneIdx,
+    distance, width, timer,
+    pool: HZ_ORDER.slice(0, unlocked), unlockedNew: k >= 1 && k <= 19 ? HZ_ORDER[k - 1] : null,
+    chance: k === 0 ? 0 : k < 20 ? 0.35 : 0.45,
     gapMean, gapMin: gapMean * 0.85, gapMax: gapMean * 1.15,
-    sizeMax: 2.6 - 0.85 * k, sizeMin: 1.5 - 0.45 * k,
+    sizeMax: 2.6 - 0.8 * kk, sizeMin: 1.5 - 0.42 * kk,
   };
 }

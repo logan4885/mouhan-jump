@@ -1,7 +1,7 @@
 // Roguelike 模式的界面：入口说明、三选一抽卡、局内 Buff 栏、先知之眼标记、各种全屏闪光
-import { t, L } from './i18n.js?v=20261110x';
-import { escapeHtml } from './utils.js?v=20261110x';
-import { BUFF_BY_ID, CATS, VIP_BUFFS, rt } from './Roguelike.js?v=20261110x';
+import { t, L } from './i18n.js?v=20261110y';
+import { escapeHtml } from './utils.js?v=20261110y';
+import { BUFF_BY_ID, CATS, VIP_BUFFS, rt } from './Roguelike.js?v=20261110y';
 
 const $ = (id) => document.getElementById(id);
 
@@ -66,13 +66,13 @@ export class RogueUI {
     this.bar.classList.add('hidden'); this.setMark(null); this.setSink(null);
   }
   /** 下沉倒计时条：frac 为剩余比例 0~1，null 隐藏 */
-  setSink(frac, secs) {
+  setSink(frac, secs, icon = '⏳') {
     if (!this.sink) return;
     if (frac == null) { this.sink.classList.add('hidden'); return; }
     this.sink.classList.remove('hidden');
     this.sink.classList.toggle('low', frac < 0.35);
     this.sink.firstChild.style.width = (frac * 100).toFixed(1) + '%';
-    this.sink.lastChild.textContent = '⏳ ' + secs.toFixed(1);
+    this.sink.lastChild.textContent = icon + ' ' + secs.toFixed(1);
   }
   refresh(rg) {
     if (!rg) return;
@@ -82,6 +82,7 @@ export class RogueUI {
     chips.push(`<span class="rg-chip shield">🛡️×${rg.shield}</span>`);
     chips.push(`<span class="rg-chip">🏢 ${rg.layers}</span>`);
     if (rg.stage) chips.push(`<span class="rg-chip">${rg.zoneIcon || ''} ${rg.stage}</span>`);
+    if (rg.nextHz) chips.push(`<span class="rg-chip">${escapeHtml(rt('nextHz'))} ${rg.nextHz}</span>`);
     if (rg.hazWind) chips.push(`<span class="rg-chip wind">${escapeHtml(rt(rg.hazWind < 0 ? 'windL' : 'windR', { n: Math.abs(rg.hazWind).toFixed(2) }))}</span>`);
     if (rg.bonusBase) chips.push(`<span class="rg-chip">📈+${rg.bonusBase}</span>`);
     if (rg.has('BUFF_21')) chips.push(`<span class="rg-chip wind">${escapeHtml(rg.wind === 0 ? '💨 0' : rt(rg.wind < 0 ? 'windL' : 'windR', { n: Math.abs(rg.wind).toFixed(2) }))}</span>`);

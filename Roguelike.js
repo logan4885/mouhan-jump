@@ -2,7 +2,7 @@
 // 规则（照 Excel《SodaJump_Phygital_Architecture_and_Buffs》）：
 //   BUFF_01~22 进入每 10 层的【三选一抽卡池】；BUFF_23~30 是 VIP 常驻被动，绝不占三选一的格子。
 //   VIP = 已经拥有任一兑换罐的玩家（沿用游戏里现有的 VIP 判断）。
-import { L } from './i18n.js?v=20261110x';
+import { L } from './i18n.js?v=20261110y';
 
 const tri = (zh, en, ar) => ({ zh, en, ar });
 const B = (id, cat, icon, name, desc, extra = {}) => ({ id: 'BUFF_' + String(id).padStart(2, '0'), cat, icon, name, desc, pool: id <= 22 ? 'run' : 'vip', ...extra });
@@ -52,11 +52,34 @@ export const RUN_POOL = BUFFS.filter((b) => b.pool === 'run');
 export const VIP_BUFFS = BUFFS.filter((b) => b.pool === 'vip');
 
 /** 界面 / 提示文字（三语） */
+/** 19 种机制方块：图标、名称、说明（解锁时顶部播报） */
+export const HZ = {
+  repulsion: { icon: '💥', name: tri('击退弹簧方块', 'Repulsion Spring', 'منصة الارتداد'), desc: tri('落地后被弹向方块后缘', 'You get bounced to the back edge after landing', 'ترتدّ إلى الحافة الخلفية بعد الهبوط') },
+  icy: { icon: '🧊', name: tri('冰霜滑行方块', 'Icy Slide', 'منصة الجليد'), desc: tri('落地后会多滑一段，要少蓄一点力', 'You slide further after landing, charge a bit less', 'تنزلق أبعد بعد الهبوط، اشحن أقل') },
+  sinking: { icon: '⏳', name: tri('极速下沉方块', 'Fast Sinker', 'منصة الغرق السريع'), desc: tri('站上去 2.2 秒就沉没，立刻起跳', 'Sinks in 2.2s once you land — jump now', 'تغرق خلال 2.2 ثانية، اقفز فوراً') },
+  moving: { icon: '↔️', name: tri('左右移动方块', 'Moving Block', 'منصة متحركة'), desc: tri('起跳前左右滑动，起跳瞬间定格', 'Slides side to side until you jump', 'تتحرك جانبياً حتى تقفز') },
+  scaling: { icon: '🔍', name: tri('动态缩放方块', 'Pulsing Block', 'منصة نابضة'), desc: tri('一会儿大一会儿小，起跳瞬间定格', 'Grows and shrinks until you jump', 'تكبر وتصغر حتى تقفز') },
+  teleport: { icon: '🌀', name: tri('空间传送方块', 'Teleport Block', 'منصة الانتقال'), desc: tri('你一开始蓄力它就瞬移到旁边', 'It blinks sideways the moment you start charging', 'تنتقل جانباً لحظة بدء الشحن') },
+  explosive: { icon: '💣', name: tri('炸弹定时方块', 'Time Bomb', 'منصة القنبلة'), desc: tri('站上去 3 秒后爆炸', 'Explodes 3s after you land', 'تنفجر بعد 3 ثوانٍ من الهبوط') },
+  windy: { icon: '🌪️', name: tri('侧向强风方块', 'Gale Block', 'منصة الرياح'), desc: tri('跳向它时被侧风吹偏', 'Crosswind blows your jump off course', 'رياح جانبية تبعدك عن المسار') },
+  mirrored: { icon: '🪞', name: tri('左右颠倒方块', 'Mirrored Block', 'منصة المرآة'), desc: tri('瞄准它时画面左右翻转', 'The screen flips while you aim at it', 'تنقلب الشاشة أثناء التصويب') },
+  shocking: { icon: '⚡', name: tri('高压电击方块', 'Shock Block', 'منصة الصعق'), desc: tri('落地被电：不算完美，并麻痹 0.7 秒', 'Landing zaps you: no perfect, stunned 0.7s', 'تُصعق: لا مثالي وتشلّ 0.7 ثانية') },
+  blackhole: { icon: '🕳️', name: tri('黑洞吸附方块', 'Black Hole', 'منصة الثقب الأسود'), desc: tri('把你的跳跃吸短，要多蓄一点力', 'Pulls your jump short — charge more', 'يسحب قفزتك لتقصر، اشحن أكثر') },
+  stealth: { icon: '👻', name: tri('隐形闪烁方块', 'Phantom Block', 'منصة الشبح'), desc: tri('一闪一闪地隐形，起跳瞬间现身', 'Flickers invisible until you jump', 'تومض وتختفي حتى تقفز') },
+  fragile: { icon: '🧱', name: tri('脆皮易碎方块', 'Fragile Block', 'منصة هشّة'), desc: tri('只有靠近中心才站得稳，边缘会碎', 'Only the centre holds — the edges crumble', 'المركز فقط يتحمّل، الحواف تنهار') },
+  reset: { icon: '🔄', name: tri('弹道重置方块', 'Reset Block', 'منصة إعادة الشحن'), desc: tri('蓄力条满了会归零重来', 'The charge bar loops back to zero when full', 'يعود شريط الشحن إلى الصفر عند الامتلاء') },
+  lava: { icon: '🔥', name: tri('熔岩灼烧方块', 'Lava Block', 'منصة الحمم'), desc: tri('站上去蓄力速度 ×1.7', 'Charge speed ×1.7 while you stand on it', 'سرعة الشحن ×1.7 أثناء الوقوف') },
+  bullseye: { icon: '🎯', name: tri('绝对靶心方块', 'Bullseye Block', 'منصة الهدف'), desc: tri('完美范围减半，但完美得分 ×3', 'Perfect zone halved, perfect score ×3', 'منطقة المثالي النصف، ونقاطه ×3') },
+  timedilate: { icon: '⏱️', name: tri('时间膨胀方块', 'Time Dilation', 'منصة تمدد الزمن'), desc: tri('蓄力变慢 ×0.55，但倒计时走得更快', 'Charging slows ×0.55 but timers run faster', 'الشحن أبطأ ×0.55 لكن المؤقتات أسرع') },
+  doublecoin: { icon: '💰', name: tri('双倍金币方块', 'Double Coin', 'منصة العملة المزدوجة'), desc: tri('落地得分 ×2', 'Landing score ×2', 'نقاط الهبوط ×2') },
+  chaos: { icon: '👑', name: tri('终极混沌方块', 'Chaos God', 'منصة الفوضى'), desc: tri('同时带 2 种随机机制', 'Carries 2 random mechanics at once', 'تحمل آليتين عشوائيتين معاً') },
+};
+
 const TXT = {
   pick: tri('第 {n} 层 · 选一个 Buff', 'Floor {n} · pick a buff', 'الطابق {n} · اختر ميزة'),
   reroll: tri('🧰 刷新重抽（无限）', '🧰 Reroll (unlimited)', '🧰 إعادة السحب (بلا حدود)'),
   title: tri('Roguelike 模式', 'Roguelike mode', 'وضع Roguelike'),
-  intro: tri('每跳 10 层，从 3 张 Buff 里选 1 张，越玩越强。有自己的 Roguelike 排行榜，不进总榜。越往上越难：平台变窄、间距变大，之后会下沉，还会出现移动 / 窄小 / 强风 / 镜像方块。', 'Every 10 floors pick 1 of 3 buffs and snowball your build. It has its own Roguelike leaderboard, separate from the main one. The higher you climb, the harder it gets: platforms shrink and spread out, then sink, and trick blocks appear.', 'كل 10 طوابق اختر ميزة من 3 وقوِّ بناءك. لها لوحة صدارة خاصة. كلما صعدت زادت الصعوبة: منصات أصغر وأبعد ثم تغرق وتظهر كتل خادعة.'),
+  intro: tri('每跳 10 层，从 3 张 Buff 里选 1 张，越玩越强。有自己的 Roguelike 排行榜，不进总榜。前 20 个方块是新手教学，之后每 20 个方块解锁一种机制方块（击退、冰面、移动、传送、炸弹、黑洞……共 19 种），第 500 个方块起还会下沉。', 'Every 10 floors pick 1 of 3 buffs and snowball your build. It has its own Roguelike leaderboard, separate from the main one. The first 20 blocks are a tutorial, then every 20 blocks unlock a new mechanic block (19 in total), and from block 500 platforms start to sink.', 'كل 10 طوابق اختر ميزة من 3 وقوِّ بناءك. لها لوحة صدارة خاصة. أول 20 كتلة تدريب، ثم تُفتح آلية جديدة كل 20 كتلة (19 في المجموع) وتبدأ المنصات بالغرق بعد الكتلة 500.'),
   rankBtn: tri('🏆 Roguelike 排行榜', '🏆 Roguelike leaderboard', '🏆 لوحة صدارة Roguelike'),
   start: tri('开始 Roguelike', 'Start Roguelike', 'ابدأ Roguelike'),
   vipOn: tri('👑 VIP 被动已生效：{n} 项', '👑 VIP passives active: {n}', '👑 مزايا VIP مفعّلة: {n}'),
@@ -66,10 +89,15 @@ const TXT = {
   build: tri('本局 Build：', 'Your build: ', 'بناؤك: '),
   none: tri('没有选 Buff', 'No buffs picked', 'لم تختر أي ميزة'),
   zone: tri('{icon} 进入{name}（第 {n} 阶段）', '{icon} Entering {name} (stage {n})', '{icon} دخلت {name} (المرحلة {n})'),
-  zone_novice: tri('新手舒适区', 'Rookie Zone', 'منطقة المبتدئين'),
-  zone_mid: tri('中速体验区', 'Tempo Zone', 'منطقة السرعة المتوسطة'),
-  zone_adv: tri('进阶挑战区', 'Challenge Zone', 'منطقة التحدي'),
-  zone_peak: tri('巅峰长跑区', 'Marathon Zone', 'منطقة الماراثون'),
+  zone_novice: tri('轻松上手区', 'Easy Start Zone', 'منطقة البداية السهلة'),
+  zone_mid: tri('节奏进阶区', 'Rhythm Zone', 'منطقة الإيقاع'),
+  zone_adv: tri('机制乱斗区', 'Mayhem Zone', 'منطقة الفوضى'),
+  zone_peak: tri('混沌巅峰区', 'Chaos Peak', 'قمة الفوضى'),
+  unlock: tri('⚠️ 【跳过 {skip} 个方块】解锁第 {n} 种机制：【{icon} {name}】！{desc}', '⚠️ [{skip} blocks cleared] Mechanic #{n} unlocked: [{icon} {name}]! {desc}', '⚠️ [تجاوزت {skip} كتلة] آلية #{n}: [{icon} {name}]! {desc}'),
+  chaosAll: tri('⚡ 20 种特殊机制全随机乱斗中！', '⚡ All mechanics are now mixed at random!', '⚡ كل الآليات مختلطة عشوائياً الآن!'),
+  startMsg: tri('🚩 启程！前 20 个方块是标准新手教学，掌握蓄力节奏！', '🚩 Let\'s go! The first 20 blocks are a standard tutorial — learn the charge rhythm!', '🚩 انطلق! أول 20 كتلة تدريب قياسي'),
+  nextHz: tri('下一块', 'Next', 'التالية'),
+  fuse: tri('💣 爆炸了！', '💣 Boom!', '💣 انفجار!'),
   sinkNote: tri('⏳ 平台在下沉，快跳！', '⏳ The platform is sinking, jump!', '⏳ المنصة تغرق، اقفز!'),
   shieldUsed: tri('🛡️ 护盾挡下了一次失误！', '🛡️ Shield saved you!', '🛡️ أنقذك الدرع!'),
   revived: tri('♻️ 原地复苏！', '♻️ Second Wind!', '♻️ إحياء فوري!'),
