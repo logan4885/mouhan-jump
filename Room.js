@@ -1,8 +1,8 @@
 // 同图比赛：开房间 / 加入 / 大厅 / 结果。服务器只发地图种子和收最终成绩，没有实时通信。
-import { Storage } from './Storage.js?v=20261110t';
-import { syncPlayer, LEADERBOARD_API } from './Leaderboard.js?v=20261110t';
+import { Storage } from './Storage.js?v=20261110u';
+import { syncPlayer, LEADERBOARD_API } from './Leaderboard.js?v=20261110u';
 import { t } from './i18n.js';
-import { escapeHtml } from './utils.js?v=20261110t';
+import { escapeHtml } from './utils.js?v=20261110u';
 
 const MAX = 8;
 const ALPHA = /[^A-HJ-NP-Z2-9]/g;
@@ -202,8 +202,8 @@ export class Room {
   }
 
   /* ---------- 结果 ---------- */
-  async _finished({ code, score }) {
-    this.phase = 'result'; this.myScore = score; this.pending = { code, score, round: this.round };
+  async _finished({ code, score, record }) {
+    this.phase = 'result'; this.myScore = score; this.record = !!record; this.pending = { code, score, round: this.round };
     this.chip.classList.add('hidden');
     this._result();
     await this._submit();
@@ -234,6 +234,7 @@ export class Room {
     this.body.innerHTML = `
       <h2>${escapeHtml(t('rm_result'))} <small>${escapeHtml(t('rm_round', { n: this.round }))}</small></h2>
       <p class="room-label">${escapeHtml(t('rm_code_label'))} <b>${escapeHtml(this.room.code)}</b></p>
+      ${this.record ? `<div class="record">${escapeHtml(t('new_record'))}</div>` : ''}
       <div class="over-score">${this.myScore}</div>
       <p class="room-verdict" id="roomVerdict"></p>
       <div id="roomPlayers"></div>

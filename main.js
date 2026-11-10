@@ -1,8 +1,8 @@
 // 入口：创建游戏实例
-import { Game } from './Game.js?v=20261110t';
-import { Storage } from './Storage.js?v=20261110t';
-import { pullProgress } from './Account.js?v=20261110t';
-import { Room } from './Room.js?v=20261110t';
+import { Game } from './Game.js?v=20261110u';
+import { Storage } from './Storage.js?v=20261110u';
+import { pullProgress } from './Account.js?v=20261110u';
+import { Room } from './Room.js?v=20261110u';
 
 function showError(err) {
   console.error(err);

@@ -1,19 +1,19 @@
 // 游戏主控：渲染器 / 场景 / 正交相机 / 灯光、输入、状态机、计分与落点判定
 import * as THREE from 'three';
-import { CONFIG } from './config.js?v=20261110t';
-import { Storage } from './Storage.js?v=20261110t';
-import { Tweens, clamp, Ease } from './utils.js?v=20261110t';
-import { SkinManager } from './SkinManager.js?v=20261110t';
-import { BlockManager } from './BlockManager.js?v=20261110t';
-import { Player } from './Player.js?v=20261110t';
-import { UIManager } from './UIManager.js?v=20261110t';
-import { Sound } from './Sound.js?v=20261110t';
-import { t, L } from './i18n.js?v=20261110t';
-import { getPerk } from './canPerks.js?v=20261110t';
-import { getSignature, RARITY } from './canSignature.js?v=20261110t';
-import { PLAYER_SKINS } from './SkinManager.js?v=20261110t';
-import { Music, playSfx } from './SkinAudio.js?v=20261110t';
-import { SignatureFX } from './SignatureFX.js?v=20261110t';
+import { CONFIG } from './config.js?v=20261110u';
+import { Storage } from './Storage.js?v=20261110u';
+import { Tweens, clamp, Ease } from './utils.js?v=20261110u';
+import { SkinManager } from './SkinManager.js?v=20261110u';
+import { BlockManager } from './BlockManager.js?v=20261110u';
+import { Player } from './Player.js?v=20261110u';
+import { UIManager } from './UIManager.js?v=20261110u';
+import { Sound } from './Sound.js?v=20261110u';
+import { t, L } from './i18n.js?v=20261110u';
+import { getPerk } from './canPerks.js?v=20261110u';
+import { getSignature, RARITY } from './canSignature.js?v=20261110u';
+import { PLAYER_SKINS } from './SkinManager.js?v=20261110u';
+import { Music, playSfx } from './SkinAudio.js?v=20261110u';
+import { SignatureFX } from './SignatureFX.js?v=20261110u';
 
 // 踩中星号方块后的免费体验时长（秒）
 const TRIAL_SEC = 8;
@@ -298,7 +298,7 @@ export class Game {
     this._updatePerkHud();
 
     // 最高分实时刷新并写入本地
-    if (!this.match && this.score > this.best) {
+    if (this.score > this.best) {
       this.best = this.score;
       Storage.saveHighScore(this.best);
       this.ui.setBest(this.best);
@@ -417,10 +417,20 @@ export class Game {
     this.ui.setFreezeBtn(false);
     this._endTrial(false);
     this._stopMusic(0.9);
-    if (this.match) {                       // 同图比赛：只交成绩，不动最高分和统计
+    if (this.match) {                       // 同图比赛：成绩同样计入最高分、统计和总排行榜，只是不弹普通结算框
       this.match.finished = true;
       this.ui.el.hud.classList.add('hidden');
-      if (this.onMatchOver) this.onMatchOver({ code: this.match.code, score: this.score, perfects: this.perfects });
+      const rec = this.score > this.bestAtStart;
+      Storage.saveHighScore(this.score);
+      this.best = Storage.getHighScore();
+      const st = Storage.getStats();
+      st.games = (st.games || 0) + 1;
+      st.perfects = (st.perfects || 0) + this.perfects;
+      Storage.saveStats(st);
+      const unl = this.skins.checkUnlocks(this.best);
+      this.ui.setBest(this.best);
+      if (unl && unl.length) this.ui.toast(t('unlocked_new') + unl.map((s) => L(s.name)).join(t('sep')));
+      if (this.onMatchOver) this.onMatchOver({ code: this.match.code, score: this.score, perfects: this.perfects, record: rec });
       return;
     }
     const record = this.score > this.bestAtStart;
