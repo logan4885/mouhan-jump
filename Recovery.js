@@ -1,8 +1,8 @@
 // 备份 / 恢复进度：不需要注册登录。
 // 恢复码 = 本机的玩家 ID + 密钥（等于“密码”，不要发给别人）。在新设备上粘贴恢复码，
 // 就会从服务器取回最高分、已解锁的罐子和 VIP 身份，并把这台设备绑定到同一个账号。
-import { Storage } from './Storage.js?v=20261110p';
-import { LEADERBOARD_API } from './Leaderboard.js?v=20261110p';
+import { Storage } from './Storage.js?v=20261110q';
+import { LEADERBOARD_API } from './Leaderboard.js?v=20261110q';
 
 export const recoveryAvailable = () => !!LEADERBOARD_API.baseUrl;
 
@@ -85,7 +85,8 @@ export function mergeServerPlayer(sp, live = false) {
   }
   // 日常同步（三方对比）：这一项我在本机没改过（等于上次对齐的值）→ 采用服务器上别的设备改的；改过 → 保留本机，稍后推送上去
   const last = Storage.getSynced() || {};
-  const untouched = (cur, was) => was === undefined || cur === was;
+  // 没有对齐记录（升级后的第一次）：本机已有值就保留本机的（并在拉取后推上去），本机为空才采用服务器的
+  const untouched = (cur, was) => (was === undefined ? !cur : cur === was);
   const next = { ...last };            // 本机改过、还没推上去的项，保持“上次对齐值”不变，下次拉取时仍判定为“改过”
   let player = sk.player;
   if (untouched('player:' + sk.player, last.equipped)) {

@@ -1,9 +1,9 @@
 // 账号：用 Google / Facebook 登录，把本机进度绑定到账号；换设备登录就能找回最高分、罐子和 VIP。
 // 服务器只保存服务商给的用户标识，不保存邮箱和密码。登录是可选的，不登录照常能玩。
-import { Storage } from './Storage.js?v=20261110p';
-import { LEADERBOARD_API, syncPlayer, fetchPlayer } from './Leaderboard.js?v=20261110p';
-import { AUTH } from './authConfig.js?v=20261110p';
-import { mergeServerPlayer } from './Recovery.js?v=20261110p';
+import { Storage } from './Storage.js?v=20261110q';
+import { LEADERBOARD_API, syncPlayer, fetchPlayer } from './Leaderboard.js?v=20261110q';
+import { AUTH } from './authConfig.js?v=20261110q';
+import { mergeServerPlayer } from './Recovery.js?v=20261110q';
 
 export const accountAvailable = () => !!LEADERBOARD_API.baseUrl && (!!AUTH.googleClientId || !!AUTH.facebookAppId);
 export const PROVIDER_NAME = { google: 'Google', facebook: 'Facebook' };
@@ -57,7 +57,9 @@ export async function pullProgress() {
   if (!sp) return { status: 'net', changed: false };
   const snap = () => JSON.stringify([Storage.getHighScore(), Storage.getSkinState(), Storage.getAvatar(), Storage.getNickname(), Storage.getStats()]);
   const before = snap();
+  const hadRecord = !!Storage.getSynced();
   mergeServerPlayer(sp, true);
+  if (!hadRecord) await syncPlayer();               // 第一次：把保留下来的本机昵称 / 头像 / 罐子推上去，并建立对齐记录
   return { status: 'ok', changed: snap() !== before };
 }
 

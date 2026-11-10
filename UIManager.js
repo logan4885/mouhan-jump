@@ -1,22 +1,22 @@
 // UI 层：开始界面、计分板、蓄力条、飘字、结算弹窗、皮肤商店（含兑换码）、排行榜、语言切换
-import { PLAYER_SKINS, BLOCK_STYLES, SkinPreview } from './SkinManager.js?v=20261110p';
-import { fetchTop, fetchPlayer, syncPlayer, buildBoard, LEADERBOARD_API } from './Leaderboard.js?v=20261110p';
-import { Storage } from './Storage.js?v=20261110p';
-import { escapeHtml } from './utils.js?v=20261110p';
-import { t, L, setLang, getLang, onLangChange, applyStatic } from './i18n.js?v=20261110p';
-import { PERKS } from './canPerks.js?v=20261110p';
-import { SIGNATURE, RARITY, getSignature } from './canSignature.js?v=20261110p';
-import { SHOP } from './shop.js?v=20261110p';
-import { recoveryAvailable, makeCode, makeLink, restore } from './Recovery.js?v=20261110p';
-import { accountAvailable, pullProgress, PROVIDER_NAME, completeLogin, renderGoogleButton, prepareFacebook, facebookLogin, logout } from './Account.js?v=20261110p';
-import { AUTH } from './authConfig.js?v=20261110p';
+import { PLAYER_SKINS, BLOCK_STYLES, SkinPreview } from './SkinManager.js?v=20261110q';
+import { fetchTop, fetchPlayer, syncPlayer, buildBoard, LEADERBOARD_API } from './Leaderboard.js?v=20261110q';
+import { Storage } from './Storage.js?v=20261110q';
+import { escapeHtml } from './utils.js?v=20261110q';
+import { t, L, setLang, getLang, onLangChange, applyStatic } from './i18n.js?v=20261110q';
+import { PERKS } from './canPerks.js?v=20261110q';
+import { SIGNATURE, RARITY, getSignature } from './canSignature.js?v=20261110q';
+import { SHOP } from './shop.js?v=20261110q';
+import { recoveryAvailable, makeCode, makeLink, restore } from './Recovery.js?v=20261110q';
+import { accountAvailable, pullProgress, PROVIDER_NAME, completeLogin, renderGoogleButton, prepareFacebook, facebookLogin, logout } from './Account.js?v=20261110q';
+import { AUTH } from './authConfig.js?v=20261110q';
 
 const $ = (id) => document.getElementById(id);
 
 export class UIManager {
   /**
    * @param {object} handlers { onStart, onRestart, onHome }
-   * @param {import('./SkinManager.js?v=20261110p').SkinManager} skins
+   * @param {import('./SkinManager.js?v=20261110q').SkinManager} skins
    */
   constructor(handlers, skins) {
     this.h = handlers;
