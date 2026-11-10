@@ -1,7 +1,7 @@
 // Roguelike 模式的界面：入口说明、三选一抽卡、局内 Buff 栏、先知之眼标记、各种全屏闪光
-import { t, L } from './i18n.js?v=20261110w';
-import { escapeHtml } from './utils.js?v=20261110w';
-import { BUFF_BY_ID, CATS, VIP_BUFFS, rt } from './Roguelike.js?v=20261110w';
+import { t, L } from './i18n.js?v=20261110x';
+import { escapeHtml } from './utils.js?v=20261110x';
+import { BUFF_BY_ID, CATS, VIP_BUFFS, rt } from './Roguelike.js?v=20261110x';
 
 const $ = (id) => document.getElementById(id);
 
@@ -14,6 +14,7 @@ export class RogueUI {
     const host = $('playerModal') ? $('playerModal').parentNode : document.body;
     host.insertAdjacentHTML('beforeend', `
       <div id="rgBar" class="rg-bar hidden" aria-live="polite"></div>
+      <div id="rgSink" class="rg-sink hidden" aria-hidden="true"><i></i><b></b></div>
       <div id="rgFlash" class="rg-flash" aria-hidden="true"></div>
       <div id="rgKing" class="rg-king hidden" aria-hidden="true"></div>
       <div class="modal-wrap hidden" id="rgIntro" role="dialog" aria-modal="true">
@@ -22,7 +23,7 @@ export class RogueUI {
       <div class="modal-wrap hidden" id="rgModal" role="dialog" aria-modal="true">
         <div class="modal rgpick"><h2 id="rgPickTitle"></h2><div class="rg-cards" id="rgCards"></div><button type="button" class="btn rg-reroll hidden" id="rgReroll"></button></div>
       </div>`);
-    this.bar = $('rgBar');
+    this.bar = $('rgBar'); this.sink = $('rgSink');
     const track = document.querySelector('.charge-track');
     if (track) { track.insertAdjacentHTML('beforeend', '<i class="rg-mark hidden" id="rgMark"></i>'); this.mark = $('rgMark'); }
     const btn = $('btnRogueStart');
@@ -62,7 +63,16 @@ export class RogueUI {
   }
   hide() {
     $('rgModal').classList.add('hidden'); this.pick = null;
-    this.bar.classList.add('hidden'); this.setMark(null);
+    this.bar.classList.add('hidden'); this.setMark(null); this.setSink(null);
+  }
+  /** 下沉倒计时条：frac 为剩余比例 0~1，null 隐藏 */
+  setSink(frac, secs) {
+    if (!this.sink) return;
+    if (frac == null) { this.sink.classList.add('hidden'); return; }
+    this.sink.classList.remove('hidden');
+    this.sink.classList.toggle('low', frac < 0.35);
+    this.sink.firstChild.style.width = (frac * 100).toFixed(1) + '%';
+    this.sink.lastChild.textContent = '⏳ ' + secs.toFixed(1);
   }
   refresh(rg) {
     if (!rg) return;
@@ -71,6 +81,8 @@ export class RogueUI {
     if (rg.vip) chips.push(`<span class="rg-chip vip">👑 VIP</span>`);
     chips.push(`<span class="rg-chip shield">🛡️×${rg.shield}</span>`);
     chips.push(`<span class="rg-chip">🏢 ${rg.layers}</span>`);
+    if (rg.stage) chips.push(`<span class="rg-chip">${rg.zoneIcon || ''} ${rg.stage}</span>`);
+    if (rg.hazWind) chips.push(`<span class="rg-chip wind">${escapeHtml(rt(rg.hazWind < 0 ? 'windL' : 'windR', { n: Math.abs(rg.hazWind).toFixed(2) }))}</span>`);
     if (rg.bonusBase) chips.push(`<span class="rg-chip">📈+${rg.bonusBase}</span>`);
     if (rg.has('BUFF_21')) chips.push(`<span class="rg-chip wind">${escapeHtml(rg.wind === 0 ? '💨 0' : rt(rg.wind < 0 ? 'windL' : 'windR', { n: Math.abs(rg.wind).toFixed(2) }))}</span>`);
     if (rg.vip && rg.target10 != null) chips.push(`<span class="rg-chip">${escapeHtml(rt('target', { n: rg.target10 }))}</span>`);

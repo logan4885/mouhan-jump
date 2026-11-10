@@ -545,3 +545,11 @@ body.rg-slow #game { filter: saturate(.7) brightness(.92); }
 .rank-tabs { display: flex; gap: 8px; margin: 0 0 12px; }
 .rank-tabs button { flex: 1; font: inherit; font-weight: 800; font-size: 14px; padding: 8px 10px; border-radius: 12px; border: 2px solid var(--ink, #2a2540); background: #fff; color: var(--ink, #2a2540); cursor: pointer; }
 .rank-tabs button.on { background: var(--accent, #ff6f4a); color: #fff; }
+
+/* ---- Roguelike 阶梯关卡：下沉倒计时条 ---- */
+.rg-sink { position: fixed; left: 50%; top: 10px; transform: translateX(-50%); width: min(34vw, 150px); height: 22px; border-radius: 12px; background: rgba(42,37,64,.78); overflow: hidden; z-index: 30; pointer-events: none; border: 2px solid rgba(255,255,255,.7); }
+.rg-sink i { position: absolute; left: 0; top: 0; bottom: 0; width: 100%; background: #7bd88f; transition: background .2s; }
+.rg-sink.low i { background: #ff5a5a; animation: rgSinkBlink .45s infinite alternate; }
+.rg-sink b { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 900; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,.5); }
+@keyframes rgSinkBlink { from { opacity: 1; } to { opacity: .55; } }
+.rg-sink.hidden { display: none; }

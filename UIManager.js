@@ -1,16 +1,16 @@
 // UI 层：开始界面、计分板、蓄力条、飘字、结算弹窗、皮肤商店（含兑换码）、排行榜、语言切换
-import { PLAYER_SKINS, BLOCK_STYLES, SkinPreview } from './SkinManager.js?v=20261110w';
-import { fetchTop, fetchPlayer, syncPlayer, buildBoard, LEADERBOARD_API, lastSync } from './Leaderboard.js?v=20261110w';
-import { Storage } from './Storage.js?v=20261110w';
-import { escapeHtml } from './utils.js?v=20261110w';
-import { t, L, setLang, getLang, onLangChange, applyStatic } from './i18n.js?v=20261110w';
-import { PERKS } from './canPerks.js?v=20261110w';
-import { SIGNATURE, RARITY, getSignature } from './canSignature.js?v=20261110w';
-import { SHOP } from './shop.js?v=20261110w';
-import { recoveryAvailable, makeCode, makeLink, restore } from './Recovery.js?v=20261110w';
-import { accountAvailable, pullProgress, PROVIDER_NAME, completeLogin, renderGoogleButton, prepareFacebook, facebookLogin, logout } from './Account.js?v=20261110w';
-import { AUTH } from './authConfig.js?v=20261110w';
-import { BUFF_BY_ID, rt } from './Roguelike.js?v=20261110w';
+import { PLAYER_SKINS, BLOCK_STYLES, SkinPreview } from './SkinManager.js?v=20261110x';
+import { fetchTop, fetchPlayer, syncPlayer, buildBoard, LEADERBOARD_API, lastSync } from './Leaderboard.js?v=20261110x';
+import { Storage } from './Storage.js?v=20261110x';
+import { escapeHtml } from './utils.js?v=20261110x';
+import { t, L, setLang, getLang, onLangChange, applyStatic } from './i18n.js?v=20261110x';
+import { PERKS } from './canPerks.js?v=20261110x';
+import { SIGNATURE, RARITY, getSignature } from './canSignature.js?v=20261110x';
+import { SHOP } from './shop.js?v=20261110x';
+import { recoveryAvailable, makeCode, makeLink, restore } from './Recovery.js?v=20261110x';
+import { accountAvailable, pullProgress, PROVIDER_NAME, completeLogin, renderGoogleButton, prepareFacebook, facebookLogin, logout } from './Account.js?v=20261110x';
+import { AUTH } from './authConfig.js?v=20261110x';
+import { BUFF_BY_ID, rt } from './Roguelike.js?v=20261110x';
 
 const $ = (id) => document.getElementById(id);
 

@@ -1,7 +1,7 @@
 // 方块管理：生成（正方体 / 圆柱体，随机颜色与方向）、落点判定、挤压回弹、回收
 import * as THREE from 'three';
-import { CONFIG } from './config.js?v=20261110w';
-import { rand, clamp, Ease, disposeObject } from './utils.js?v=20261110w';
+import { CONFIG } from './config.js?v=20261110x';
+import { rand, clamp, Ease, disposeObject } from './utils.js?v=20261110x';
 
 function mulberry32(a) {
   return () => {
@@ -31,6 +31,8 @@ export class BlockManager {
     this.sizeBoostLeft = 0;  // Roguelike：接下来 N 个方块变宽（绝对防御）
     this.diamondLeft = 0;    // Roguelike：接下来 N 个方块是 2 倍积分的钻石方块
     this.nearNext = false;   // Roguelike：下一个方块用最近距离（安全气囊）
+    this.stairFn = null;     // Roguelike：Game 注入 (层数) => 关卡参数（阶梯难度）；为空 = 普通难度
+    this.stairFloor = 2;     // 正在生成的方块对应的层数
     this.trialRoll = null; // Game 注入：() => boolean，决定下一个方块是不是“24K 星号方块”
   }
 
@@ -40,6 +42,7 @@ export class BlockManager {
   /** 清空并生成开局的两个方块 */
   reset() {
     this.sizeBoostLeft = 0; this.diamondLeft = 0; this.nearNext = false;
+    this.stairFloor = 2;
     this.rng = this.seed == null ? null : mulberry32(this.seed);
     this.blocks.forEach((b) => this._destroy(b));
     this.blocks = [];
@@ -57,19 +60,28 @@ export class BlockManager {
     const dirKey = R() < 0.5 ? 'x' : 'z';
     const dir = DIRS[dirKey];
     const shape = R() < 0.55 ? 'box' : 'cylinder';
-    const shrink = score * CONFIG.SIZE_SHRINK_PER_SCORE;
-    const maxSize = clamp(CONFIG.BLOCK_MAX_SIZE - shrink, 1.25, CONFIG.BLOCK_MAX_SIZE);
-    const minSize = clamp(CONFIG.BLOCK_MIN_SIZE - shrink * 0.6, 1.0, CONFIG.BLOCK_MIN_SIZE);
+    const stair = this.stairFn && !this.rng ? this.stairFn(this.stairFloor) : null;   // Roguelike 阶梯难度
+    const shrink = stair ? 0 : score * CONFIG.SIZE_SHRINK_PER_SCORE;
+    const maxSize = stair ? stair.sizeMax : clamp(CONFIG.BLOCK_MAX_SIZE - shrink, 1.25, CONFIG.BLOCK_MAX_SIZE);
+    const minSize = stair ? stair.sizeMin : clamp(CONFIG.BLOCK_MIN_SIZE - shrink * 0.6, 1.0, CONFIG.BLOCK_MIN_SIZE);
     let size = rnd(minSize, maxSize);
+    // 阴间机制：按概率给这个方块带一种（移动 / 窄小 / 强侧风 / 镜像）
+    let haz = null;
+    if (stair && !this.nearNext && this.diamondLeft <= 0 && R() * 100 < stair.hazard) {
+      haz = ['move', 'narrow', 'wind', 'mirror'][Math.floor(R() * 4)];
+      if (haz === 'narrow') size = Math.max(0.8, size * 0.72);
+    }
     if (this.sizeBoostLeft > 0) { size = Math.min(size * 1.3, 3.4); this.sizeBoostLeft--; }
     // 保证两个方块之间至少留出一点空隙
-    const minGap = Math.max(CONFIG.BLOCK_MIN_GAP, cur.size / 2 + size / 2 + 0.5);
-    let gap = rnd(minGap, Math.max(minGap + 0.3, CONFIG.BLOCK_MAX_GAP));
+    const minGap = Math.max(stair ? stair.gapMin : CONFIG.BLOCK_MIN_GAP, cur.size / 2 + size / 2 + 0.5);
+    let gap = stair ? Math.min(rnd(minGap, Math.max(minGap + 0.3, stair.gapMax)), CONFIG.JUMP_MAX_DIST - 0.8)
+                    : rnd(minGap, Math.max(minGap + 0.3, CONFIG.BLOCK_MAX_GAP));
     if (this.nearNext) { gap = minGap; this.nearNext = false; }
     const block = this._create({ x: cur.x + dir.x * gap, z: cur.z + dir.z * gap, shape, size, animate });
     block.dirKey = dirKey;
     if (this.trialRoll && this.trialRoll(score)) this._markTrial(block);
     if (this.diamondLeft > 0) { this.diamondLeft--; this.markDiamond(block); }
+    if (haz) { block.windSign = R() < 0.5 ? -1 : 1; block.mPh = R() * 6.28; this.markHazard(block, haz); }
     this.blocks.push(block);
     return block;
   }
@@ -137,6 +149,26 @@ export class BlockManager {
     this._glow(block, '#b08cff', '#4a2a9a', '✦', '#f3ebff');
   }
 
+  /** 阶梯难度的“阴间机制”方块：移动 ⇄ / 窄小 🔻 / 强侧风 💨 / 镜像 🪞 */
+  markHazard(block, kind) {
+    if (!block || block.trial) return;
+    block.haz = kind; block.mOff = block.mOff || 0;
+    const L = { move: ['#ffb347', '#8a4a00', '⇄', '#fff3dc'], narrow: ['#ff6f91', '#7a1030', '🔻', '#ffe0e8'],
+                wind: ['#8fe388', '#1d6a2a', '💨', '#eaffe8'], mirror: ['#ff7ad9', '#7a1a66', '🪞', '#ffe6f7'] }[kind];
+    this._glow(block, L[0], L[1], L[2], L[3]);
+  }
+
+  /** 移动方块：只在“还没起跳”时左右滑动（起跳瞬间定格，落点判定和画面一致） */
+  updateHazards(dt, active) {
+    const n = this.next;
+    if (!active || !n || n.haz !== 'move' || n.frozen) return;
+    n.mPh += dt;
+    const off = Math.sin(n.mPh * 2.4) * 1.1, d = off - (n.mOff || 0);
+    n.mOff = off;
+    if (n.dirKey === 'x') n.z += d; else n.x += d;
+    n.root.position.x = n.x; n.root.position.z = n.z;
+  }
+
   /** 把下一个方块沿“与跳跃方向垂直”的方向偏移 frac × 间距（量子纠缠）；方向随机 */
   offsetNext(frac) {
     const n = this.next, c = this.current;
@@ -150,8 +182,8 @@ export class BlockManager {
 
   /** 踩过之后去掉钻石 / 量子外观 */
   clearMark(block) {
-    if (!block || (!block.diamond && !block.quantum)) return;
-    block.diamond = false; block.quantum = false;
+    if (!block || (!block.diamond && !block.quantum && !block.haz)) return;
+    block.diamond = false; block.quantum = false; block.haz = null;
     if (block.star) { block.root.remove(block.star); disposeObject(block.star); block.star = null; }
     const old = block.mesh;
     const fresh = this._buildMesh(block.shape, block.size);
@@ -211,6 +243,7 @@ export class BlockManager {
       if (b.trial) this._goldify(b);
       else if (b.diamond) { b.diamond = false; this.markDiamond(b); }
       else if (b.quantum) { b.quantum = false; this.markQuantum(b); }
+      else if (b.haz) { const k = b.haz; b.haz = null; this.markHazard(b, k); }
     });
   }
 

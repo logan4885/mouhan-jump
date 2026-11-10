@@ -2,7 +2,7 @@
 // 规则（照 Excel《SodaJump_Phygital_Architecture_and_Buffs》）：
 //   BUFF_01~22 进入每 10 层的【三选一抽卡池】；BUFF_23~30 是 VIP 常驻被动，绝不占三选一的格子。
 //   VIP = 已经拥有任一兑换罐的玩家（沿用游戏里现有的 VIP 判断）。
-import { L } from './i18n.js?v=20261110w';
+import { L } from './i18n.js?v=20261110x';
 
 const tri = (zh, en, ar) => ({ zh, en, ar });
 const B = (id, cat, icon, name, desc, extra = {}) => ({ id: 'BUFF_' + String(id).padStart(2, '0'), cat, icon, name, desc, pool: id <= 22 ? 'run' : 'vip', ...extra });
@@ -56,7 +56,7 @@ const TXT = {
   pick: tri('第 {n} 层 · 选一个 Buff', 'Floor {n} · pick a buff', 'الطابق {n} · اختر ميزة'),
   reroll: tri('🧰 刷新重抽（无限）', '🧰 Reroll (unlimited)', '🧰 إعادة السحب (بلا حدود)'),
   title: tri('Roguelike 模式', 'Roguelike mode', 'وضع Roguelike'),
-  intro: tri('每跳 10 层，从 3 张 Buff 里选 1 张，越玩越强。有自己的 Roguelike 排行榜，不进总榜。', 'Every 10 floors pick 1 of 3 buffs and snowball your build. It has its own Roguelike leaderboard, separate from the main one.', 'كل 10 طوابق اختر ميزة من 3 وقوِّ بناءك. لها لوحة صدارة خاصة منفصلة عن العامة.'),
+  intro: tri('每跳 10 层，从 3 张 Buff 里选 1 张，越玩越强。有自己的 Roguelike 排行榜，不进总榜。越往上越难：平台变窄、间距变大，之后会下沉，还会出现移动 / 窄小 / 强风 / 镜像方块。', 'Every 10 floors pick 1 of 3 buffs and snowball your build. It has its own Roguelike leaderboard, separate from the main one. The higher you climb, the harder it gets: platforms shrink and spread out, then sink, and trick blocks appear.', 'كل 10 طوابق اختر ميزة من 3 وقوِّ بناءك. لها لوحة صدارة خاصة. كلما صعدت زادت الصعوبة: منصات أصغر وأبعد ثم تغرق وتظهر كتل خادعة.'),
   rankBtn: tri('🏆 Roguelike 排行榜', '🏆 Roguelike leaderboard', '🏆 لوحة صدارة Roguelike'),
   start: tri('开始 Roguelike', 'Start Roguelike', 'ابدأ Roguelike'),
   vipOn: tri('👑 VIP 被动已生效：{n} 项', '👑 VIP passives active: {n}', '👑 مزايا VIP مفعّلة: {n}'),
@@ -65,6 +65,12 @@ const TXT = {
   floors: tri('到达第 {n} 层', 'Reached floor {n}', 'وصلت إلى الطابق {n}'),
   build: tri('本局 Build：', 'Your build: ', 'بناؤك: '),
   none: tri('没有选 Buff', 'No buffs picked', 'لم تختر أي ميزة'),
+  zone: tri('{icon} 进入{name}（第 {n} 阶段）', '{icon} Entering {name} (stage {n})', '{icon} دخلت {name} (المرحلة {n})'),
+  zone_novice: tri('新手舒适区', 'Rookie Zone', 'منطقة المبتدئين'),
+  zone_mid: tri('中速体验区', 'Tempo Zone', 'منطقة السرعة المتوسطة'),
+  zone_adv: tri('进阶挑战区', 'Challenge Zone', 'منطقة التحدي'),
+  zone_peak: tri('巅峰长跑区', 'Marathon Zone', 'منطقة الماراثون'),
+  sinkNote: tri('⏳ 平台在下沉，快跳！', '⏳ The platform is sinking, jump!', '⏳ المنصة تغرق، اقفز!'),
   shieldUsed: tri('🛡️ 护盾挡下了一次失误！', '🛡️ Shield saved you!', '🛡️ أنقذك الدرع!'),
   revived: tri('♻️ 原地复苏！', '♻️ Second Wind!', '♻️ إحياء فوري!'),
   spring: tri('🛞 弹回来了！', '🛞 Bounced back!', '🛞 ارتددت!'),

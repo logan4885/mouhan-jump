@@ -1,6 +1,6 @@
 // 多语言：中文 / English / العربية
 // 静态文字写在 index.html 的 data-i18n 属性里，动态文字用 t('key', { 变量 })
-import { Storage } from './Storage.js?v=20261110w';
+import { Storage } from './Storage.js?v=20261110x';
 
 export const LANGS = ['zh', 'en', 'ar'];
 

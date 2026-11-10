@@ -1,21 +1,22 @@
 // 游戏主控：渲染器 / 场景 / 正交相机 / 灯光、输入、状态机、计分与落点判定
 import * as THREE from 'three';
-import { CONFIG } from './config.js?v=20261110w';
-import { Storage } from './Storage.js?v=20261110w';
-import { Tweens, clamp, Ease } from './utils.js?v=20261110w';
-import { SkinManager } from './SkinManager.js?v=20261110w';
-import { BlockManager } from './BlockManager.js?v=20261110w';
-import { Player } from './Player.js?v=20261110w';
-import { UIManager } from './UIManager.js?v=20261110w';
-import { Sound } from './Sound.js?v=20261110w';
-import { t, L } from './i18n.js?v=20261110w';
-import { getPerk } from './canPerks.js?v=20261110w';
-import { getSignature, RARITY } from './canSignature.js?v=20261110w';
-import { PLAYER_SKINS } from './SkinManager.js?v=20261110w';
-import { Music, playSfx } from './SkinAudio.js?v=20261110w';
-import { SignatureFX } from './SignatureFX.js?v=20261110w';
-import { RunState, rt, chargeTimeFor } from './Roguelike.js?v=20261110w';
-import { fetchTop } from './Leaderboard.js?v=20261110w';
+import { CONFIG } from './config.js?v=20261110x';
+import { Storage } from './Storage.js?v=20261110x';
+import { Tweens, clamp, Ease } from './utils.js?v=20261110x';
+import { SkinManager } from './SkinManager.js?v=20261110x';
+import { BlockManager } from './BlockManager.js?v=20261110x';
+import { Player } from './Player.js?v=20261110x';
+import { UIManager } from './UIManager.js?v=20261110x';
+import { Sound } from './Sound.js?v=20261110x';
+import { t, L } from './i18n.js?v=20261110x';
+import { getPerk } from './canPerks.js?v=20261110x';
+import { getSignature, RARITY } from './canSignature.js?v=20261110x';
+import { PLAYER_SKINS } from './SkinManager.js?v=20261110x';
+import { Music, playSfx } from './SkinAudio.js?v=20261110x';
+import { SignatureFX } from './SignatureFX.js?v=20261110x';
+import { RunState, rt, chargeTimeFor } from './Roguelike.js?v=20261110x';
+import { fetchTop } from './Leaderboard.js?v=20261110x';
+import { stairParams } from './Staircase.js?v=20261110x';
 
 // 踩中星号方块后的免费体验时长（秒）
 const TRIAL_SEC = 8;
@@ -207,6 +208,7 @@ export class Game {
     const dist = clamp(CONFIG.JUMP_MIN_DIST + CONFIG.JUMP_SPEED * t + CONFIG.JUMP_ACCEL * t * t, CONFIG.JUMP_MIN_DIST, CONFIG.JUMP_MAX_DIST);
     const cur = this.blocks.current, next = this.blocks.next;
     this.blocks.release(cur);
+    if (next.haz === 'move') next.frozen = true;     // 移动方块：起跳瞬间定格
 
     // 跳跃方向：从角色当前位置指向下一个方块中心（和原版一样会自动修正横向偏差）
     const p = this.player.root.position;
@@ -218,7 +220,8 @@ export class Game {
     if (rg) {
       if (rg.has('BUFF_15') && Math.random() < 0.1) { lx = next.x; lz = next.z; rocket = true; this.ui.toast(rt('rocket')); }   // 火箭推力：直达正中心
       if (!rocket) {
-        if (rg.wind) { lx += -dz * rg.wind; lz += dx * rg.wind; }                                                              // 气流干扰：侧风把落点吹偏
+        const w = (rg.wind || 0) + (rg.hazWind || 0);
+        if (w) { lx += -dz * w; lz += dx * w; }                                                              // 气流干扰：侧风把落点吹偏
         if (rg.has('BUFF_03')) { const ex = next.x - lx, ez = next.z - lz; if (Math.hypot(ex, ez) < 1.2) { lx += ex * 0.35; lz += ez * 0.35; } }   // 羽毛缓降：空中微调
       }
     }
@@ -289,7 +292,7 @@ export class Game {
 
   _onLand(result) {
     this.sound.land();
-    if (result === 'stay') { this.state = 'ready'; this._rogueReady(); this._updatePerkHud(); return; }
+    if (result === 'stay') { if (this.blocks.next) this.blocks.next.frozen = false; this.state = 'ready'; this._rogueReady(); this._updatePerkHud(); return; }
     const landed = this.blocks.next;
     if (landed && landed.trial) this._startTrial(landed);
     let diamond = false, quantum = false;
@@ -338,6 +341,7 @@ export class Game {
       Storage.saveHighScore(this.best);
       this.ui.setBest(this.best);
     }
+    if (this.rogue) { this.blocks.stairFloor = this.rogue.layers + 2; this._sinkReset(); }
     this.blocks.advance(this.score);
     if (this.rogue && this.rogue.layers % 10 === 0) { this._rogueChoose(); return; }   // 每 10 层三选一
     this.state = 'ready';
@@ -385,6 +389,7 @@ export class Game {
     setTimeout(() => {
       if (this.state !== 'falling') return;
       const cur = this.blocks.current;
+      cur.root.position.y = 0; this._sinkReset();
       this.player.place(cur.x, CONFIG.BLOCK_HEIGHT, cur.z);
       const sq = this.player.squashG.scale;
       this.tweens.add({ duration: 0.35, ease: Ease.outElastic, update: (e) => sq.setScalar(0.3 + 0.7 * e) });
@@ -501,6 +506,7 @@ export class Game {
   _rogueBegin() {
     const rg = this.rogue;
     this._rogueReady();
+    this._sinkReset();
     if (rg.vip) {            // 降维打击：把 Roguelike 榜第 10 名当作挑战目标
       fetchTop(10, 0, 'rogue').then((list) => {
         if (this.rogue !== rg || !Array.isArray(list) || !list.length) return;
@@ -514,6 +520,9 @@ export class Game {
   _rogueReady() {
     const rg = this.rogue; if (!rg) return;
     rg.rollWind();
+    const nx = this.blocks.next;
+    rg.hazWind = nx && nx.haz === 'wind' ? nx.windSign * 0.8 : 0;                       // 强侧风方块：这一跳被额外吹偏
+    this._setMirror(rg.mirrorLeft > 0 || !!(nx && nx.haz === 'mirror'));                  // 镜像方块：瞄准时画面翻转
     this.player.root.visible = this._invisT <= 0;
     this.rogueUI.refresh(rg);
   }
@@ -524,6 +533,7 @@ export class Game {
     if (this._invisT > 0) { this._invisT -= dt; if (this._invisT <= 0) this.player.root.visible = true; }
     if (!['ready', 'charging', 'jumping'].includes(this.state)) return;
     if (rg.twistT > 0) rg.twistT = Math.max(0, rg.twistT - dt);
+    this._sinkTick(dt);
     if (rg.has('BUFF_13')) {
       rg.snowT += dt;
       if (rg.snowT >= 10) { rg.snowT -= 10; rg.bonusBase += 1; this.ui.toast(rt('snow', { n: rg.bonusBase })); this.rogueUI.refresh(rg); }
@@ -556,6 +566,43 @@ export class Game {
     if (rg.mirrorLeft > 0 && --rg.mirrorLeft === 0) { this._setMirror(false); this.ui.toast(rt('mirrorEnd')); }
     if (rg.vip && rg.target10 != null && !rg.beat10 && this.score > rg.target10) { rg.beat10 = true; this.ui.toast(rt('beat')); }
     this.rogueUI.refresh(rg);
+  }
+
+  /** 下沉倒计时：落到新方块上重新计时；只在等待起跳 / 蓄力时走（时停期间暂停） */
+  _sinkReset() {
+    const rg = this.rogue; if (!rg) { this._sinkMax = 0; return; }
+    const p = stairParams(rg.layers + 1);
+    if (rg.stage !== p.stage) {                                        // 进入新阶段 / 新区域
+      const first = rg.stage == null; rg.stage = p.stage; rg.zoneIcon = p.zone.icon;
+      if (!first && (p.stage === 2 || p.stage === 11 || p.stage === 26)) this.ui.toast(rt('zone', { icon: p.zone.icon, name: rt('zone_' + p.zone.id), n: p.stage }));
+    }
+    this._sinkMax = p.timer || 0; this._sinkT = this._sinkMax;
+    if (this.rogueUI) this.rogueUI.setSink(null);
+  }
+
+  _sinkTick(dt) {
+    if (!(this._sinkMax > 0) || !(this.state === 'ready' || this.state === 'charging') || this.freezeLeft > 0) return;
+    this._sinkT -= dt;
+    const frac = Math.max(0, this._sinkT / this._sinkMax);
+    const cur = this.blocks.current;
+    cur.root.position.y = -0.55 * Math.pow(1 - frac, 1.6);            // 平台一点点沉下去
+    this.rogueUI.setSink(frac, Math.max(0, this._sinkT));
+    if (this._sinkT <= 0) this._sinkFail();
+  }
+
+  _sinkFail() {
+    const rg = this.rogue, cur = this.blocks.current;
+    if (rg.useShield()) {                                              // 护盾：把平台托回来，重新计时
+      this.ui.toast(rt('shieldUsed')); playSfx(this.sound, 'icechime', 1, 0.8);
+      cur.root.position.y = 0; this._sinkReset(); this.rogueUI.refresh(rg);
+      if (this.state === 'ready') this.player.root.position.y = this.blocks.topY(cur);
+      return;
+    }
+    if (this.state === 'charging') { this.sound.chargeStop(); this.ui.hideCharge(); this.blocks.release(cur); }
+    this._sinkMax = 0; this.rogueUI.setSink(null);
+    this.state = 'jumping';
+    this.player.opts = { onFallen: () => this._onFallen() };
+    this.player.fall();
   }
 
   _rogueBestCheck() {
@@ -601,7 +648,7 @@ export class Game {
     this.player.root.visible = true;
     const record = this.score > this.rogueBestAtStart;
     this._rogueBestCheck();
-    this.rogueUI.hide();
+    this.rogueUI.hide(); this._sinkMax = 0;
     if (rg.vip && record) this.rogueUI.king();       // 王者降临：VIP 破 Roguelike 纪录
     this.ui.showGameOver({ score: this.score, best: this.rogueBest, record, perfects: this.perfects, unlocked: [], rogue: { layers: rg.layers, picks: rg.picks, vip: rg.vip, king: rg.vip && record } });
   }
@@ -747,6 +794,7 @@ export class Game {
   /* ================= 回合控制 ================= */
   reset() {
     this.tweens.clear();
+    this.blocks.stairFn = this.rogueMode ? stairParams : null;     // Roguelike：阶梯式关卡难度
     this.blocks.reset();
     this.player.place(0, CONFIG.BLOCK_HEIGHT, 0);
     this.score = 0; this.combo = 0; this.perfects = 0; this.chargeT = 0;
@@ -906,7 +954,7 @@ export class Game {
     this.tweens.update(dt);
     if (this.freezeLeft > 0) { this.freezeLeft -= dt; if (this.freezeLeft <= 0) this._endFreeze(true, true); }
     this._autoPlay(dt);
-    if (this.rogue) this._rogueTick(dt);
+    if (this.rogue) { this._rogueTick(dt); this.blocks.updateHazards(dt, (this.state === 'ready' || this.state === 'charging') && !(this.freezeLeft > 0)); }
 
     if (this.state === 'charging') {
       const slow = this.rogue && this.rogue.has('BUFF_18') && this.chargeT > 1.0 ? 0.5 : 1;     // 子弹时间：蓄力过 1 秒后进入慢动作
@@ -915,11 +963,11 @@ export class Game {
       const k = this.chargeT / CONFIG.CHARGE_MAX_TIME;
       const cur = this.blocks.current;
       this.blocks.squash(cur, k);
-      this.player.charge(k, this.blocks.topY(cur));
+      this.player.charge(k, this.blocks.topY(cur) + cur.root.position.y);
       this.ui.showCharge(k);
     } else if (this.state === 'ready' && this.player.state === 'idle') {
       // 方块回弹时角色跟着顶面上下
-      this.player.root.position.y = this.blocks.topY(this.blocks.current);
+      this.player.root.position.y = this.blocks.topY(this.blocks.current) + this.blocks.current.root.position.y;
     }
 
     this.player.update(dt);
