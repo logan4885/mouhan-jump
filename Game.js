@@ -1,19 +1,19 @@
 // 游戏主控：渲染器 / 场景 / 正交相机 / 灯光、输入、状态机、计分与落点判定
 import * as THREE from 'three';
-import { CONFIG } from './config.js?v=20261110q';
-import { Storage } from './Storage.js?v=20261110q';
-import { Tweens, clamp, Ease } from './utils.js?v=20261110q';
-import { SkinManager } from './SkinManager.js?v=20261110q';
-import { BlockManager } from './BlockManager.js?v=20261110q';
-import { Player } from './Player.js?v=20261110q';
-import { UIManager } from './UIManager.js?v=20261110q';
-import { Sound } from './Sound.js?v=20261110q';
-import { t, L } from './i18n.js?v=20261110q';
-import { getPerk } from './canPerks.js?v=20261110q';
-import { getSignature, RARITY } from './canSignature.js?v=20261110q';
-import { PLAYER_SKINS } from './SkinManager.js?v=20261110q';
-import { Music, playSfx } from './SkinAudio.js?v=20261110q';
-import { SignatureFX } from './SignatureFX.js?v=20261110q';
+import { CONFIG } from './config.js?v=20261110r';
+import { Storage } from './Storage.js?v=20261110r';
+import { Tweens, clamp, Ease } from './utils.js?v=20261110r';
+import { SkinManager } from './SkinManager.js?v=20261110r';
+import { BlockManager } from './BlockManager.js?v=20261110r';
+import { Player } from './Player.js?v=20261110r';
+import { UIManager } from './UIManager.js?v=20261110r';
+import { Sound } from './Sound.js?v=20261110r';
+import { t, L } from './i18n.js?v=20261110r';
+import { getPerk } from './canPerks.js?v=20261110r';
+import { getSignature, RARITY } from './canSignature.js?v=20261110r';
+import { PLAYER_SKINS } from './SkinManager.js?v=20261110r';
+import { Music, playSfx } from './SkinAudio.js?v=20261110r';
+import { SignatureFX } from './SignatureFX.js?v=20261110r';
 
 // 踩中星号方块后的免费体验时长（秒）
 const TRIAL_SEC = 8;
@@ -26,6 +26,8 @@ export class Game {
     this.score = 0;
     this.combo = 0;
     this.perfects = 0;
+    this.match = null;        // 同图比赛：{ code, seed, finished }；非空时不计入最高分/总榜，且关闭罐子能力
+    this.onMatchOver = null;
     this.best = Storage.getHighScore();
     this.chargeT = 0;
     this.tweens = new Tweens();
@@ -296,7 +298,7 @@ export class Game {
     this._updatePerkHud();
 
     // 最高分实时刷新并写入本地
-    if (this.score > this.best) {
+    if (!this.match && this.score > this.best) {
       this.best = this.score;
       Storage.saveHighScore(this.best);
       this.ui.setBest(this.best);
@@ -317,7 +319,7 @@ export class Game {
 
   /* ================= 罐子能力 ================= */
   _refreshPerk() {
-    this.perk = getPerk(this.skins.state.player);
+    this.perk = getPerk(this.match ? null : this.skins.state.player);   // 同图比赛里大家都没有罐子能力，才公平
     this._updatePerkHud();
   }
 
@@ -415,6 +417,12 @@ export class Game {
     this.ui.setFreezeBtn(false);
     this._endTrial(false);
     this._stopMusic(0.9);
+    if (this.match) {                       // 同图比赛：只交成绩，不动最高分和统计
+      this.match.finished = true;
+      this.ui.el.hud.classList.add('hidden');
+      if (this.onMatchOver) this.onMatchOver({ code: this.match.code, score: this.score, perfects: this.perfects });
+      return;
+    }
     const record = this.score > this.bestAtStart;
     Storage.saveHighScore(this.score);
     this.best = Storage.getHighScore();
@@ -454,7 +462,7 @@ export class Game {
 
   _rollTrial(score) {
     this._sinceTrial++;
-    if (this.state === 'menu' || this.trial || this._trialsThisRound >= 3 || !this._trialSkin()) return false;
+    if (this.match || this.state === 'menu' || this.trial || this._trialsThisRound >= 3 || !this._trialSkin()) return false;
     // 网址加 #trial：第 2 个方块起必出星号方块，方便自己测试
     const force = (location.hash || '').includes('trial') && this._trialsThisRound < 3 && this._sinceTrial >= 2;
     // 正常节奏：每局第一个在 3~6 分左右出现；之后每隔 5 个方块起开始 50% 抽取，12 个方块内必出
@@ -581,6 +589,7 @@ export class Game {
   }
 
   startRound() {
+    if (this.match && this.match.finished) return;     // 同图比赛每人只玩一局
     this.ui.hideGameOver();
     this.reset();
     this.bestAtStart = this.best;
@@ -592,6 +601,21 @@ export class Game {
     this._startMusic();
     this.state = 'ready';
     this._updatePerkHud();
+  }
+
+  /** 进入同图比赛：地图由种子决定，所有人一模一样 */
+  enterMatch(code, seed) {
+    this.match = { code, seed, finished: false };
+    this.blocks.seed = seed;
+    this._refreshPerk();
+    this.startRound();
+  }
+
+  leaveMatch() {
+    this.match = null;
+    this.blocks.seed = null;
+    this._refreshPerk();
+    this.goHome();
   }
 
   goHome() {

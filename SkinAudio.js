@@ -235,7 +235,7 @@ export const SFX = {
 
 /* ------------------------- 循环音乐 ------------------------- */
 export class Music {
-  /** @param {import('./Sound.js?v=20261110q').Sound} sound 借用它的 AudioContext 和静音状态 */
+  /** @param {import('./Sound.js?v=20261110r').Sound} sound 借用它的 AudioContext 和静音状态 */
   constructor(sound) {
     this.sound = sound;
     this.theme = null; this.id = null;

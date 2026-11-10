@@ -1,15 +1,24 @@
 // 方块管理：生成（正方体 / 圆柱体，随机颜色与方向）、落点判定、挤压回弹、回收
 import * as THREE from 'three';
-import { CONFIG } from './config.js?v=20261110q';
-import { rand, clamp, Ease, disposeObject } from './utils.js?v=20261110q';
+import { CONFIG } from './config.js?v=20261110r';
+import { rand, clamp, Ease, disposeObject } from './utils.js?v=20261110r';
+
+function mulberry32(a) {
+  return () => {
+    a |= 0; a = (a + 0x6d2b79f5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
 
 const DIRS = { x: new THREE.Vector3(1, 0, 0), z: new THREE.Vector3(0, 0, -1) };
 
 export class BlockManager {
   /**
    * @param {THREE.Scene} scene
-   * @param {import('./SkinManager.js?v=20261110q').SkinManager} skins
-   * @param {import('./utils.js?v=20261110q').Tweens} tweens
+   * @param {import('./SkinManager.js?v=20261110r').SkinManager} skins
+   * @param {import('./utils.js?v=20261110r').Tweens} tweens
    */
   constructor(scene, skins, tweens) {
     this.scene = scene;
@@ -17,6 +26,8 @@ export class BlockManager {
     this.tweens = tweens;
     this.blocks = [];
     this.currentIndex = 0;
+    this.seed = null;      // 同图比赛：非空时用固定种子生成地图（所有人拿到一模一样的方块）
+    this.rng = null;
     this.trialRoll = null; // Game 注入：() => boolean，决定下一个方块是不是“24K 星号方块”
   }
 
@@ -25,6 +36,7 @@ export class BlockManager {
 
   /** 清空并生成开局的两个方块 */
   reset() {
+    this.rng = this.seed == null ? null : mulberry32(this.seed);
     this.blocks.forEach((b) => this._destroy(b));
     this.blocks = [];
     this.currentIndex = 0;
@@ -35,16 +47,19 @@ export class BlockManager {
   /** 在当前方块前方随机生成下一个方块（沿 +X 或 -Z） */
   spawnNext(score = 0, animate = true) {
     const cur = this.blocks[this.blocks.length - 1];
-    const dirKey = Math.random() < 0.5 ? 'x' : 'z';
+    const R = this.rng ? () => this.rng() : Math.random;
+    const rnd = (a, b) => a + R() * (b - a);
+    if (this.rng) score = this.blocks.length - 1;      // 固定地图：按第几个方块缩小，保证大家的地图完全一致
+    const dirKey = R() < 0.5 ? 'x' : 'z';
     const dir = DIRS[dirKey];
-    const shape = Math.random() < 0.55 ? 'box' : 'cylinder';
+    const shape = R() < 0.55 ? 'box' : 'cylinder';
     const shrink = score * CONFIG.SIZE_SHRINK_PER_SCORE;
     const maxSize = clamp(CONFIG.BLOCK_MAX_SIZE - shrink, 1.25, CONFIG.BLOCK_MAX_SIZE);
     const minSize = clamp(CONFIG.BLOCK_MIN_SIZE - shrink * 0.6, 1.0, CONFIG.BLOCK_MIN_SIZE);
-    const size = rand(minSize, maxSize);
+    const size = rnd(minSize, maxSize);
     // 保证两个方块之间至少留出一点空隙
     const minGap = Math.max(CONFIG.BLOCK_MIN_GAP, cur.size / 2 + size / 2 + 0.5);
-    const gap = rand(minGap, Math.max(minGap + 0.3, CONFIG.BLOCK_MAX_GAP));
+    const gap = rnd(minGap, Math.max(minGap + 0.3, CONFIG.BLOCK_MAX_GAP));
     const block = this._create({ x: cur.x + dir.x * gap, z: cur.z + dir.z * gap, shape, size, animate });
     block.dirKey = dirKey;
     if (this.trialRoll && this.trialRoll(score)) this._markTrial(block);
