@@ -567,3 +567,6 @@ body.rg-slow #game { filter: saturate(.7) brightness(.92); }
 #start .site-back { max-width: calc(100% - 205px); padding: 9px 12px; }
 #start .lang-switch button { padding: 9px 10px; }
 
+
+/* Roguelike 介绍弹窗：两个按钮之间留间距 */
+#rgIntro #rgRank { display: block; width: 100%; margin-top: 18px; }
