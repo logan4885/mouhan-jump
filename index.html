@@ -12,7 +12,7 @@
   <meta name="apple-mobile-web-app-title" content="跳一跳 3D">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>跳一跳 3D</title>
-  <link rel="stylesheet" href="style.css?v=20261111f">
+  <link rel="stylesheet" href="style.css?v=20261111g">
   <!-- Three.js 以 ES Module 方式从 CDN 引入 -->
   <script type="importmap">
     { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }
@@ -70,14 +70,26 @@
       </p>
     </section>
 
-    <!-- 下载到手机：手动安装说明 -->
+    <!-- 下载到手机：安卓 / 苹果分开说明 -->
     <div class="modal-wrap hidden" id="installModal" role="dialog" aria-modal="true" aria-labelledby="installTitle">
       <div class="modal install-modal">
         <button class="close" data-instclose aria-label="Close">✕</button>
         <h2 id="installTitle" data-i18n="inst_title">下载到手机</h2>
-        <p id="installBody" class="install-body"></p>
+        <p id="instInapp" class="inst-inapp hidden"></p>
+        <div id="instCards">
+          <section class="inst-card" id="instAndroid">
+            <h3 data-i18n="inst_android_h">🤖 安卓手机</h3>
+            <div id="instAndroidSteps"></div>
+            <button type="button" class="btn primary hidden" id="instAndroidGo" data-i18n="inst_go">一键安装</button>
+          </section>
+          <section class="inst-card" id="instIos">
+            <h3 data-i18n="inst_ios_h">🍎 苹果 iPhone</h3>
+            <div id="instIosSteps"></div>
+            <p class="inst-ios-warn" data-i18n="inst_note_ios">注意：苹果手机上主屏幕版和 Safari 的存档是分开的，换过去前请先点“登录，保存进度”，到新版里再登录。</p>
+          </section>
+        </div>
         <p id="installNote" class="install-note"></p>
-        <button type="button" class="btn primary big" data-instclose data-i18n="inst_ok">知道了</button>
+        <button type="button" class="btn big" data-instclose data-i18n="inst_ok">知道了</button>
       </div>
     </div>
 
@@ -195,7 +207,7 @@
     </div>
   </div>
 
-  <script type="module" src="main.js?v=20261111f"></script>
+  <script type="module" src="main.js?v=20261111g"></script>
   <!-- 兜底：Three.js 或模块加载失败时给出提示 -->
   <script>
     setTimeout(function () { if (!window.__jumpReady) document.getElementById('nogl').classList.remove('hidden'); }, 9000);

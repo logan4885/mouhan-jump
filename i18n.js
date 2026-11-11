@@ -1,11 +1,16 @@
 // 多语言：中文 / English / العربية
 // 静态文字写在 index.html 的 data-i18n 属性里，动态文字用 t('key', { 变量 })
-import { Storage } from './Storage.js?v=20261111f';
+import { Storage } from './Storage.js?v=20261111g';
 
 export const LANGS = ['zh', 'en', 'ar'];
 
 const DICT = {
   zh: {
+    inst_android_h: "🤖 安卓手机",
+    inst_android_steps: "用 Chrome 打开本页|点右上角菜单 ⋮|选“安装应用”或“添加到主屏幕”，再点“安装”",
+    inst_ios_h: "🍎 苹果 iPhone",
+    inst_ios_steps: "用 Safari 打开本页（不要用微信等内置浏览器）|点底部的“分享”按钮（方框加向上箭头）|选“添加到主屏幕”，再点右上角“添加”",
+    inst_go: "一键安装",
     inst_btn: "📲 下载到手机",
     inst_title: "下载到手机",
     inst_ios: "苹果手机：用 Safari 打开本页，点底部的“分享”按钮，再选“添加到主屏幕”。",
@@ -65,6 +70,11 @@ const DICT = {
     nogl_p: '你的浏览器不支持 WebGL，或 Three.js 加载失败。请更换浏览器或检查网络后刷新。',
   },
   en: {
+    inst_android_h: "🤖 Android",
+    inst_android_steps: "Open this page in Chrome|Tap the menu ⋮ at the top right|Choose \"Install app\" or \"Add to Home screen\", then tap Install",
+    inst_ios_h: "🍎 iPhone",
+    inst_ios_steps: "Open this page in Safari (not an in-app browser)|Tap the Share button at the bottom (square with an up arrow)|Choose \"Add to Home Screen\", then tap Add at the top right",
+    inst_go: "Install now",
     inst_btn: "📲 Install on your phone",
     inst_title: "Install on your phone",
     inst_ios: "iPhone/iPad: open this page in Safari, tap the Share button at the bottom, then choose \"Add to Home Screen\".",
@@ -124,6 +134,11 @@ const DICT = {
     nogl_p: 'Your browser does not support WebGL, or Three.js failed to load. Try another browser or check your connection, then reload.',
   },
   ar: {
+    inst_android_h: "🤖 أندرويد",
+    inst_android_steps: "افتح الصفحة في Chrome|اضغط القائمة ⋮ أعلى اليمين|اختر «تثبيت التطبيق» أو «إضافة إلى الشاشة الرئيسية» ثم اضغط تثبيت",
+    inst_ios_h: "🍎 آيفون",
+    inst_ios_steps: "افتح الصفحة في Safari (وليس متصفحاً مدمجاً في تطبيق)|اضغط زر المشاركة في الأسفل (مربع وسهم لأعلى)|اختر «إضافة إلى الشاشة الرئيسية» ثم اضغط إضافة أعلى اليمين",
+    inst_go: "ثبّت الآن",
     inst_btn: "📲 ثبّت على هاتفك",
     inst_title: "ثبّت على هاتفك",
     inst_ios: "آيفون/آيباد: افتح الصفحة في Safari، اضغط زر المشاركة في الأسفل ثم اختر «إضافة إلى الشاشة الرئيسية».",

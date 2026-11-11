@@ -1,7 +1,7 @@
 // Roguelike 模式的界面：入口说明、三选一抽卡、局内 Buff 栏、先知之眼标记、各种全屏闪光
-import { t, L } from './i18n.js?v=20261111f';
-import { escapeHtml } from './utils.js?v=20261111f';
-import { BUFF_BY_ID, CATS, VIP_BUFFS, rt } from './Roguelike.js?v=20261111f';
+import { t, L } from './i18n.js?v=20261111g';
+import { escapeHtml } from './utils.js?v=20261111g';
+import { BUFF_BY_ID, CATS, VIP_BUFFS, rt } from './Roguelike.js?v=20261111g';
 
 const $ = (id) => document.getElementById(id);
 
