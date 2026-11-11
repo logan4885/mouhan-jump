@@ -1,76 +1,81 @@
 // Roguelike 专用：20 种敌人（空中 / 红圈砸落 / 地面滚动 / 追踪）+ 自动反击（冲击波、连击炮、炮塔、护盾反弹、赏金）
 // 只在 Roguelike 里生效（game.rogue 非空）；普通模式、同图比赛完全不会创建任何敌人。
+// 敌人全部是冲着“站在地上的你”来的：出现时先在你脚下亮预警（红圈 / 红带 / 屏幕边缘 ⚠️），你站着不动就会被打中，起跳离开或跳到空中就躲掉。
 // 5 类行为（每一类下面有若干种敌人，外观 / 速度 / 范围不同）：
-//   cross  横着飞过跳跃线      只撞【在空中】的你 → 看准它飞过再起跳（屏幕边缘先亮 ⚠️ 预警）
-//   float  慢慢飘进跳跃线      只撞【在空中】的你 → 等它飘走
-//   drop   先亮红圈，随后砸下   圈里站着的人（地上 / 刚起跳）会中 → 起跳离开
-//   roll   沿红带从侧面滚过方块 只撞【站在方块上】的你 → 在空中就躲掉
-//   home   追着你飞            站着、空中都会撞 → 靠反击打掉，或跳到别处拉开
+//   cross  贴地横着飞向你站的位置   红带 + 屏幕边缘 ⚠️ 预警
+//   float  慢慢飘向你站的位置       红带预警
+//   drop   先亮红圈，随后砸下        圈里的人会中
+//   roll   沿红带从侧面滚过方块      在空中就躲掉
+//   home   追着你飞                  站着、空中都会撞，要靠反击打掉
 //   被打中：先扣「硬化罐壳」，再扣护盾，都没有就掉下去（和踩空一样，可以被复苏 / 复活挡住）
+// 难度分档：前 10 个方块（第 0 档）没有敌人；之后每 10 个方块一档，每档多解锁几种敌人，刷怪更快、同屏更多、预警更短。
 import * as THREE from 'three';
-import { CONFIG } from './config.js?v=20261113a';
-import { L } from './i18n.js?v=20261113a';
-import { rt } from './Roguelike.js?v=20261113a';
-import { playSfx } from './SkinAudio.js?v=20261113a';
+import { CONFIG } from './config.js?v=20261113b';
+import { L } from './i18n.js?v=20261113b';
+import { rt } from './Roguelike.js?v=20261113b';
+import { playSfx } from './SkinAudio.js?v=20261113b';
 
 const tri = (zh, en, ar) => ({ zh, en, ar });
 
 /** 20 种敌人。from = 从第几层开始可能出现，w = 出现权重；其余是这一类行为的参数。想调难度改这里。 */
 export const KINDS = {
   // ---- cross：横着飞过 ----
-  bird:      { t: 'cross', icon: '🐦', from: 0,  w: 5, r: 0.62, speed: [4.6, 6.4], alt: [0.8, 2.4], warn: 1.0,
-    name: tri('鸟', 'Bird', 'طائر'), desc: tri('横着飞过，只撞空中的你', 'Flies across — only hits you mid-air', 'يعبر أفقياً ويصيبك في الهواء فقط') },
-  bat:       { t: 'cross', icon: '🦇', from: 2,  w: 4, r: 0.5,  speed: [5.5, 7.5], alt: [0.8, 2.6], warn: 0.9, wobY: 0.6, wobF: 9,
-    name: tri('蝙蝠', 'Bat', 'خفاش'), desc: tri('忽高忽低地快速飞过，只撞空中的你', 'Darts across, bobbing up and down — mid-air only', 'يعبر بسرعة صعوداً وهبوطاً — في الهواء فقط') },
-  bee:       { t: 'cross', icon: '🐝', from: 6,  w: 3, r: 0.42, speed: [4.0, 5.5], alt: [0.8, 2.2], warn: 0.9, zig: 1.0, zigF: 6,
-    name: tri('蜜蜂', 'Bee', 'نحلة'), desc: tri('蛇形来回飞过，只撞空中的你', 'Zig-zags across — mid-air only', 'يعبر بشكل متعرج — في الهواء فقط') },
-  eagle:     { t: 'cross', icon: '🦅', from: 12, w: 3, r: 0.85, speed: [8, 10], alt: [1.2, 3.0], warn: 0.8, size: 2.3,
-    name: tri('老鹰', 'Eagle', 'نسر'), desc: tri('又快又大，掠过高空，只撞空中的你', 'Big and fast — mid-air only', 'كبير وسريع — في الهواء فقط') },
-  plane:     { t: 'cross', icon: '✈️', from: 26, w: 2, r: 0.8,  speed: [11, 13], alt: [1.2, 3.0], warn: 0.7, size: 2.2,
-    name: tri('飞机', 'Plane', 'طائرة'), desc: tri('极快地横扫而过，只撞空中的你', 'Sweeps past at top speed — mid-air only', 'يمرّ بسرعة قصوى — في الهواء فقط') },
-  ufo:       { t: 'cross', icon: '🛸', from: 18, w: 3, r: 0.75, speed: [3.6, 4.8], alt: [1.0, 2.8], warn: 1.1, wobY: 0.5, wobF: 3, size: 2.0,
-    name: tri('飞碟', 'UFO', 'طبق طائر'), desc: tri('慢悠悠地上下飘着飞过，只撞空中的你', 'Bobs slowly across — mid-air only', 'يعبر ببطء صعوداً وهبوطاً — في الهواء فقط') },
+  bird:      { t: 'cross', icon: '🐦', from: 10,  w: 5, r: 0.62, speed: [4.6, 6.4], alt: [0.15, 0.7], warn: 1.0,
+    name: tri('鸟', 'Bird', 'طائر'), desc: tri('横着飞过，贴地冲你来，起跳躲开', 'Flies across — skims the ground at you, jump to dodge', 'يعبر أفقياً نحوك على مستوى الأرض، اقفز لتتفاداه') },
+  bat:       { t: 'cross', icon: '🦇', from: 20,  w: 4, r: 0.5,  speed: [5.5, 7.5], alt: [0.15, 0.7], warn: 0.9, wobY: 0.25, wobF: 9,
+    name: tri('蝙蝠', 'Bat', 'خفاش'), desc: tri('忽高忽低地快速飞过，贴地冲你来，起跳躲开', 'Darts across, bobbing up and down — skims the ground at you, jump to dodge', 'يعبر بسرعة صعوداً وهبوطاً — نحوك على مستوى الأرض، اقفز لتتفاداه') },
+  bee:       { t: 'cross', icon: '🐝', from: 30,  w: 3, r: 0.42, speed: [4.0, 5.5], alt: [0.15, 0.7], warn: 0.9, zig: 1.0, zigF: 6,
+    name: tri('蜜蜂', 'Bee', 'نحلة'), desc: tri('蛇形来回飞过，贴地冲你来，起跳躲开', 'Zig-zags across — skims the ground at you, jump to dodge', 'يعبر بشكل متعرج — نحوك على مستوى الأرض، اقفز لتتفاداه') },
+  eagle:     { t: 'cross', icon: '🦅', from: 40, w: 3, r: 0.85, speed: [8, 10], alt: [0.2, 0.8], warn: 0.8, size: 2.3,
+    name: tri('老鹰', 'Eagle', 'نسر'), desc: tri('又快又大，掠过高空，贴地冲你来，起跳躲开', 'Big and fast — skims the ground at you, jump to dodge', 'كبير وسريع — نحوك على مستوى الأرض، اقفز لتتفاداه') },
+  plane:     { t: 'cross', icon: '✈️', from: 70, w: 2, r: 0.8,  speed: [11, 13], alt: [0.2, 0.8], warn: 0.7, size: 2.2,
+    name: tri('飞机', 'Plane', 'طائرة'), desc: tri('极快地横扫而过，贴地冲你来，起跳躲开', 'Sweeps past at top speed — skims the ground at you, jump to dodge', 'يمرّ بسرعة قصوى — نحوك على مستوى الأرض، اقفز لتتفاداه') },
+  ufo:       { t: 'cross', icon: '🛸', from: 50, w: 3, r: 0.75, speed: [3.6, 4.8], alt: [0.3, 0.9], warn: 1.1, wobY: 0.2, wobF: 3, size: 2.0,
+    name: tri('飞碟', 'UFO', 'طبق طائر'), desc: tri('慢悠悠地上下飘着飞过，贴地冲你来，起跳躲开', 'Bobs slowly across — skims the ground at you, jump to dodge', 'يعبر ببطء صعوداً وهبوطاً — نحوك على مستوى الأرض، اقفز لتتفاداه') },
   // ---- float：飘进跳跃线 ----
-  balloon:   { t: 'float', icon: '🎈', from: 0,  w: 4, r: 0.7, rise: 0.8, drift: 0.55, life: 8, warn: 0.7,
-    name: tri('气球', 'Balloon', 'بالون'), desc: tri('慢慢飘进跳跃线，只撞空中的你', 'Drifts into your path — mid-air only', 'يطفو إلى مسارك — في الهواء فقط') },
-  ghost:     { t: 'float', icon: '👻', from: 4,  w: 3, r: 0.6, rise: 0.5, drift: 0.5, life: 8, warn: 0.7, sway: 1.1, swayF: 2.2,
-    name: tri('幽灵', 'Ghost', 'شبح'), desc: tri('左右摇摆地飘，只撞空中的你', 'Weaves side to side — mid-air only', 'يتمايل يمنة ويسرة — في الهواء فقط') },
-  cloud:     { t: 'float', icon: '⛈️', from: 13, w: 2, r: 1.0, rise: 0.3, drift: 0.4, life: 10, warn: 0.9, size: 2.6,
-    name: tri('雷云', 'Storm cloud', 'سحابة رعدية'), desc: tri('又大又慢，久久不散，只撞空中的你', 'Huge and slow, lingers — mid-air only', 'ضخمة وبطيئة وتبقى طويلاً — في الهواء فقط') },
-  kite:      { t: 'float', icon: '🪁', from: 8,  w: 3, r: 0.55, rise: 0.5, drift: 1.1, life: 7, warn: 0.7, sway: 0.5, swayF: 3,
-    name: tri('风筝', 'Kite', 'طائرة ورقية'), desc: tri('顺着风斜着飘过，只撞空中的你', 'Rides the wind across — mid-air only', 'يعبر مع الريح — في الهواء فقط') },
+  balloon:   { t: 'float', icon: '🎈', from: 10,  w: 4, r: 0.7, rise: 0.15, drift: 0.9, life: 8, warn: 0.7,
+    name: tri('气球', 'Balloon', 'بالون'), desc: tri('慢慢飘向你站的位置，起跳躲开', 'Drifts into your path — skims the ground at you, jump to dodge', 'يطفو إلى مسارك — نحوك على مستوى الأرض، اقفز لتتفاداه') },
+  ghost:     { t: 'float', icon: '👻', from: 20,  w: 3, r: 0.6, rise: 0.1, drift: 0.8, life: 8, warn: 0.7, sway: 1.1, swayF: 2.2,
+    name: tri('幽灵', 'Ghost', 'شبح'), desc: tri('左右摇摆地飘，贴地冲你来，起跳躲开', 'Weaves side to side — skims the ground at you, jump to dodge', 'يتمايل يمنة ويسرة — نحوك على مستوى الأرض، اقفز لتتفاداه') },
+  cloud:     { t: 'float', icon: '⛈️', from: 40, w: 2, r: 1.0, rise: 0.05, drift: 0.6, life: 10, warn: 0.9, size: 2.6,
+    name: tri('雷云', 'Storm cloud', 'سحابة رعدية'), desc: tri('又大又慢，久久不散，贴地冲你来，起跳躲开', 'Huge and slow, lingers — skims the ground at you, jump to dodge', 'ضخمة وبطيئة وتبقى طويلاً — نحوك على مستوى الأرض، اقفز لتتفاداه') },
+  kite:      { t: 'float', icon: '🪁', from: 30,  w: 3, r: 0.55, rise: 0.12, drift: 1.3, life: 7, warn: 0.7, sway: 0.5, swayF: 3,
+    name: tri('风筝', 'Kite', 'طائرة ورقية'), desc: tri('顺着风斜着飘过，贴地冲你来，起跳躲开', 'Rides the wind across — skims the ground at you, jump to dodge', 'يعبر مع الريح — نحوك على مستوى الأرض، اقفز لتتفاداه') },
   // ---- drop：红圈后砸落 ----
-  dart:      { t: 'drop', icon: '🎯', from: 0,  w: 4, hitR: 0.85, warn: 1.2, fall: 26, h: 9, size: 1.2,
+  dart:      { t: 'drop', icon: '🎯', from: 10,  w: 4, hitR: 0.85, warn: 1.2, fall: 26, h: 9, size: 1.2,
     name: tri('飞镖', 'Dart', 'سهم'), desc: tri('先亮红圈，1.2 秒后砸下；站着不动会中', 'A red ring, then it drops — don\'t stand still', 'دائرة حمراء ثم يسقط — لا تقف ساكناً') },
-  rock:      { t: 'drop', icon: '🪨', from: 5,  w: 3, hitR: 0.95, warn: 1.2, fall: 22, h: 9, size: 1.5,
+  rock:      { t: 'drop', icon: '🪨', from: 20,  w: 3, hitR: 0.95, warn: 1.2, fall: 22, h: 9, size: 1.5,
     name: tri('落石', 'Falling rock', 'حجر ساقط'), desc: tri('红圈里的人会被砸', 'Whoever stands in the ring gets crushed', 'من يقف في الدائرة يُسحق') },
-  bomb:      { t: 'drop', icon: '💣', from: 9,  w: 3, hitR: 1.5,  warn: 1.7, fall: 14, h: 8, size: 1.5,
+  bomb:      { t: 'drop', icon: '💣', from: 40,  w: 3, hitR: 1.5,  warn: 1.7, fall: 14, h: 8, size: 1.5,
     name: tri('炸弹', 'Bomb', 'قنبلة'), desc: tri('落地就爆炸，范围很大', 'Explodes on landing with a big radius', 'ينفجر عند الارتطام بنطاق كبير') },
-  lightning: { t: 'drop', icon: '⚡', from: 14, w: 3, hitR: 0.9,  warn: 0.9, fall: 80, h: 12, size: 2.6,
+  lightning: { t: 'drop', icon: '⚡', from: 50, w: 3, hitR: 0.9,  warn: 0.9, fall: 80, h: 12, size: 2.6,
     name: tri('闪电', 'Lightning', 'صاعقة'), desc: tri('红圈亮得很快，马上劈下', 'The ring flashes fast — a strike follows', 'الدائرة تومض بسرعة ثم تضرب الصاعقة') },
-  ice:       { t: 'drop', icon: '🧊', from: 20, w: 3, hitR: 0.7,  warn: 0.9, fall: 30, h: 9, size: 1.1,
+  ice:       { t: 'drop', icon: '🧊', from: 60, w: 3, hitR: 0.7,  warn: 0.9, fall: 30, h: 9, size: 1.1,
     name: tri('冰锥', 'Icicle', 'جليد'), desc: tri('小范围的快速砸落', 'A small, fast drop', 'سقوط سريع بنطاق صغير') },
-  meteor:    { t: 'drop', icon: '☄️', from: 22, w: 2, hitR: 1.35, warn: 1.6, fall: 34, h: 11, size: 2.1,
+  meteor:    { t: 'drop', icon: '☄️', from: 70, w: 2, hitR: 1.35, warn: 1.6, fall: 34, h: 11, size: 2.1,
     name: tri('流星', 'Meteor', 'نيزك'), desc: tri('超大红圈，砸得更狠', 'A huge ring and a harder hit', 'دائرة ضخمة وضربة أقوى') },
   // ---- roll：地面滚过方块 ----
-  bowling:   { t: 'roll', icon: '🎳', from: 10, w: 3, r: 0.5,  speed: 6.5, warn: 1.1, size: 1.2,
+  bowling:   { t: 'roll', icon: '🎳', from: 30, w: 3, r: 0.5,  speed: 6.5, warn: 1.1, size: 1.2,
     name: tri('保龄球', 'Bowling ball', 'كرة بولينغ'), desc: tri('沿红带从侧面滚过方块；跳到空中就躲开', 'Rolls along the red lane — get airborne to dodge', 'تتدحرج على المسار الأحمر — اقفز لتتفاداها') },
-  snowball:  { t: 'roll', icon: '⛄', from: 16, w: 3, r: 0.75, speed: 4.0, warn: 1.3, size: 1.8,
+  snowball:  { t: 'roll', icon: '⛄', from: 50, w: 3, r: 0.75, speed: 4.0, warn: 1.3, size: 1.8,
     name: tri('雪球', 'Snowball', 'كرة ثلج'), desc: tri('又大又慢地滚过方块，起跳躲开', 'Big and slow — jump to dodge', 'كبيرة وبطيئة — اقفز لتتفاداها') },
   // ---- home：追踪 ----
-  mosquito:  { t: 'home', icon: '🦟', from: 24, w: 3, r: 0.32, speed: 4.3, warn: 0.9, life: 6, turn: 3.5, jitter: 0.04, size: 0.9,
+  mosquito:  { t: 'home', icon: '🦟', from: 60, w: 3, r: 0.32, speed: 4.3, warn: 0.9, life: 6, turn: 3.5, jitter: 0.04, size: 0.9,
     name: tri('蚊子', 'Mosquito', 'بعوضة'), desc: tri('又小又快地追着你', 'Small, fast and chasing you', 'صغيرة وسريعة وتطاردك') },
-  missile:   { t: 'home', icon: '🚀', from: 28, w: 2, r: 0.5,  speed: 3.4, warn: 1.0, life: 7, turn: 2.2, size: 1.3,
+  missile:   { t: 'home', icon: '🚀', from: 80, w: 2, r: 0.5,  speed: 3.4, warn: 1.0, life: 7, turn: 2.2, size: 1.3,
     name: tri('追踪导弹', 'Homing missile', 'صاروخ موجّه'), desc: tri('追着你飞，站着、在空中都会撞', 'Chases you — hits you standing or airborne', 'يطاردك — يصيبك واقفاً أو في الهواء') },
 };
 export const KIND_LIST = Object.keys(KINDS);
 
 /** 调参面板：想更简单 / 更难，只改这里 */
 export const ENEMY = {
-  startLayer: 0,                                                   // 第几层之后开始出现敌人（0 = 第一层就有）
-  firstDelay: 3,                                                   // 开局后第一只出现的时间（秒）
-  interval: (layers) => Math.max(2.4, 6.5 - layers * 0.06),        // 两次刷怪的间隔（秒）
-  maxAlive: (layers) => (layers < 25 ? 1 : layers < 60 ? 2 : 3),   // 同时最多几只
+  startLayer: 10,                                                  // 前 10 个方块（第 0 档）是新手教学，没有敌人
+  tierSize: 10,                                                    // 每多少层一档（要和 Staircase 的 STAIR.tierSize 一致）
+  firstDelay: 3,                                                   // 第 1 档开始后第一只出现的时间（秒）
+  tier: (layers) => Math.floor(layers / 10),
+  interval: (layers) => Math.max(2.4, 7 - (Math.floor(layers / 10) - 1) * 0.5),   // 两次刷怪的间隔（秒）：第 1 档 7 秒 → 逐档缩短到 2.4 秒
+  maxAlive: (layers) => { const t = Math.floor(layers / 10); return t < 3 ? 1 : t < 6 ? 2 : 3; },   // 同时最多几只
+  warnScale: (layers) => Math.max(0.7, 1 - 0.03 * (Math.floor(layers / 10) - 1)),                  // 预警时间随档位缩短（最短 70%）
   killScore: (layers) => 5 + Math.floor(layers / 10),              // 击落一只得分
   turretEvery: 4,                                                  // 自动炮塔：每几秒一发
   cannonEvery: 3,                                                  // 连击炮：每几个连续完美攒 1 发
@@ -183,12 +188,13 @@ export class Enemies {
     const e = { kind, K, t: K.t, phase: 'warn', life: 0, locked: false, r: rr, size: K.size || rr * 2.6, vel: new THREE.Vector3(), base: new THREE.Vector3(), side: Math.random() < 0.5 ? -1 : 1, warnT: K.warn };
     e.mesh = spriteFor(kind, e.size);
     e.pos = e.mesh.position;
-    if (K.t === 'cross') { e.speed = rnd(K.speed); e.f = 0.3 + Math.random() * 0.4; e.alt = rnd(K.alt); }
-    if (K.t === 'drop' || K.t === 'roll') {
+    e.warnT = K.warn * ENEMY.warnScale(rg.layers);
+    if (K.t === 'cross') { e.speed = rnd(K.speed); e.alt = rnd(K.alt); }
+    if (K.t !== 'home') {
       const p = g.player.root.position; e.tx = p.x; e.tz = p.z;                              // 瞄准你现在站的地方
       const ty = TOP + ((k.c.root && k.c.root.position.y) || 0) + 0.04;
       if (K.t === 'drop') e.tele = this._ringMesh(0xff3b3b, K.hitR * 0.78, K.hitR);
-      else { e.tele = new THREE.Mesh(new THREE.PlaneGeometry(14, K.r * 1.8), new THREE.MeshBasicMaterial({ color: 0xff3b3b, transparent: true, opacity: 0.5, side: THREE.DoubleSide, depthTest: false })); e.tele.rotation.x = -Math.PI / 2; e.tele.renderOrder = 21; }
+      else { e.tele = new THREE.Mesh(new THREE.PlaneGeometry(K.t === 'float' ? 7 : 14, K.r * 1.8), new THREE.MeshBasicMaterial({ color: 0xff3b3b, transparent: true, opacity: 0.5, side: THREE.DoubleSide, depthTest: false })); e.tele.rotation.x = -Math.PI / 2; e.tele.renderOrder = 21; }
       e.tele.position.set(e.tx, ty, e.tz); g.scene.add(e.tele);
     }
     if (K.t !== 'drop' && K.t !== 'roll') {                                              // 空中的敌人：地上投一个小影子，方便判断位置
@@ -209,16 +215,16 @@ export class Enemies {
   /** 预警期间每帧重新对准当前的跳跃走廊（你落地后走廊会变） */
   _place(e, k) {
     const K = e.K, b = e.base;
-    e.lane = { x: k.mx, z: k.mz, px: k.px, pz: k.pz, dx: k.dx, dz: k.dz };
-    if (K.t === 'cross') {
-      const x = k.c.x + k.dx * k.len * e.f, z = k.c.z + k.dz * k.len * e.f;
-      e.lane.x = x; e.lane.z = z;
+    e.lane = { x: e.tx !== undefined ? e.tx : k.mx, z: e.tz !== undefined ? e.tz : k.mz, px: k.px, pz: k.pz, dx: k.dx, dz: k.dz };
+    const { x, z } = e.lane;
+    if (K.t === 'cross') {                                                                // 贴地横着飞向你站的位置
       b.set(x + k.px * e.side * 9, TOP + e.alt, z + k.pz * e.side * 9);
       e.vel.set(-k.px * e.side * e.speed, 0, -k.pz * e.side * e.speed);
-    } else if (K.t === 'float') {
-      b.set(k.mx + k.px * e.side * 3, TOP + 0.4, k.mz + k.pz * e.side * 3);
-      if (K.drift > 1) e.vel.set(k.dx * K.drift - k.px * e.side * 0.3, K.rise, k.dz * K.drift - k.pz * e.side * 0.3);   // 风筝顺着跳跃方向飘
-      else e.vel.set(-k.px * e.side * K.drift, K.rise, -k.pz * e.side * K.drift);
+      e.tele.rotation.z = Math.atan2(-k.pz, k.px);
+    } else if (K.t === 'float') {                                                         // 慢慢飘向你站的位置
+      b.set(x + k.px * e.side * 2.5, TOP + 0.5, z + k.pz * e.side * 2.5);
+      e.vel.set(-k.px * e.side * K.drift, K.rise, -k.pz * e.side * K.drift);
+      e.tele.rotation.z = Math.atan2(-k.pz, k.px);
     } else if (K.t === 'drop') {
       b.set(e.tx, TOP + K.h, e.tz); e.vel.set(0, -K.fall, 0);
     } else if (K.t === 'roll') {
@@ -241,7 +247,6 @@ export class Enemies {
       e.warnT -= dt;
       if (e.tele) e.tele.material.opacity = 0.3 + 0.35 * Math.sin(e.life * 14);
       if (K.t === 'float') e.mesh.scale.setScalar(e.size * Math.max(0.05, Math.min(1, 1 - e.warnT / K.warn)));
-      else if (K.t === 'cross') { const k = this._corridor(); if (k) this._place(e, k); }
       if (e.warnT <= 0) { e.phase = 'fly'; e.mesh.visible = true; e.life = 0; if (K.t === 'float') e.mesh.scale.setScalar(e.size); }
       return;
     }
@@ -253,8 +258,8 @@ export class Enemies {
       if (w) { e.pos.x += e.lane.dx * w; e.pos.z += e.lane.dz * w; }
       if (e.shadow) e.shadow.position.set(e.pos.x, TOP + 0.03, e.pos.z);
       if (K.t === 'cross') { if (Math.hypot(b.x - e.lane.x, b.z - e.lane.z) > 11 || e.life > 9) return this._remove(e, true); }
-      else if (e.life > K.life || b.y > TOP + 9) return this._remove(e, true);
-      if (pl.state === 'jump' && Math.hypot(e.pos.x - p.x, e.pos.y - (p.y + 0.5), e.pos.z - p.z) < e.r + 0.4) this._hit(e);   // 只撞在空中的你
+      else if (e.life > K.life || Math.hypot(b.x - e.lane.x, b.z - e.lane.z) > 6) return this._remove(e, true);
+      if (pl.state !== 'fall' && pl.state !== 'down' && pl.state !== 'tip' && Math.hypot(e.pos.x - p.x, e.pos.y - (p.y + 0.5), e.pos.z - p.z) < e.r + 0.4) this._hit(e);   // 站着、刚起跳的你都会撞；跳高了就躲掉
     } else if (K.t === 'drop') {
       b.addScaledVector(e.vel, dt); e.pos.copy(b);
       if (e.pos.y <= TOP + 0.45) {                                                       // 落到脚下那一刻判定

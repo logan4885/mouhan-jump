@@ -1,10 +1,10 @@
 // 邀请好友：每个玩家有自己的邀请二维码/链接；朋友通过它进来、玩完 1 局才算 1 个有效邀请；
 // 每满 10 个，服务器发 1 个兑换码（INV-XXXX-XXXX），在商店里输入就随机解锁 1 款特效罐。
 // 自己带一个很小的二维码生成器（固定 3 号版本、纠错 M，够放 42 个字符的网址），不依赖任何外部库。
-import { Storage } from './Storage.js?v=20261113a';
-import { LEADERBOARD_API, syncPlayer } from './Leaderboard.js?v=20261113a';
-import { L, onLangChange } from './i18n.js?v=20261113a';
-import { PLAYER_SKINS } from './SkinManager.js?v=20261113a';
+import { Storage } from './Storage.js?v=20261113b';
+import { LEADERBOARD_API, syncPlayer } from './Leaderboard.js?v=20261113b';
+import { L, onLangChange } from './i18n.js?v=20261113b';
+import { PLAYER_SKINS } from './SkinManager.js?v=20261113b';
 
 const SITE = 'https://jump.mouhan.dev/';
 const REF_KEY = 'jump3d_ref';

@@ -1,23 +1,23 @@
 // 游戏主控：渲染器 / 场景 / 正交相机 / 灯光、输入、状态机、计分与落点判定
 import * as THREE from 'three';
-import { CONFIG } from './config.js?v=20261113a';
-import { Storage } from './Storage.js?v=20261113a';
-import { Tweens, clamp, Ease } from './utils.js?v=20261113a';
-import { SkinManager } from './SkinManager.js?v=20261113a';
-import { BlockManager } from './BlockManager.js?v=20261113a';
-import { Player } from './Player.js?v=20261113a';
-import { UIManager } from './UIManager.js?v=20261113a';
-import { Sound } from './Sound.js?v=20261113a';
-import { t, L } from './i18n.js?v=20261113a';
-import { getPerk } from './canPerks.js?v=20261113a';
-import { getSignature, RARITY } from './canSignature.js?v=20261113a';
-import { PLAYER_SKINS } from './SkinManager.js?v=20261113a';
-import { Music, playSfx } from './SkinAudio.js?v=20261113a';
-import { SignatureFX } from './SignatureFX.js?v=20261113a';
-import { RunState, rt, chargeTimeFor, HZ } from './Roguelike.js?v=20261113a';
-import { fetchTop } from './Leaderboard.js?v=20261113a';
-import { Enemies, ENEMY, KINDS } from './Enemies.js?v=20261113a';
-import { stairParams, STAND_HZ, STAIR, HZT } from './Staircase.js?v=20261113a';
+import { CONFIG } from './config.js?v=20261113b';
+import { Storage } from './Storage.js?v=20261113b';
+import { Tweens, clamp, Ease } from './utils.js?v=20261113b';
+import { SkinManager } from './SkinManager.js?v=20261113b';
+import { BlockManager } from './BlockManager.js?v=20261113b';
+import { Player } from './Player.js?v=20261113b';
+import { UIManager } from './UIManager.js?v=20261113b';
+import { Sound } from './Sound.js?v=20261113b';
+import { t, L } from './i18n.js?v=20261113b';
+import { getPerk } from './canPerks.js?v=20261113b';
+import { getSignature, RARITY } from './canSignature.js?v=20261113b';
+import { PLAYER_SKINS } from './SkinManager.js?v=20261113b';
+import { Music, playSfx } from './SkinAudio.js?v=20261113b';
+import { SignatureFX } from './SignatureFX.js?v=20261113b';
+import { RunState, rt, chargeTimeFor, HZ } from './Roguelike.js?v=20261113b';
+import { fetchTop } from './Leaderboard.js?v=20261113b';
+import { Enemies, ENEMY, KINDS } from './Enemies.js?v=20261113b';
+import { stairParams, STAND_HZ, STAIR, HZT } from './Staircase.js?v=20261113b';
 const hz = (b, k) => !!(b && b.hzs && b.hzs.includes(k));      // 方块是否带某个机制
 
 // 踩中星号方块后的免费体验时长（秒）
@@ -604,12 +604,13 @@ export class Game {
     const rg = this.rogue; if (!rg) { this._sinkMax = 0; return; }
     blk = blk || this.blocks.current;
     const p = stairParams(rg.layers + 1);
-    if (rg.stage !== p.stage) {                                        // 进入新的 20 个方块一档：播报新解锁的机制 / 新区域
-      const first = rg.stage == null; const prevZone = rg.zoneIdx; rg.stage = p.stage; rg.zoneIcon = p.zone.icon; rg.zoneIdx = p.zoneIdx;
-      if (first) this.ui.toast(rt('startMsg'), 3200);
-      else if (p.unlockedNew) { const h = HZ[p.unlockedNew]; this.ui.toast(rt('unlock', { skip: p.k * STAIR.step, n: p.k, icon: h.icon, name: L(h.name), desc: L(h.desc) }), 3600); }
-      else if (p.k === 20 && !STAIR.allUnlocked) this.ui.toast(rt('chaosAll'), 3000);
-      if (!first && prevZone !== p.zoneIdx && !(p.k === 20 && !STAIR.allUnlocked) && !p.unlockedNew) this.ui.toast(rt('zone', { icon: p.zone.icon, name: rt('zone_' + p.zone.id), n: p.stage }), 2800);
+    if (rg.stage !== p.stage) {                                        // 进入新的一档（每 10 个方块一档）：播报新解锁的机制 / 敌人
+      const first = rg.stage == null; rg.stage = p.stage; rg.zoneIcon = p.zone.icon; rg.zoneIdx = p.zoneIdx;
+      if (first) this.ui.toast(rt('startMsg'), 3600);
+      else {
+        const mech = p.unlockedNew.map((k) => HZ[k].icon).join(''), foe = Object.values(KINDS).filter((K) => K.from === p.tier * STAIR.tierSize).map((K) => K.icon).join('');
+        this.ui.toast(rt('tierUp', { n: p.tier, mech: mech ? rt('tierMech', { v: mech }) : '', foe: foe ? rt('tierFoe', { v: foe }) : '' }), 3800);
+      }
     }
     let max = p.timer || 0, icon = '⏳';
     if (hz(blk, 'sinking')) { max = max ? Math.min(max, HZT.sinking) : HZT.sinking; }

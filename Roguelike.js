@@ -2,7 +2,7 @@
 // 规则（照 Excel《SodaJump_Phygital_Architecture_and_Buffs》）：
 //   BUFF_01~22 进入每 5 层的【三选一抽卡池】；BUFF_23~30 是 VIP 常驻被动，绝不占三选一的格子。
 //   VIP = 已经拥有任一兑换罐的玩家（沿用游戏里现有的 VIP 判断）。
-import { L } from './i18n.js?v=20261113a';
+import { L } from './i18n.js?v=20261113b';
 
 const tri = (zh, en, ar) => ({ zh, en, ar });
 const B = (id, cat, icon, name, desc, extra = {}) => ({ id: 'BUFF_' + String(id).padStart(2, '0'), cat, icon, name, desc, pool: id <= 22 ? 'run' : 'vip', ...extra });
@@ -86,7 +86,7 @@ const TXT = {
   pick: tri('第 {n} 层 · 选一个 Buff', 'Floor {n} · pick a buff', 'الطابق {n} · اختر ميزة'),
   reroll: tri('🧰 刷新重抽（无限）', '🧰 Reroll (unlimited)', '🧰 إعادة السحب (بلا حدود)'),
   title: tri('Roguelike 模式', 'Roguelike mode', 'وضع Roguelike'),
-  intro: tri('每跳 5 层，从 3 张 Buff 里选 1 张，越玩越强。有自己的 Roguelike 排行榜，不进总榜。每一个方块都是随机的机制方块（击退、冰面、移动、传送、炸弹、黑洞……共 19 种），难度爬升极快，约 65 个方块就到最终档，第 35 个方块起还会下沉。从第一层起就有 20 种敌人（鸟、蝙蝠、飞镖、炸弹、流星、保龄球、追踪导弹……）从空中和地面袭来，靠「反击流」Buff 自动打回去。', 'Every 5 floors pick 1 of 3 buffs and snowball your build. It has its own Roguelike leaderboard, separate from the main one. Every single block is a random mechanic block (19 kinds) and the difficulty ramps up fast — max difficulty by block ~65, platforms start to sink from block ~35. From floor 1, 20 kinds of enemies (birds, bats, darts, bombs, meteors, bowling balls, homing missiles…) attack from the air and the ground — counter them with the Counter-build buffs.', 'كل 5 طوابق اختر ميزة من 3 وقوِّ بناءك. لها لوحة صدارة خاصة. كل كتلة هي كتلة آلية عشوائية (19 نوعاً) والصعوبة ترتفع بسرعة، وتبدأ المنصات بالغرق من الكتلة 35 تقريباً.'),
+  intro: tri('每跳 5 层，从 3 张 Buff 里选 1 张，越玩越强。有自己的 Roguelike 排行榜，不进总榜。前 10 个方块是新手教学，很轻松；之后每 10 个方块难度提升一档：机制方块（击退、冰面、移动、传送、炸弹、黑洞……共 19 种）、下沉倒计时和 20 种会袭击你的敌人会逐步登场，靠「反击流」Buff 自动打回去。', 'Every 5 floors pick 1 of 3 buffs and snowball your build. It has its own Roguelike leaderboard, separate from the main one. The first 10 blocks are an easy warm-up; after that the difficulty rises every 10 blocks — mechanic blocks (19 kinds), sinking timers and 20 kinds of enemies phase in. Fight back with the Counter-build buffs.', 'كل 5 طوابق اختر ميزة من 3 وقوِّ بناءك. لها لوحة صدارة خاصة. أول 10 كتل للإحماء، وبعدها ترتفع الصعوبة كل 10 كتل: كتل ميكانيكية (19 نوعاً) ومؤقتات غرق و20 نوعاً من الأعداء. قاوم بميزات الهجوم المضاد.'),
   rankBtn: tri('🏆 Roguelike 排行榜', '🏆 Roguelike leaderboard', '🏆 لوحة صدارة Roguelike'),
   start: tri('开始 Roguelike', 'Start Roguelike', 'ابدأ Roguelike'),
   vipOn: tri('👑 VIP 被动已生效：{n} 项', '👑 VIP passives active: {n}', '👑 مزايا VIP مفعّلة: {n}'),
@@ -102,7 +102,10 @@ const TXT = {
   zone_peak: tri('混沌巅峰区', 'Chaos Peak', 'قمة الفوضى'),
   unlock: tri('⚠️ 【跳过 {skip} 个方块】解锁第 {n} 种机制：【{icon} {name}】！{desc}', '⚠️ [{skip} blocks cleared] Mechanic #{n} unlocked: [{icon} {name}]! {desc}', '⚠️ [تجاوزت {skip} كتلة] آلية #{n}: [{icon} {name}]! {desc}'),
   chaosAll: tri('⚡ 20 种特殊机制全随机乱斗中！', '⚡ All mechanics are now mixed at random!', '⚡ كل الآليات مختلطة عشوائياً الآن!'),
-  startMsg: tri('🔥 地狱模式！每个方块都是机制方块，从第一跳就开始乱斗！', '🔥 Hell mode! Every block is a mechanic block — chaos from the very first jump!', '🔥 وضع الجحيم! كل كتلة بآلية خاصة منذ القفزة الأولى!'),
+  startMsg: tri('🌱 前 10 个方块是新手教学，放心跳！之后每 10 个方块难度提升一档', '🌱 The first 10 blocks are an easy warm-up. After that, difficulty rises every 10 blocks!', '🌱 أول 10 كتل للإحماء. بعدها ترتفع الصعوبة كل 10 كتل!'),
+  tierUp: tri('⬆️ 难度提升！第 {n} 档{mech}{foe}', '⬆️ Difficulty up! Tier {n}{mech}{foe}', '⬆️ ارتفعت الصعوبة! المستوى {n}{mech}{foe}'),
+  tierMech: tri('　新机制：{v}', '  New blocks: {v}', '  كتل جديدة: {v}'),
+  tierFoe: tri('　新敌人：{v}', '  New enemies: {v}', '  أعداء جدد: {v}'),
   nextHz: tri('下一块', 'Next', 'التالية'),
   fuse: tri('💣 爆炸了！', '💣 Boom!', '💣 انفجار!'),
   sinkNote: tri('⏳ 平台在下沉，快跳！', '⏳ The platform is sinking, jump!', '⏳ المنصة تغرق، اقفز!'),
