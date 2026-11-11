@@ -1,7 +1,8 @@
 // 方块管理：生成（正方体 / 圆柱体，随机颜色与方向）、落点判定、挤压回弹、回收
 import * as THREE from 'three';
-import { CONFIG } from './config.js?v=20261110za';
-import { rand, clamp, Ease, disposeObject } from './utils.js?v=20261110za';
+import { CONFIG } from './config.js?v=20261110zb';
+import { rand, clamp, Ease, disposeObject } from './utils.js?v=20261110zb';
+import { HZT } from './Staircase.js?v=20261110zb';
 
 function mulberry32(a) {
   return () => {
@@ -81,6 +82,7 @@ export class BlockManager {
     const minGap = Math.max(stair ? stair.gapMin : CONFIG.BLOCK_MIN_GAP, cur.size / 2 + size / 2 + 0.5);
     let gap = stair ? Math.min(rnd(minGap, Math.max(minGap + 0.3, stair.gapMax)), CONFIG.JUMP_MAX_DIST - 0.8)
                     : rnd(minGap, Math.max(minGap + 0.3, CONFIG.BLOCK_MAX_GAP));
+    if (haz && haz.includes('blackhole')) gap = Math.max(cur.size / 2 + size / 2 + 0.5, Math.min(gap, (CONFIG.JUMP_MAX_DIST - 0.7) * HZT.blackhole));   // 黑洞会把跳跃吸短，间距不能超出最大跳距
     if (this.nearNext) { gap = minGap; this.nearNext = false; }
     const block = this._create({ x: cur.x + dir.x * gap, z: cur.z + dir.z * gap, shape, size, animate });
     block.dirKey = dirKey;
@@ -175,7 +177,7 @@ export class BlockManager {
     n.t = (n.t || 0) + dt;
     if (n.hzs.includes('moving')) {
       n.mPh += dt;
-      const off = Math.sin(n.mPh * 2.4) * 1.1, d = off - (n.mOff || 0);
+      const off = Math.sin(n.mPh * HZT.moveSpeed) * HZT.moveAmp, d = off - (n.mOff || 0);
       n.mOff = off;
       if (n.dirKey === 'x') n.z += d; else n.x += d;
       n.root.position.x = n.x; n.root.position.z = n.z;
