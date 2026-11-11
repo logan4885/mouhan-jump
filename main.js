@@ -5,6 +5,7 @@ import { pullProgress } from './Account.js?v=20261111g';
 import { Room } from './Room.js?v=20261111g';
 import { RogueUI } from './RogueUI.js?v=20261111g';
 import { initInstall } from './Install.js?v=20261111h';
+import { Invite } from './Invite.js?v=20261112a';
 
 function showError(err) {
   console.error(err);
@@ -17,6 +18,7 @@ try {
   window.__room = new Room(game);   // 同图比赛
   window.__rogueUI = new RogueUI(game);   // Roguelike 模式
   initInstall();             // “下载到手机”按钮 + 离线缓存
+  window.__invite = new Invite(game);   // 邀请好友：二维码、分享、每 10 人送兑换码
   window.__game = game;      // 方便在控制台调试
   window.__jumpReady = true;
 
