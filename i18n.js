@@ -1,13 +1,13 @@
 // 多语言：中文 / English / العربية
 // 静态文字写在 index.html 的 data-i18n 属性里，动态文字用 t('key', { 变量 })
-import { Storage } from './Storage.js?v=20261111a';
+import { Storage } from './Storage.js?v=20261111b';
 
 export const LANGS = ['zh', 'en', 'ar'];
 
 const DICT = {
   zh: {
     rk_reset_note: '📅 每周五重置排行榜（普通榜 + Roguelike 榜）',
-    page_title: '跳一跳 3D', logo: '跳一跳', back_site: '↩ 回到牟涵的小屋',
+    page_title: '跳一跳 3D', logo: '跳一跳', back_site: '↩ 牟涵的小屋',
     subtitle: '按住蓄力，松开起跳。落在正中心得分翻倍！',
     start: '开始游戏', skins: '🎨 皮肤', rank: '🏆 排行榜', home: '🏠 首页',
     my_best: '我的最高分', best: '最高分',
@@ -57,7 +57,7 @@ const DICT = {
   },
   en: {
     rk_reset_note: '📅 Normal & Roguelike boards reset every Friday',
-    page_title: 'Jump Jump 3D', logo: 'Jump Jump', back_site: "↩ Back to Mouhan's house",
+    page_title: 'Jump Jump 3D', logo: 'Jump Jump', back_site: "↩ Mouhan's house",
     subtitle: 'Hold to charge, release to jump. Land dead center for double points!',
     start: 'Play', skins: '🎨 Skins', rank: '🏆 Ranking', home: '🏠 Home',
     my_best: 'My best', best: 'Best',
@@ -107,7 +107,7 @@ const DICT = {
   },
   ar: {
     rk_reset_note: '📅 تُعاد لوحات الصدارة كل جمعة (العادية + Roguelike)',
-    page_title: 'قفزة قفزة 3D', logo: 'قفزة قفزة', back_site: '↩ العودة إلى بيت موهان',
+    page_title: 'قفزة قفزة 3D', logo: 'قفزة قفزة', back_site: '↩ بيت موهان',
     subtitle: 'اضغط مطولًا للشحن واترك للقفز. الهبوط في المنتصف تمامًا يضاعف النقاط!',
     start: 'ابدأ اللعب', skins: '🎨 الأشكال', rank: '🏆 الترتيب', home: '🏠 الرئيسية',
     my_best: 'أفضل نتيجة لي', best: 'الأفضل',
