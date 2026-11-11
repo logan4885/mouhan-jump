@@ -28,6 +28,15 @@ function randomHex(bytes) {
   return Array.from(a, (b) => b.toString(16).padStart(2, '0')).join('');
 }
 
+/** 本周的编号 = 本周起点（埃及时间每周五 00:00）那天的日期，例如 '2026-11-06'。前后端算法必须一致 */
+export function weekId(d = new Date()) {
+  const parts = new Intl.DateTimeFormat('en-CA', { timeZone: 'Africa/Cairo', year: 'numeric', month: '2-digit', day: '2-digit', weekday: 'short' }).formatToParts(d);
+  const g = (t) => parts.find((p) => p.type === t).value;
+  const idx = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 }[g('weekday')];
+  const back = (idx - 5 + 7) % 7;
+  return new Date(Date.UTC(+g('year'), +g('month') - 1, +g('day') - back)).toISOString().slice(0, 10);
+}
+
 export const Storage = {
   // ---- 玩家身份：首次打开自动生成（id 公开，secret 只留在本机，服务器只存它的哈希）----
   getPlayer() {
@@ -48,7 +57,7 @@ export const Storage = {
   setSynced(o) { write('synced', o); },
   /** 退出登录 / 删除数据后：清空本机进度和身份（语言、静音保留），下次打开会生成全新的玩家 */
   clearLocalProgress() {
-    ['player', 'highScore', 'skins:v2', 'nickname', 'avatar', 'stats', 'usedCodes', 'account', 'synced', 'rogueBest'].forEach((k) => {
+    ['player', 'highScore', 'skins:v2', 'nickname', 'avatar', 'stats', 'usedCodes', 'account', 'synced', 'rogueBest', 'weekly'].forEach((k) => {
       delete memory[k];
       try { localStorage.removeItem(PREFIX + k); } catch (e) { /* 忽略 */ }
     });
@@ -67,6 +76,15 @@ export const Storage = {
   // ---- Roguelike 模式最高分（单独记录，不同步到总榜）----
   getRogueBest() { return Number(read('rogueBest', 0)) || 0; },
   saveRogueBest(score) { if (score > this.getRogueBest()) { write('rogueBest', score); return true; } return false; },
+
+
+  // ---- 每周榜成绩（每周五埃及时间 0 点清零；上传排行榜用这个，个人历史最高分不受影响）----
+  weekId() { return weekId(); },
+  _weekly() { const w = read('weekly', null); const cur = weekId(); return w && w.week === cur ? w : { week: cur, best: 0, rogue: 0 }; },
+  getWeekBest() { return this._weekly().best; },
+  getWeekRogue() { return this._weekly().rogue; },
+  noteWeekScore(score) { const w = this._weekly(); if (score > w.best) { w.best = Math.floor(score); write('weekly', w); } },
+  noteWeekRogue(score) { const w = this._weekly(); if (score > w.rogue) { w.rogue = Math.floor(score); write('weekly', w); } },
 
   // ---- 皮肤 ----
   getSkinState() {

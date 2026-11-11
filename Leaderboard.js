@@ -8,7 +8,7 @@
 //   GET  {baseUrl}/api/player/:id
 //        -> { ok, player: { id, nickname, score, rank, perfects, games, equipped, unlocked[], total, avatar, color } }
 
-import { Storage } from './Storage.js?v=20261110zb';
+import { Storage } from './Storage.js?v=20261111a';
 
 export const LEADERBOARD_API = {
   baseUrl: 'https://mouhan-jump-api.onrender.com',            // 部署后端后填这里，例如 'https://jump3d-api.onrender.com'；为空则使用 Mock 数据
@@ -71,7 +71,7 @@ export async function syncPlayer() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         id: p.id, secret: p.secret, nickname: Storage.getNickname(), avatar: Storage.getAvatar(),
-        score: Storage.getHighScore(), rogueBest: Storage.getRogueBest(), perfects: stats.perfects || 0, games: stats.games || 0,
+        week: Storage.weekId(), score: Storage.getWeekBest(), rogueBest: Storage.getWeekRogue(), perfects: stats.perfects || 0, games: stats.games || 0,
         unlocked: skins.unlocked, equipped: 'player:' + skins.player,
       }),
     });

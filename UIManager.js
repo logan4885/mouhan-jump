@@ -1,16 +1,16 @@
 // UI 层：开始界面、计分板、蓄力条、飘字、结算弹窗、皮肤商店（含兑换码）、排行榜、语言切换
-import { PLAYER_SKINS, BLOCK_STYLES, SkinPreview } from './SkinManager.js?v=20261110zb';
-import { fetchTop, fetchPlayer, syncPlayer, buildBoard, LEADERBOARD_API, lastSync } from './Leaderboard.js?v=20261110zb';
-import { Storage } from './Storage.js?v=20261110zb';
-import { escapeHtml } from './utils.js?v=20261110zb';
-import { t, L, setLang, getLang, onLangChange, applyStatic } from './i18n.js?v=20261110zb';
-import { PERKS } from './canPerks.js?v=20261110zb';
-import { SIGNATURE, RARITY, getSignature } from './canSignature.js?v=20261110zb';
-import { SHOP } from './shop.js?v=20261110zb';
-import { recoveryAvailable, makeCode, makeLink, restore } from './Recovery.js?v=20261110zb';
-import { accountAvailable, pullProgress, PROVIDER_NAME, completeLogin, renderGoogleButton, prepareFacebook, facebookLogin, logout } from './Account.js?v=20261110zb';
-import { AUTH } from './authConfig.js?v=20261110zb';
-import { BUFF_BY_ID, rt } from './Roguelike.js?v=20261110zb';
+import { PLAYER_SKINS, BLOCK_STYLES, SkinPreview } from './SkinManager.js?v=20261111a';
+import { fetchTop, fetchPlayer, syncPlayer, buildBoard, LEADERBOARD_API, lastSync } from './Leaderboard.js?v=20261111a';
+import { Storage } from './Storage.js?v=20261111a';
+import { escapeHtml } from './utils.js?v=20261111a';
+import { t, L, setLang, getLang, onLangChange, applyStatic } from './i18n.js?v=20261111a';
+import { PERKS } from './canPerks.js?v=20261111a';
+import { SIGNATURE, RARITY, getSignature } from './canSignature.js?v=20261111a';
+import { SHOP } from './shop.js?v=20261111a';
+import { recoveryAvailable, makeCode, makeLink, restore } from './Recovery.js?v=20261111a';
+import { accountAvailable, pullProgress, PROVIDER_NAME, completeLogin, renderGoogleButton, prepareFacebook, facebookLogin, logout } from './Account.js?v=20261111a';
+import { AUTH } from './authConfig.js?v=20261111a';
+import { BUFF_BY_ID, rt } from './Roguelike.js?v=20261111a';
 
 const $ = (id) => document.getElementById(id);
 
@@ -557,7 +557,7 @@ export class UIManager {
     const data = await fetchTop(PAGE, 0, rogue ? 'rogue' : '');
     if (token !== this._rankToken) return;
     const meId = Storage.getPlayer().id;
-    const me = { id: meId, nickname: Storage.getNickname() || t('me'), score: rogue ? Storage.getRogueBest() : Storage.getHighScore() };
+    const me = { id: meId, nickname: Storage.getNickname() || t('me'), score: rogue ? Storage.getWeekRogue() : Storage.getWeekBest() };
     const list = Array.isArray(data) ? data : [];
     this._rankRows = {};
     // 真实后端：整页就是这一页；Mock：一次给全部

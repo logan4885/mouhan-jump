@@ -1,22 +1,22 @@
 // 游戏主控：渲染器 / 场景 / 正交相机 / 灯光、输入、状态机、计分与落点判定
 import * as THREE from 'three';
-import { CONFIG } from './config.js?v=20261110zb';
-import { Storage } from './Storage.js?v=20261110zb';
-import { Tweens, clamp, Ease } from './utils.js?v=20261110zb';
-import { SkinManager } from './SkinManager.js?v=20261110zb';
-import { BlockManager } from './BlockManager.js?v=20261110zb';
-import { Player } from './Player.js?v=20261110zb';
-import { UIManager } from './UIManager.js?v=20261110zb';
-import { Sound } from './Sound.js?v=20261110zb';
-import { t, L } from './i18n.js?v=20261110zb';
-import { getPerk } from './canPerks.js?v=20261110zb';
-import { getSignature, RARITY } from './canSignature.js?v=20261110zb';
-import { PLAYER_SKINS } from './SkinManager.js?v=20261110zb';
-import { Music, playSfx } from './SkinAudio.js?v=20261110zb';
-import { SignatureFX } from './SignatureFX.js?v=20261110zb';
-import { RunState, rt, chargeTimeFor, HZ } from './Roguelike.js?v=20261110zb';
-import { fetchTop } from './Leaderboard.js?v=20261110zb';
-import { stairParams, STAND_HZ, STAIR, HZT } from './Staircase.js?v=20261110zb';
+import { CONFIG } from './config.js?v=20261111a';
+import { Storage } from './Storage.js?v=20261111a';
+import { Tweens, clamp, Ease } from './utils.js?v=20261111a';
+import { SkinManager } from './SkinManager.js?v=20261111a';
+import { BlockManager } from './BlockManager.js?v=20261111a';
+import { Player } from './Player.js?v=20261111a';
+import { UIManager } from './UIManager.js?v=20261111a';
+import { Sound } from './Sound.js?v=20261111a';
+import { t, L } from './i18n.js?v=20261111a';
+import { getPerk } from './canPerks.js?v=20261111a';
+import { getSignature, RARITY } from './canSignature.js?v=20261111a';
+import { PLAYER_SKINS } from './SkinManager.js?v=20261111a';
+import { Music, playSfx } from './SkinAudio.js?v=20261111a';
+import { SignatureFX } from './SignatureFX.js?v=20261111a';
+import { RunState, rt, chargeTimeFor, HZ } from './Roguelike.js?v=20261111a';
+import { fetchTop } from './Leaderboard.js?v=20261111a';
+import { stairParams, STAND_HZ, STAIR, HZT } from './Staircase.js?v=20261111a';
 const hz = (b, k) => !!(b && b.hzs && b.hzs.includes(k));      // 方块是否带某个机制
 
 // 踩中星号方块后的免费体验时长（秒）
@@ -352,6 +352,7 @@ export class Game {
     if (this.rogue) this._rogueAfterLand(perfect, before);
 
     // 最高分实时刷新并写入本地（Roguelike 单独记录，不进总榜）
+    Storage[this.rogue ? 'noteWeekRogue' : 'noteWeekScore'](this.score);   // 每周榜成绩
     if (this.rogue) this._rogueBestCheck();
     else if (this.score > this.best) {
       this.best = this.score;
@@ -494,6 +495,7 @@ export class Game {
       this.match.finished = true;
       this.ui.el.hud.classList.add('hidden');
       const rec = this.score > this.bestAtStart;
+      Storage.noteWeekScore(this.score);
       Storage.saveHighScore(this.score);
       this.best = Storage.getHighScore();
       const st = Storage.getStats();
@@ -507,6 +509,7 @@ export class Game {
       return;
     }
     const record = this.score > this.bestAtStart;
+    Storage.noteWeekScore(this.score);
     Storage.saveHighScore(this.score);
     this.best = Storage.getHighScore();
     const stats = Storage.getStats();
@@ -634,6 +637,7 @@ export class Game {
   }
 
   _rogueBestCheck() {
+    Storage.noteWeekRogue(this.score);
     if (this.score > this.rogueBest) {
       this.rogueBest = this.score;
       Storage.saveRogueBest(this.score);

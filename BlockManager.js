@@ -1,8 +1,8 @@
 // 方块管理：生成（正方体 / 圆柱体，随机颜色与方向）、落点判定、挤压回弹、回收
 import * as THREE from 'three';
-import { CONFIG } from './config.js?v=20261110zb';
-import { rand, clamp, Ease, disposeObject } from './utils.js?v=20261110zb';
-import { HZT } from './Staircase.js?v=20261110zb';
+import { CONFIG } from './config.js?v=20261111a';
+import { rand, clamp, Ease, disposeObject } from './utils.js?v=20261111a';
+import { HZT } from './Staircase.js?v=20261111a';
 
 function mulberry32(a) {
   return () => {
