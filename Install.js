@@ -1,5 +1,5 @@
 // “下载到手机”：把游戏装到手机主屏幕（PWA）。联网时仍和服务器同步，进度不变。
-import { t, onLangChange } from './i18n.js?v=20261111d';
+import { t, onLangChange } from './i18n.js?v=20261111f';
 
 const $ = (id) => document.getElementById(id);
 const ua = navigator.userAgent || '';

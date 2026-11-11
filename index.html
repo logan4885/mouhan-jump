@@ -12,7 +12,7 @@
   <meta name="apple-mobile-web-app-title" content="跳一跳 3D">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>跳一跳 3D</title>
-  <link rel="stylesheet" href="style.css?v=20261111d">
+  <link rel="stylesheet" href="style.css?v=20261111f">
   <!-- Three.js 以 ES Module 方式从 CDN 引入 -->
   <script type="importmap">
     { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }
@@ -158,17 +158,6 @@
             <p class="redeem-msg" id="acctMsg" role="status" aria-live="polite"></p>
             <p class="bk-hint"><a href="privacy.html" target="_blank" rel="noopener" data-i18n="ac_privacy">隐私政策</a></p>
           </div>
-          <p class="bk-sub" data-i18n="bk_sub">备用方式：恢复码（不用登录）</p>
-          <p class="bk-hint" data-i18n="bk_hint">换手机或清除浏览器前，先复制恢复码；在新设备上粘贴，就能找回最高分和已解锁的罐子。恢复码相当于你的密码，不要发给别人。</p>
-          <div class="bk-row">
-            <button type="button" class="btn" id="bkCopy" data-i18n="bk_copy">复制恢复码</button>
-            <button type="button" class="btn" id="bkLink" data-i18n="bk_link">复制恢复链接</button>
-          </div>
-          <form class="redeem" id="bkForm" autocomplete="off">
-            <input id="bkInput" placeholder="粘贴恢复码" data-i18n-ph="bk_ph" spellcheck="false" autocapitalize="off" dir="ltr">
-            <button class="btn" type="submit" data-i18n="bk_btn">恢复</button>
-          </form>
-          <p class="redeem-msg" id="bkMsg" role="status" aria-live="polite"></p>
         </details>
       </div>
     </div>
@@ -206,7 +195,7 @@
     </div>
   </div>
 
-  <script type="module" src="main.js?v=20261111e"></script>
+  <script type="module" src="main.js?v=20261111f"></script>
   <!-- 兜底：Three.js 或模块加载失败时给出提示 -->
   <script>
     setTimeout(function () { if (!window.__jumpReady) document.getElementById('nogl').classList.remove('hidden'); }, 9000);
