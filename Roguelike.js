@@ -37,7 +37,7 @@ export const BUFFS = [
   B(20, 'chaos', '👻', tri('隐形罐体', 'Ghost Can', 'علبة شبحية'), tri('起跳后易拉罐隐形 1 秒，盲狙落点的落地得分 x1.5', 'Your can turns invisible for 1 s after jumping; blind landings score 1.5x', 'تختفي العلبة ثانية بعد القفز، والهبوط الأعمى يعطي 1.5x')),
   B(21, 'chaos', '🌪️', tri('气流干扰', 'Crosswind', 'رياح جانبية'), tri('每次起跳前出现随机侧风，落点会被吹偏，需要自己计算', 'A random crosswind appears before every jump and pushes your landing sideways', 'رياح جانبية عشوائية قبل كل قفزة تدفع نقطة الهبوط')),
   B(22, 'chaos', '🪞', tri('镜像世界', 'Mirror World', 'عالم المرآة'), tri('整个画面左右翻转，持续到下一次抽卡', 'The whole view flips left-right until the next card draw', 'ينقلب المشهد أفقياً حتى السحب التالي'), { repeat: true }),
-  B(23, 'vip', '👑', tri('VIP 黄金护甲', 'Golden Armor', 'الدرع الذهبي'), tri('进场自带 2 层护盾，复活不消耗局内道具', 'Start every run with 2 shields; revives cost no in-run items', 'تبدأ بدرعين وإحياؤك لا يستهلك شيئاً')),
+  B(23, 'vip', '👑', tri('VIP 黄金护甲', 'Golden Armor', 'الدرع الذهبي'), tri('进场自带 1 层护盾，复活不消耗局内道具', 'Start every run with 1 shield; revives cost no in-run items', 'تبدأ بدرع واحد وإحياؤك لا يستهلك شيئاً')),
   B(24, 'vip', '🎵', tri('共鸣', 'Resonance', 'الرنين'), tri('每连续 10 次 Perfect 触发共鸣：全屏金光清除所有负面效果，并加 100 分（原创音效）', 'Every 10 perfects in a row: golden flash clears all curses and gives +100 (original sound)', 'كل 10 هبوطات مثالية: وميض ذهبي يزيل كل التأثيرات السلبية و+100 نقطة')),
   B(25, 'vip', '🧰', tri('多维背包', 'Multiverse Bag', 'الحقيبة اللانهائية'), tri('抽卡界面开启无限制 Reroll（刷新重抽）按钮', 'Unlimited Reroll button on the card screen', 'زر إعادة السحب غير محدود')),
   B(26, 'vip', '🪩', tri('迪斯科狂欢', 'Disco Fever', 'حمى الديسكو'), tri('踩中中心自动触发金色粒子雨与灯光特效', 'Centre hits trigger a golden particle rain and light show', 'إصابة المركز تُطلق مطر جسيمات ذهبية وأضواء')),
@@ -139,7 +139,7 @@ export class RunState {
     this.invis = false;
     this.target10 = null;     // 降维打击：排行榜第 10 名的分数
     this.beat10 = false;
-    if (this.vip) this.shield += 2;     // BUFF_23 黄金护甲
+    if (this.vip) this.shield += 1;     // BUFF_23 黄金护甲
   }
 
   has(id) { return !!this.buffs[id]; }
