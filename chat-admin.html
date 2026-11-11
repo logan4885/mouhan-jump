@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="zh"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="robots" content="noindex"><title>留言板管理</title>
+<meta name="robots" content="noindex"><title>留言板 / WhatsApp 管理</title>
 <style>
 body{font:15px/1.4 "Microsoft YaHei","PingFang SC",system-ui,sans-serif;margin:0;padding:16px;background:#f6f3ff;color:#2b2540}
 h1{font-size:20px;margin:0 0 12px}.bar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
@@ -11,16 +11,21 @@ td,th{padding:8px;border-bottom:1px solid #ddd;text-align:left;vertical-align:to
 tr.hid td{opacity:.45;text-decoration:line-through}tr.hid td.act{text-decoration:none;opacity:1}
 .tx{max-width:360px;overflow-wrap:anywhere}.pid{font:12px monospace;color:#777}.rep{color:#d33;font-weight:800}.ban{background:#d33;color:#fff;border-radius:6px;padding:0 5px;font-size:12px}
 #msg{margin:8px 0;font-weight:700;color:#d33;min-height:20px}.act button{margin:2px}
+#waBox{display:none}.wabar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0}.num{font-family:monospace;font-weight:700}
+td a{color:#1a7f37;font-weight:700;text-decoration:none}.ok{color:#1a7f37;font-weight:800}input.note{width:130px;padding:4px 6px}
 </style></head><body>
-<h1>💬 留言板管理</h1>
+<h1>💬 留言板 / 📱 WhatsApp 名单管理</h1>
 <div class="bar">
   <input id="key" type="password" placeholder="管理口令 (CHAT_ADMIN_KEY)" size="24">
   <input id="api" placeholder="后端地址（自动填，一般不用改）" size="30">
   <button class="p" id="go">查看最近消息</button>
+  <button class="p" id="goWa">📱 WhatsApp 名单</button>
   <label><input type="checkbox" id="auto"> 每 5 秒刷新</label>
 </div>
 <div id="msg"></div>
-<table><thead><tr><th>时间</th><th>玩家</th><th>内容</th><th>举报</th><th>操作</th></tr></thead><tbody id="rows"></tbody></table>
+<div id="waBox"><div class="wabar"><b id="waCount"></b><button class="p" id="waCsv">⬇ 下载 CSV</button><button id="waCopy">复制全部号码</button><span style="color:#777;font-size:13px">号码只检查了格式，没有验证码；联系后在"已核对"里打勾。</span></div>
+<table><thead><tr><th>时间</th><th>玩家</th><th>WhatsApp</th><th>语言/区号</th><th>得到的皮肤</th><th>成绩</th><th>核对 / 备注</th><th></th></tr></thead><tbody id="waRows"></tbody></table></div>
+<table id="chatTable"><thead><tr><th>时间</th><th>玩家</th><th>内容</th><th>举报</th><th>操作</th></tr></thead><tbody id="rows"></tbody></table>
 <script type="module">
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -46,13 +51,52 @@ async function load() {
         ${m.banned ? `<button data-a="unban" data-p="${m.pid}">解封</button>` : `<button class="d" data-a="ban" data-p="${m.pid}" data-h="24">禁言24小时</button><button class="d" data-a="ban" data-p="${m.pid}" data-h="0">永久禁言</button>`}</td></tr>`).join('');
   } catch (e) { $('msg').textContent = e.message; }
 }
-$('go').onclick = load;
 $('rows').onclick = async (e) => {
   const b = e.target.closest('button'); if (!b) return;
   const body = { action: b.dataset.a, msg: b.dataset.m, pid: b.dataset.p, hours: Number(b.dataset.h || 0), purge: true };
   if (b.dataset.a === 'ban' && !confirm(b.dataset.h === '0' ? '永久禁言这个玩家，并隐藏他的全部消息？' : '禁言这个玩家 24 小时，并隐藏他的全部消息？')) return;
   try { await call(body); load(); } catch (err) { $('msg').textContent = err.message; }
 };
-let t = null; $('auto').onchange = () => { clearInterval(t); if ($('auto').checked) t = setInterval(load, 5000); };
-if ($('key').value && $('api').value) load();
+
+let leads = [];
+const LN = { zh: '中文', en: 'English', ar: 'العربية' };
+async function loadWa() {
+  $('msg').textContent = '';
+  try {
+    sessionStorage.setItem('chatKey', $('key').value); localStorage.setItem('chatApi', $('api').value);
+    leads = (await call({ action: 'wa_list' })).leads;
+    $('chatTable').style.display = 'none'; $('waBox').style.display = 'block';
+    $('waCount').textContent = '共 ' + leads.length + ' 个号码';
+    $('waRows').innerHTML = leads.map((l) => `<tr><td>${new Date(l.ts * 1000).toLocaleString()}</td><td><b>${esc(l.nick || '?')}</b><div class="pid">${l.pid}</div></td>
+      <td><span class="num">+${esc(l.phone)}</span><br><a href="https://wa.me/${esc(l.phone)}" target="_blank" rel="noopener">在 WhatsApp 打开 ↗</a></td>
+      <td>${esc(LN[l.lang] || l.lang || '-')} / +${esc(l.cc)}</td><td>${esc(l.skin)}</td><td>最高 ${l.best}<br>Rogue ${l.rogue}<br>${l.games} 局</td>
+      <td><label><input type="checkbox" data-wv="${l.id}" ${l.verified ? 'checked' : ''}> 已核对</label><br><input class="note" data-wn="${l.id}" value="${esc(l.note)}" placeholder="备注"></td>
+      <td><button class="d" data-wd="${l.id}">删除</button></td></tr>`).join('');
+  } catch (e) { $('msg').textContent = e.message; }
+}
+$('goWa').onclick = loadWa;
+const origLoad = load;
+$('go').onclick = () => { $('waBox').style.display = 'none'; $('chatTable').style.display = ''; load(); };
+$('waRows').onchange = async (e) => {
+  const id = e.target.dataset.wv || e.target.dataset.wn; if (!id) return;
+  const v = document.querySelector(`[data-wv="${id}"]`).checked, n = document.querySelector(`[data-wn="${id}"]`).value;
+  try { await call({ action: 'wa_mark', wid: id, verified: v, note: n }); } catch (err) { $('msg').textContent = err.message; }
+};
+$('waRows').onclick = async (e) => {
+  const b = e.target.closest('[data-wd]'); if (!b) return;
+  if (!confirm('从名单里删除这个号码？（玩家已得到的皮肤不会收回）')) return;
+  try { await call({ action: 'wa_delete', wid: b.dataset.wd }); loadWa(); } catch (err) { $('msg').textContent = err.message; }
+};
+const q = (v) => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
+$('waCsv').onclick = () => {
+  const head = ['序号', '领取时间', '昵称', 'WhatsApp号码(含区号)', '国家区号', '语言', '获得皮肤', '最高分', 'Roguelike最高', '局数', '登录方式', '已核对', '备注', '玩家ID'];
+  const rows = leads.map((l, i) => [leads.length - i, new Date(l.ts * 1000).toISOString().replace('T', ' ').slice(0, 19) + ' UTC', l.nick, '="+' + l.phone + '"', '="+' + l.cc + '"', l.lang, l.skin, l.best, l.rogue, l.games, l.providers, l.verified ? '是' : '', l.note, l.pid]);
+  const csv = '﻿' + [head, ...rows].map((r) => r.map(q).join(',')).join('\r\n');
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+  a.download = 'whatsapp-leads-' + new Date().toISOString().slice(0, 10) + '.csv'; a.click();
+};
+$('waCopy').onclick = async () => { try { await navigator.clipboard.writeText(leads.map((l) => '+' + l.phone).join('\n')); $('msg').textContent = '已复制 ' + leads.length + ' 个号码'; } catch (e) { $('msg').textContent = '复制失败，请用 CSV'; } };
+
+let t = null; $('auto').onchange = () => { clearInterval(t); if ($('auto').checked) t = setInterval(() => { if ($('waBox').style.display !== 'block') load(); }, 5000); };
+if ($('key').value && $('api').value) $('go').onclick();
 </script></body></html>
