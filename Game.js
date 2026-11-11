@@ -32,7 +32,7 @@ export class Game {
     this.perfects = 0;
     this.match = null;        // 同图比赛：{ code, seed, finished }；非空时不计入最高分/总榜，且关闭罐子能力
     this.onMatchOver = null;
-    this.rogueMode = false;   // Roguelike 模式：每 10 层三选一 Buff；成绩单独统计，不进总榜
+    this.rogueMode = false;   // Roguelike 模式：每 5 层三选一 Buff；成绩单独统计，不进总榜
     this.rogue = null;        // 当前这一局的 RunState
     this.rogueUI = null;
     this.rogueBest = Storage.getRogueBest();
@@ -367,7 +367,7 @@ export class Game {
     }
     if (this.rogue) { this.blocks.stairFloor = this.rogue.layers + 2; this._sinkReset(landed); }
     this.blocks.advance(this.score);
-    if (this.rogue && this.rogue.layers % 10 === 0) { this._rogueChoose(); return; }   // 每 10 层三选一
+    if (this.rogue && this.rogue.layers % 5 === 0) { this._rogueChoose(); return; }   // 每 5 层三选一
     this.state = 'ready';
     this._rogueReady();
     this._updatePerkHud();
@@ -641,7 +641,7 @@ export class Game {
     }
   }
 
-  /** 每 10 层：停下来三选一 */
+  /** 每 5 层：停下来三选一 */
   _rogueChoose() {
     const rg = this.rogue;
     const opts = rg.choices(3);
