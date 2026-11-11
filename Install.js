@@ -1,6 +1,6 @@
 // “下载到手机”：把游戏装到手机主屏幕（PWA）。联网时仍和服务器同步，进度不变。
 // 弹窗里安卓和苹果分开讲：当前设备的那一栏排在前面并高亮，另一栏也能看到。
-import { t, onLangChange } from './i18n.js?v=20261111g';
+import { t, L, onLangChange } from './i18n.js?v=20261111g';
 
 const $ = (id) => document.getElementById(id);
 const ua = navigator.userAgent || '';
@@ -33,6 +33,10 @@ export function initInstall() {
   const fill = () => {
     $('instAndroidSteps').innerHTML = steps('inst_android_steps');
     $('instIosSteps').innerHTML = steps('inst_ios_steps');
+    const apk = $('instApk');
+    if (apk) apk.textContent = L({ zh: '⬇️ 下载安卓安装包（APK）', en: '⬇️ Download Android app (APK)', ar: '⬇️ تنزيل تطبيق أندرويد (APK)' });
+    const ah = $('instApkHint');
+    if (ah) ah.textContent = L({ zh: '下载后点开文件安装；若提示“未知来源”，请按提示允许一次。', en: 'Open the file after downloading. If asked about unknown sources, allow it once.', ar: 'افتح الملف بعد التنزيل. إذا ظهر تنبيه المصادر غير المعروفة فاسمح به مرة واحدة.' });
     $('instInapp').textContent = inApp ? t('inst_inapp') : '';
     $('instInapp').classList.toggle('hidden', !inApp);
     $('installNote').textContent = t('inst_note');

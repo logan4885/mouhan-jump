@@ -1,6 +1,6 @@
 // Service Worker：让游戏可以装到手机主屏幕，并在断网时也能打开。
 // 原则：同源文件“有网先用网络（保证永远是最新版），断网才用缓存”；排行榜/同步等 API 请求（别的域名）完全不碰，所以服务器同步不受影响。
-const CACHE = 'jump3d-shell-v1';
+const CACHE = 'jump3d-shell-v2';
 const CORE = ['./', 'index.html', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png', 'apple-touch-icon.png', 'favicon-32.png'];
 const CDN = 'https://cdn.jsdelivr.net/';   // Three.js
 
@@ -17,6 +17,7 @@ self.addEventListener('fetch', (e) => {
   const sameOrigin = url.origin === self.location.origin;
   if (!sameOrigin && !req.url.startsWith(CDN)) return;          // 后端 API 等：不拦截
   if (sameOrigin && url.pathname.endsWith('/sw.js')) return;
+  if (sameOrigin && url.pathname.endsWith('.apk')) return;      // 安装包直接走网络，不缓存
   const cdn = !sameOrigin;
   e.respondWith((async () => {
     const cache = await caches.open(CACHE);

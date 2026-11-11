@@ -12,7 +12,7 @@
   <meta name="apple-mobile-web-app-title" content="跳一跳 3D">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>跳一跳 3D</title>
-  <link rel="stylesheet" href="style.css?v=20261111g">
+  <link rel="stylesheet" href="style.css?v=20261111h">
   <!-- Three.js 以 ES Module 方式从 CDN 引入 -->
   <script type="importmap">
     { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }
@@ -80,6 +80,8 @@
           <section class="inst-card" id="instAndroid">
             <h3 data-i18n="inst_android_h">🤖 安卓手机</h3>
             <div id="instAndroidSteps"></div>
+            <a class="btn primary inst-apk" id="instApk" href="jump3d.apk" download="Jump3D.apk"></a>
+            <p class="inst-apk-hint" id="instApkHint"></p>
             <button type="button" class="btn primary hidden" id="instAndroidGo" data-i18n="inst_go">一键安装</button>
           </section>
           <section class="inst-card" id="instIos">
@@ -207,7 +209,7 @@
     </div>
   </div>
 
-  <script type="module" src="main.js?v=20261111g"></script>
+  <script type="module" src="main.js?v=20261111h"></script>
   <!-- 兜底：Three.js 或模块加载失败时给出提示 -->
   <script>
     setTimeout(function () { if (!window.__jumpReady) document.getElementById('nogl').classList.remove('hidden'); }, 9000);
