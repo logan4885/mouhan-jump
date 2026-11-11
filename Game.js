@@ -1,22 +1,22 @@
 // 游戏主控：渲染器 / 场景 / 正交相机 / 灯光、输入、状态机、计分与落点判定
 import * as THREE from 'three';
-import { CONFIG } from './config.js?v=20261110z';
-import { Storage } from './Storage.js?v=20261110z';
-import { Tweens, clamp, Ease } from './utils.js?v=20261110z';
-import { SkinManager } from './SkinManager.js?v=20261110z';
-import { BlockManager } from './BlockManager.js?v=20261110z';
-import { Player } from './Player.js?v=20261110z';
-import { UIManager } from './UIManager.js?v=20261110z';
-import { Sound } from './Sound.js?v=20261110z';
-import { t, L } from './i18n.js?v=20261110z';
-import { getPerk } from './canPerks.js?v=20261110z';
-import { getSignature, RARITY } from './canSignature.js?v=20261110z';
-import { PLAYER_SKINS } from './SkinManager.js?v=20261110z';
-import { Music, playSfx } from './SkinAudio.js?v=20261110z';
-import { SignatureFX } from './SignatureFX.js?v=20261110z';
-import { RunState, rt, chargeTimeFor, HZ } from './Roguelike.js?v=20261110z';
-import { fetchTop } from './Leaderboard.js?v=20261110z';
-import { stairParams, STAND_HZ, STAIR } from './Staircase.js?v=20261110z';
+import { CONFIG } from './config.js?v=20261110za';
+import { Storage } from './Storage.js?v=20261110za';
+import { Tweens, clamp, Ease } from './utils.js?v=20261110za';
+import { SkinManager } from './SkinManager.js?v=20261110za';
+import { BlockManager } from './BlockManager.js?v=20261110za';
+import { Player } from './Player.js?v=20261110za';
+import { UIManager } from './UIManager.js?v=20261110za';
+import { Sound } from './Sound.js?v=20261110za';
+import { t, L } from './i18n.js?v=20261110za';
+import { getPerk } from './canPerks.js?v=20261110za';
+import { getSignature, RARITY } from './canSignature.js?v=20261110za';
+import { PLAYER_SKINS } from './SkinManager.js?v=20261110za';
+import { Music, playSfx } from './SkinAudio.js?v=20261110za';
+import { SignatureFX } from './SignatureFX.js?v=20261110za';
+import { RunState, rt, chargeTimeFor, HZ } from './Roguelike.js?v=20261110za';
+import { fetchTop } from './Leaderboard.js?v=20261110za';
+import { stairParams, STAND_HZ, STAIR } from './Staircase.js?v=20261110za';
 const hz = (b, k) => !!(b && b.hzs && b.hzs.includes(k));      // 方块是否带某个机制
 
 // 踩中星号方块后的免费体验时长（秒）
@@ -389,7 +389,6 @@ export class Game {
       const m = this.rogue.perkMods();
       this.perk.perfectMul = (this.perk.perfectMul || 1) * m.perfectMul;
       this.perk.chargeMul = (this.perk.chargeMul || 1) * m.chargeMul;
-      this.perk.perfectRing = this.perk.perfectRing || m.perfectRing;
     }
     this._updatePerkHud();
   }
@@ -562,12 +561,6 @@ export class Game {
       rg.snowT += dt;
       if (rg.snowT >= 10) { rg.snowT -= 10; rg.bonusBase += 1; this.ui.toast(rt('snow', { n: rg.bonusBase })); this.rogueUI.refresh(rg); }
     }
-    // 先知之眼（VIP）：蓄力条上标出刚好落在中心的蓄力位置
-    if (rg.vip && (this.state === 'ready' || this.state === 'charging') && this.blocks.next) {
-      const p = this.player.root.position, n = this.blocks.next;
-      const k = chargeTimeFor(Math.hypot(n.x - p.x, n.z - p.z), CONFIG) / CONFIG.CHARGE_MAX_TIME;
-      this.rogueUI.setMark(k > 0 && k < 1 ? k : null);
-    } else this.rogueUI.setMark(null);
   }
 
   _rogueAfterLand(perfect, before) {

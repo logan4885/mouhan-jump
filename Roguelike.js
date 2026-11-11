@@ -1,8 +1,8 @@
-// Roguelike 模式：30 个 Buff 数据 + 局内状态机 RunState。
+// Roguelike 模式：29 个 Buff（BUFF_28 先知之眼已移除） 数据 + 局内状态机 RunState。
 // 规则（照 Excel《SodaJump_Phygital_Architecture_and_Buffs》）：
 //   BUFF_01~22 进入每 10 层的【三选一抽卡池】；BUFF_23~30 是 VIP 常驻被动，绝不占三选一的格子。
 //   VIP = 已经拥有任一兑换罐的玩家（沿用游戏里现有的 VIP 判断）。
-import { L } from './i18n.js?v=20261110z';
+import { L } from './i18n.js?v=20261110za';
 
 const tri = (zh, en, ar) => ({ zh, en, ar });
 const B = (id, cat, icon, name, desc, extra = {}) => ({ id: 'BUFF_' + String(id).padStart(2, '0'), cat, icon, name, desc, pool: id <= 22 ? 'run' : 'vip', ...extra });
@@ -42,7 +42,6 @@ export const BUFFS = [
   B(25, 'vip', '🧰', tri('多维背包', 'Multiverse Bag', 'الحقيبة اللانهائية'), tri('抽卡界面开启无限制 Reroll（刷新重抽）按钮', 'Unlimited Reroll button on the card screen', 'زر إعادة السحب غير محدود')),
   B(26, 'vip', '🪩', tri('迪斯科狂欢', 'Disco Fever', 'حمى الديسكو'), tri('踩中中心自动触发金色粒子雨与灯光特效', 'Centre hits trigger a golden particle rain and light show', 'إصابة المركز تُطلق مطر جسيمات ذهبية وأضواء')),
   B(27, 'vip', '🔋', tri('能量永动机', 'Perpetual Energy', 'طاقة لا تنفد'), tri('无限重开，没有次数限制', 'Unlimited restarts, no daily cap', 'إعادة بدء بلا حدود')),
-  B(28, 'vip', '🧭', tri('先知之眼', 'Oracle Eye', 'عين العرّاف'), tri('下一个方块上显示完美区域，蓄力条标出完美落点', 'Shows the perfect zone on the next block and marks the perfect spot on the charge bar', 'تُظهر منطقة الهبوط المثالي وتحدد النقطة المثالية على شريط الشحن')),
   B(29, 'vip', '👑', tri('王者降临', 'King Arrives', 'وصول الملك'), tri('破 Roguelike 纪录时全屏王者横幅；排行榜里 VIP 自带金色发光边框', 'Breaking your Roguelike record shows a full-screen crown banner; VIPs glow gold on the leaderboard', 'كسر رقمك يعرض لافتة تاج بملء الشاشة، وتتوهج كلاعب VIP في لوحة الصدارة')),
   B(30, 'vip', '🎟️', tri('降维打击', 'Dimension Strike', 'ضربة الأبعاد'), tri('本局得分永久 x2，并盯着排行榜第 10 名作为挑战目标', 'Score x2 for the whole run, with the leaderboard #10 shown as your target', 'نقاطك x2 طوال الجولة مع عرض المركز العاشر كهدف')),
 ];
@@ -83,7 +82,7 @@ const TXT = {
   rankBtn: tri('🏆 Roguelike 排行榜', '🏆 Roguelike leaderboard', '🏆 لوحة صدارة Roguelike'),
   start: tri('开始 Roguelike', 'Start Roguelike', 'ابدأ Roguelike'),
   vipOn: tri('👑 VIP 被动已生效：{n} 项', '👑 VIP passives active: {n}', '👑 مزايا VIP مفعّلة: {n}'),
-  vipOff: tri('用兑换码解锁任意一款特效罐即成为 VIP，开局自带 8 项常驻被动。', 'Unlock any special can with a code to become VIP and start with 8 permanent passives.', 'افتح أي علبة خاصة بالرمز لتصبح VIP وتبدأ بـ 8 مزايا دائمة.'),
+  vipOff: tri('用兑换码解锁任意一款特效罐即成为 VIP，开局自带 7 项常驻被动。', 'Unlock any special can with a code to become VIP and start with 7 permanent passives.', 'افتح أي علبة خاصة بالرمز لتصبح VIP وتبدأ بـ 7 مزايا دائمة.'),
   over: tri('Roguelike 结算', 'Roguelike result', 'نتيجة Roguelike'),
   floors: tri('到达第 {n} 层', 'Reached floor {n}', 'وصلت إلى الطابق {n}'),
   build: tri('本局 Build：', 'Your build: ', 'بناؤك: '),
@@ -167,7 +166,6 @@ export class RunState {
     return {
       perfectMul: this.has('BUFF_01') ? 1.25 : 1,
       chargeMul: this.has('BUFF_12') ? 1.5 : 1,
-      perfectRing: this.vip,      // BUFF_28 先知之眼
     };
   }
   floatAdd() { return this.has('BUFF_03') ? 0.3 : 0; }

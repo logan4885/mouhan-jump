@@ -1,8 +1,8 @@
 // 同图比赛：开房间 / 加入 / 大厅 / 结果。服务器只发地图种子和收最终成绩，没有实时通信。
-import { Storage } from './Storage.js?v=20261110z';
-import { syncPlayer, LEADERBOARD_API } from './Leaderboard.js?v=20261110z';
+import { Storage } from './Storage.js?v=20261110za';
+import { syncPlayer, LEADERBOARD_API } from './Leaderboard.js?v=20261110za';
 import { t } from './i18n.js';
-import { escapeHtml } from './utils.js?v=20261110z';
+import { escapeHtml } from './utils.js?v=20261110za';
 
 const MAX = 8;
 const ALPHA = /[^A-HJ-NP-Z2-9]/g;

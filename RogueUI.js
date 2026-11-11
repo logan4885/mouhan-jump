@@ -1,7 +1,7 @@
 // Roguelike 模式的界面：入口说明、三选一抽卡、局内 Buff 栏、先知之眼标记、各种全屏闪光
-import { t, L } from './i18n.js?v=20261110z';
-import { escapeHtml } from './utils.js?v=20261110z';
-import { BUFF_BY_ID, CATS, VIP_BUFFS, rt } from './Roguelike.js?v=20261110z';
+import { t, L } from './i18n.js?v=20261110za';
+import { escapeHtml } from './utils.js?v=20261110za';
+import { BUFF_BY_ID, CATS, VIP_BUFFS, rt } from './Roguelike.js?v=20261110za';
 
 const $ = (id) => document.getElementById(id);
 
@@ -49,7 +49,7 @@ export class RogueUI {
     $('rgIntroBody').innerHTML = `
       <h2>🎲 ${escapeHtml(rt('title'))}</h2>
       <p class="room-intro">${escapeHtml(rt('intro'))}</p>
-      <div class="rg-vipbox ${vip ? 'on' : ''}"><div>${vipList}</div><p>${escapeHtml(vip ? rt('vipOn', { n: 8 }) : rt('vipOff'))}</p></div>
+      <div class="rg-vipbox ${vip ? 'on' : ''}"><div>${vipList}</div><p>${escapeHtml(vip ? rt('vipOn', { n: VIP_BUFFS.length }) : rt('vipOff'))}</p></div>
       <button type="button" class="btn primary big" id="rgGo">${escapeHtml(rt('start'))}</button>
       <button type="button" class="btn" id="rgRank">${escapeHtml(rt('rankBtn'))}</button>`;
     $('rgIntro').classList.remove('hidden');
