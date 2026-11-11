@@ -29,7 +29,7 @@ td a{color:#1a7f37;font-weight:700;text-decoration:none}.ok{color:#1a7f37;font-w
 <script type="module">
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-try { const m = await import('./Leaderboard.js?v=20261112c'); if (m.LEADERBOARD_API.baseUrl) $('api').value = m.LEADERBOARD_API.baseUrl; } catch (e) {}
+try { const m = await import('./Leaderboard.js?v=20261113b'); if (m.LEADERBOARD_API.baseUrl) $('api').value = m.LEADERBOARD_API.baseUrl; } catch (e) {}
 try { $('key').value = sessionStorage.getItem('chatKey') || ''; $('api').value = $('api').value || localStorage.getItem('chatApi') || ''; } catch (e) {}
 async function call(body) {
   const base = $('api').value.trim().replace(/\/+$/, '');

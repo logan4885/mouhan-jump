@@ -6,6 +6,8 @@ import { Room } from './Room.js?v=20261113b';
 import { RogueUI } from './RogueUI.js?v=20261113b';
 import { initInstall } from './Install.js?v=20261113b';
 import { Invite } from './Invite.js?v=20261113b';
+import { Chat } from './Chat.js?v=20261113b';
+import { WhatsApp } from './WhatsApp.js?v=20261113b';
 
 function showError(err) {
   console.error(err);
@@ -19,6 +21,8 @@ try {
   window.__rogueUI = new RogueUI(game);   // Roguelike 模式
   initInstall();             // “下载到手机”按钮 + 离线缓存
   window.__invite = new Invite(game);   // 邀请好友：二维码、分享、每 10 人送兑换码
+  window.__chat = new Chat(game);   // 留言板（聊天大厅）
+  window.__wa = new WhatsApp(game);   // 填 WhatsApp 领随机皮肤
   window.__game = game;      // 方便在控制台调试
   window.__jumpReady = true;
 
