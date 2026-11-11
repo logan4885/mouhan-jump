@@ -1,7 +1,7 @@
 // Roguelike 模式的界面：入口说明、三选一抽卡、局内 Buff 栏、先知之眼标记、各种全屏闪光
 import { t, L } from './i18n.js?v=20261112c';
 import { escapeHtml } from './utils.js?v=20261112c';
-import { BUFF_BY_ID, CATS, VIP_BUFFS, rt } from './Roguelike.js?v=20261112c';
+import { BUFF_BY_ID, CATS, VIP_BUFFS, HZ, rt } from './Roguelike.js?v=20261112c';
 
 const $ = (id) => document.getElementById(id);
 
@@ -14,6 +14,7 @@ export class RogueUI {
     const host = $('playerModal') ? $('playerModal').parentNode : document.body;
     host.insertAdjacentHTML('beforeend', `
       <div id="rgBar" class="rg-bar hidden" aria-live="polite"></div>
+      <div id="rgHint" class="rg-hint" aria-hidden="true"></div>
       <div id="rgSink" class="rg-sink hidden" aria-hidden="true"><i></i><b></b></div>
       <div id="rgFlash" class="rg-flash" aria-hidden="true"></div>
       <div id="rgKing" class="rg-king hidden" aria-hidden="true"></div>
@@ -23,7 +24,7 @@ export class RogueUI {
       <div class="modal-wrap hidden" id="rgModal" role="dialog" aria-modal="true">
         <div class="modal rgpick"><h2 id="rgPickTitle"></h2><div class="rg-cards" id="rgCards"></div><button type="button" class="btn rg-reroll hidden" id="rgReroll"></button></div>
       </div>`);
-    this.bar = $('rgBar'); this.sink = $('rgSink');
+    this.bar = $('rgBar'); this.sink = $('rgSink'); this.hintEl = $('rgHint');
     const track = document.querySelector('.charge-track');
     if (track) { track.insertAdjacentHTML('beforeend', '<i class="rg-mark hidden" id="rgMark"></i>'); this.mark = $('rgMark'); }
     const btn = $('btnRogueStart');
@@ -63,8 +64,19 @@ export class RogueUI {
   }
   hide() {
     $('rgModal').classList.add('hidden'); this.pick = null;
-    this.bar.classList.add('hidden'); this.setMark(null); this.setSink(null);
+    this.bar.classList.add('hidden'); this.setMark(null); this.setSink(null); this.hideHint();
   }
+  /** 机制方块出现时的效果提示卡：图标 + 名称 + 一句话效果（混沌方块列出两种） */
+  showHint(kinds, chaos) {
+    const el = this.hintEl; if (!el || !kinds || !kinds.length) return;
+    const rows = kinds.map((k) => HZ[k]).filter(Boolean).map((h) =>
+      `<div class="rg-hint-row"><span class="ic">${h.icon}</span><span class="tx"><b>${escapeHtml(L(h.name))}</b><span>${escapeHtml(L(h.desc))}</span></span></div>`).join('');
+    el.innerHTML = (chaos ? `<div class="rg-hint-tag">👑 ${escapeHtml(L(HZ.chaos.name))}</div>` : '') + rows;
+    el.classList.add('on');
+    clearTimeout(this._hintT);
+    this._hintT = setTimeout(() => el.classList.remove('on'), chaos ? 4200 : 3000);
+  }
+  hideHint() { if (this.hintEl) { clearTimeout(this._hintT); this.hintEl.classList.remove('on'); } }
   /** 下沉倒计时条：frac 为剩余比例 0~1，null 隐藏 */
   setSink(frac, secs, icon = '⏳') {
     if (!this.sink) return;

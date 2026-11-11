@@ -551,6 +551,8 @@ export class Game {
     rg.hazWind = nx && hz(nx, 'windy') ? nx.windSign * HZT.wind : 0;                       // 强侧风方块：这一跳被额外吹偏
     this._setMirror(rg.mirrorLeft > 0 || !!(nx && hz(nx, 'mirrored')));                  // 镜像方块：瞄准时画面翻转
     this.player.root.visible = this._invisT <= 0;
+    if (nx && nx.hzs && !nx.hinted) { nx.hinted = true; this.rogueUI.showHint(nx.hzs, nx.chaos); }   // 每个机制方块出现时提示一次它的效果
+    else if (!(nx && nx.hzs)) this.rogueUI.hideHint();
     this.rogueUI.refresh(rg);
   }
 

@@ -1,9 +1,9 @@
 // 入口：创建游戏实例
-import { Game } from './Game.js?v=20261112c';
+import { Game } from './Game.js?v=20261112d';
 import { Storage } from './Storage.js?v=20261112c';
 import { pullProgress } from './Account.js?v=20261112c';
 import { Room } from './Room.js?v=20261112c';
-import { RogueUI } from './RogueUI.js?v=20261112c';
+import { RogueUI } from './RogueUI.js?v=20261112d';
 import { initInstall } from './Install.js?v=20261112c';
 import { Invite } from './Invite.js?v=20261112c';
 import { Chat } from './Chat.js?v=20261112c';
