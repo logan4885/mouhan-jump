@@ -6,6 +6,7 @@ export const LANGS = ['zh', 'en', 'ar'];
 
 const DICT = {
   zh: {
+    rk_reset_note: '📅 每周五重置排行榜（普通榜 + Roguelike 榜）',
     page_title: '跳一跳 3D', logo: '跳一跳', back_site: '↩ 回到牟涵的小屋',
     subtitle: '按住蓄力，松开起跳。落在正中心得分翻倍！',
     start: '开始游戏', skins: '🎨 皮肤', rank: '🏆 排行榜', home: '🏠 首页',
@@ -55,6 +56,7 @@ const DICT = {
     nogl_p: '你的浏览器不支持 WebGL，或 Three.js 加载失败。请更换浏览器或检查网络后刷新。',
   },
   en: {
+    rk_reset_note: '📅 Normal & Roguelike boards reset every Friday',
     page_title: 'Jump Jump 3D', logo: 'Jump Jump', back_site: "↩ Back to Mouhan's house",
     subtitle: 'Hold to charge, release to jump. Land dead center for double points!',
     start: 'Play', skins: '🎨 Skins', rank: '🏆 Ranking', home: '🏠 Home',
@@ -104,6 +106,7 @@ const DICT = {
     nogl_p: 'Your browser does not support WebGL, or Three.js failed to load. Try another browser or check your connection, then reload.',
   },
   ar: {
+    rk_reset_note: '📅 تُعاد لوحات الصدارة كل جمعة (العادية + Roguelike)',
     page_title: 'قفزة قفزة 3D', logo: 'قفزة قفزة', back_site: '↩ العودة إلى بيت موهان',
     subtitle: 'اضغط مطولًا للشحن واترك للقفز. الهبوط في المنتصف تمامًا يضاعف النقاط!',
     start: 'ابدأ اللعب', skins: '🎨 الأشكال', rank: '🏆 الترتيب', home: '🏠 الرئيسية',
