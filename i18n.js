@@ -1,11 +1,20 @@
 // 多语言：中文 / English / العربية
 // 静态文字写在 index.html 的 data-i18n 属性里，动态文字用 t('key', { 变量 })
-import { Storage } from './Storage.js?v=20261111b';
+import { Storage } from './Storage.js?v=20261111d';
 
 export const LANGS = ['zh', 'en', 'ar'];
 
 const DICT = {
   zh: {
+    inst_btn: "📲 下载到手机",
+    inst_title: "下载到手机",
+    inst_ios: "苹果手机：用 Safari 打开本页，点底部的“分享”按钮，再选“添加到主屏幕”。",
+    inst_android: "点浏览器右上角的菜单 ⋮，选择“安装应用”或“添加到主屏幕”。",
+    inst_inapp: "现在是在应用内置的浏览器里，装不了。请点右上角 ⋮ 选“用浏览器打开”（Chrome / Safari），再点一次“下载到手机”。",
+    inst_note: "装好后和网页版是同一个游戏，联网时成绩、皮肤、排行榜会继续和服务器同步。",
+    inst_note_ios: "注意：苹果手机上主屏幕版和 Safari 的存档是分开的，换过去前请先点“登录，保存进度”（或记下恢复码），到新版里再登录。",
+    inst_done: "✅ 已添加到主屏幕",
+    inst_ok: "知道了",
     rk_reset_note: '📅 每周五重置排行榜（普通榜 + Roguelike 榜）',
     page_title: '跳一跳 3D', logo: '跳一跳', back_site: '↩ 牟涵的小屋',
     subtitle: '按住蓄力，松开起跳。落在正中心得分翻倍！',
@@ -56,6 +65,15 @@ const DICT = {
     nogl_p: '你的浏览器不支持 WebGL，或 Three.js 加载失败。请更换浏览器或检查网络后刷新。',
   },
   en: {
+    inst_btn: "📲 Install on your phone",
+    inst_title: "Install on your phone",
+    inst_ios: "iPhone/iPad: open this page in Safari, tap the Share button at the bottom, then choose \"Add to Home Screen\".",
+    inst_android: "Tap the browser menu ⋮ (top right), then choose \"Install app\" or \"Add to Home screen\".",
+    inst_inapp: "You are in an in-app browser, which cannot install apps. Tap ⋮ (top right), choose \"Open in browser\" (Chrome / Safari), then tap Install again.",
+    inst_note: "It is the same game as the website: while online, your scores, skins and rankings keep syncing with the server.",
+    inst_note_ios: "Note: on iPhone the Home Screen app keeps its own save, separate from Safari. Tap \"Sign in to save progress\" (or note your recovery code) before switching, then sign in inside the app.",
+    inst_done: "✅ Added to your home screen",
+    inst_ok: "Got it",
     rk_reset_note: '📅 Normal & Roguelike boards reset every Friday',
     page_title: 'Jump Jump 3D', logo: 'Jump Jump', back_site: "↩ Mouhan's house",
     subtitle: 'Hold to charge, release to jump. Land dead center for double points!',
@@ -106,6 +124,15 @@ const DICT = {
     nogl_p: 'Your browser does not support WebGL, or Three.js failed to load. Try another browser or check your connection, then reload.',
   },
   ar: {
+    inst_btn: "📲 ثبّت على هاتفك",
+    inst_title: "ثبّت على هاتفك",
+    inst_ios: "آيفون/آيباد: افتح الصفحة في Safari، اضغط زر المشاركة في الأسفل ثم اختر «إضافة إلى الشاشة الرئيسية».",
+    inst_android: "اضغط قائمة المتصفح ⋮ (أعلى اليمين) ثم اختر «تثبيت التطبيق» أو «إضافة إلى الشاشة الرئيسية».",
+    inst_inapp: "أنت داخل متصفح مدمج في تطبيق ولا يمكنه التثبيت. اضغط ⋮ (أعلى اليمين) واختر «فتح في المتصفح» (Chrome / Safari) ثم اضغط تثبيت مرة أخرى.",
+    inst_note: "هي نفس اللعبة: عند الاتصال بالإنترنت تستمر نتائجك وأشكالك والترتيب في التزامن مع الخادم.",
+    inst_note_ios: "تنبيه: في آيفون نسخة الشاشة الرئيسية لها حفظ منفصل عن Safari. اضغط «تسجيل الدخول لحفظ التقدم» (أو احتفظ برمز الاستعادة) قبل الانتقال ثم سجّل الدخول داخل التطبيق.",
+    inst_done: "✅ تمت الإضافة إلى الشاشة الرئيسية",
+    inst_ok: "حسناً",
     rk_reset_note: '📅 تُعاد لوحات الصدارة كل جمعة (العادية + Roguelike)',
     page_title: 'قفزة قفزة 3D', logo: 'قفزة قفزة', back_site: '↩ بيت موهان',
     subtitle: 'اضغط مطولًا للشحن واترك للقفز. الهبوط في المنتصف تمامًا يضاعف النقاط!',

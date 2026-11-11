@@ -4,8 +4,15 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
   <meta name="theme-color" content="#cfe9ff">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="跳一跳 3D">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>跳一跳 3D</title>
-  <link rel="stylesheet" href="style.css?v=20261111c">
+  <link rel="stylesheet" href="style.css?v=20261111d">
   <!-- Three.js 以 ES Module 方式从 CDN 引入 -->
   <script type="importmap">
     { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }
@@ -54,6 +61,7 @@
       </div>
       <button class="btn" id="btnRoomStart" data-i18n="rm_btn">👥 同图比赛</button>
       <button class="btn" id="btnRogueStart" data-i18n="rg_btn">🎲 Roguelike 模式</button>
+      <button class="link-btn" id="btnInstall" data-i18n="inst_btn">📲 下载到手机</button>
       <button class="link-btn" id="btnAcctStart" data-i18n="ac_start">👤 登录，保存进度</button>
       <p class="start-best"><span data-i18n="my_best">我的最高分</span> <b id="startBest">0</b></p>
       <p class="controls">
@@ -61,6 +69,17 @@
         <span class="only-touch" data-i18n="ctl_touch">手机：按住屏幕任意位置</span>
       </p>
     </section>
+
+    <!-- 下载到手机：手动安装说明 -->
+    <div class="modal-wrap hidden" id="installModal" role="dialog" aria-modal="true" aria-labelledby="installTitle">
+      <div class="modal install-modal">
+        <button class="close" data-instclose aria-label="Close">✕</button>
+        <h2 id="installTitle" data-i18n="inst_title">下载到手机</h2>
+        <p id="installBody" class="install-body"></p>
+        <p id="installNote" class="install-note"></p>
+        <button type="button" class="btn primary big" data-instclose data-i18n="inst_ok">知道了</button>
+      </div>
+    </div>
 
     <!-- 结算弹窗 -->
     <div class="modal-wrap hidden" id="overModal" role="dialog" aria-modal="true" aria-labelledby="overTitle">
@@ -187,7 +206,7 @@
     </div>
   </div>
 
-  <script type="module" src="main.js?v=20261111b"></script>
+  <script type="module" src="main.js?v=20261111d"></script>
   <!-- 兜底：Three.js 或模块加载失败时给出提示 -->
   <script>
     setTimeout(function () { if (!window.__jumpReady) document.getElementById('nogl').classList.remove('hidden'); }, 9000);
