@@ -1,22 +1,22 @@
 // 游戏主控：渲染器 / 场景 / 正交相机 / 灯光、输入、状态机、计分与落点判定
 import * as THREE from 'three';
-import { CONFIG } from './config.js?v=20261111g';
-import { Storage } from './Storage.js?v=20261111g';
-import { Tweens, clamp, Ease } from './utils.js?v=20261111g';
-import { SkinManager } from './SkinManager.js?v=20261111g';
-import { BlockManager } from './BlockManager.js?v=20261111g';
-import { Player } from './Player.js?v=20261111g';
-import { UIManager } from './UIManager.js?v=20261111g';
-import { Sound } from './Sound.js?v=20261111g';
-import { t, L } from './i18n.js?v=20261111g';
-import { getPerk } from './canPerks.js?v=20261111g';
-import { getSignature, RARITY } from './canSignature.js?v=20261111g';
-import { PLAYER_SKINS } from './SkinManager.js?v=20261111g';
-import { Music, playSfx } from './SkinAudio.js?v=20261111g';
-import { SignatureFX } from './SignatureFX.js?v=20261111g';
-import { RunState, rt, chargeTimeFor, HZ } from './Roguelike.js?v=20261111g';
-import { fetchTop } from './Leaderboard.js?v=20261111g';
-import { stairParams, STAND_HZ, STAIR, HZT } from './Staircase.js?v=20261111g';
+import { CONFIG } from './config.js?v=20261112c';
+import { Storage } from './Storage.js?v=20261112c';
+import { Tweens, clamp, Ease } from './utils.js?v=20261112c';
+import { SkinManager } from './SkinManager.js?v=20261112c';
+import { BlockManager } from './BlockManager.js?v=20261112c';
+import { Player } from './Player.js?v=20261112c';
+import { UIManager } from './UIManager.js?v=20261112c';
+import { Sound } from './Sound.js?v=20261112c';
+import { t, L } from './i18n.js?v=20261112c';
+import { getPerk } from './canPerks.js?v=20261112c';
+import { getSignature, RARITY } from './canSignature.js?v=20261112c';
+import { PLAYER_SKINS } from './SkinManager.js?v=20261112c';
+import { Music, playSfx } from './SkinAudio.js?v=20261112c';
+import { SignatureFX } from './SignatureFX.js?v=20261112c';
+import { RunState, rt, chargeTimeFor, HZ } from './Roguelike.js?v=20261112c';
+import { fetchTop } from './Leaderboard.js?v=20261112c';
+import { stairParams, STAND_HZ, STAIR, HZT } from './Staircase.js?v=20261112c';
 const hz = (b, k) => !!(b && b.hzs && b.hzs.includes(k));      // 方块是否带某个机制
 
 // 踩中星号方块后的免费体验时长（秒）

@@ -1,11 +1,11 @@
 // 入口：创建游戏实例
-import { Game } from './Game.js?v=20261111g';
-import { Storage } from './Storage.js?v=20261111g';
-import { pullProgress } from './Account.js?v=20261111g';
-import { Room } from './Room.js?v=20261111g';
-import { RogueUI } from './RogueUI.js?v=20261111g';
-import { initInstall } from './Install.js?v=20261111h';
-import { Invite } from './Invite.js?v=20261112b';
+import { Game } from './Game.js?v=20261112c';
+import { Storage } from './Storage.js?v=20261112c';
+import { pullProgress } from './Account.js?v=20261112c';
+import { Room } from './Room.js?v=20261112c';
+import { RogueUI } from './RogueUI.js?v=20261112c';
+import { initInstall } from './Install.js?v=20261112c';
+import { Invite } from './Invite.js?v=20261112c';
 
 function showError(err) {
   console.error(err);

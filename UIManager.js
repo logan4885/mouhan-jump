@@ -1,23 +1,23 @@
 // UI 层：开始界面、计分板、蓄力条、飘字、结算弹窗、皮肤商店（含兑换码）、排行榜、语言切换
-import { PLAYER_SKINS, BLOCK_STYLES, SkinPreview } from './SkinManager.js?v=20261111g';
-import { fetchTop, fetchPlayer, syncPlayer, buildBoard, LEADERBOARD_API, lastSync } from './Leaderboard.js?v=20261111g';
-import { Storage } from './Storage.js?v=20261111g';
-import { escapeHtml } from './utils.js?v=20261111g';
-import { t, L, setLang, getLang, onLangChange, applyStatic } from './i18n.js?v=20261111g';
-import { PERKS } from './canPerks.js?v=20261111g';
-import { SIGNATURE, RARITY, getSignature } from './canSignature.js?v=20261111g';
-import { SHOP } from './shop.js?v=20261111g';
-import { recoveryAvailable, makeCode, makeLink, restore } from './Recovery.js?v=20261111g';
-import { accountAvailable, pullProgress, PROVIDER_NAME, completeLogin, renderGoogleButton, prepareFacebook, facebookLogin, logout } from './Account.js?v=20261111g';
-import { AUTH } from './authConfig.js?v=20261111g';
-import { BUFF_BY_ID, rt } from './Roguelike.js?v=20261111g';
+import { PLAYER_SKINS, BLOCK_STYLES, SkinPreview } from './SkinManager.js?v=20261112c';
+import { fetchTop, fetchPlayer, syncPlayer, buildBoard, LEADERBOARD_API, lastSync } from './Leaderboard.js?v=20261112c';
+import { Storage } from './Storage.js?v=20261112c';
+import { escapeHtml } from './utils.js?v=20261112c';
+import { t, L, setLang, getLang, onLangChange, applyStatic } from './i18n.js?v=20261112c';
+import { PERKS } from './canPerks.js?v=20261112c';
+import { SIGNATURE, RARITY, getSignature } from './canSignature.js?v=20261112c';
+import { SHOP } from './shop.js?v=20261112c';
+import { recoveryAvailable, makeCode, makeLink, restore } from './Recovery.js?v=20261112c';
+import { accountAvailable, pullProgress, PROVIDER_NAME, completeLogin, renderGoogleButton, prepareFacebook, facebookLogin, logout } from './Account.js?v=20261112c';
+import { AUTH } from './authConfig.js?v=20261112c';
+import { BUFF_BY_ID, rt } from './Roguelike.js?v=20261112c';
 
 const $ = (id) => document.getElementById(id);
 
 export class UIManager {
   /**
    * @param {object} handlers { onStart, onRestart, onHome }
-   * @param {import('./SkinManager.js').SkinManager} skins
+   * @param {import('./SkinManager.js?v=20261112c').SkinManager} skins
    */
   constructor(handlers, skins) {
     this.h = handlers;
@@ -328,7 +328,17 @@ export class UIManager {
 
   async _vipHint(score) {
     this._hideVipHint();
-    if (this.skins.isVip || !LEADERBOARD_API.baseUrl || Storage.getHighScore() <= 0) return; // 看的是历史最高分的名次，这一局得 0 分也照样提示
+    if (this.skins.isVip) return;
+    // 非 VIP 玩家：每局结束都显示“激活 VIP Code / 找 Founder 拿现货”两个按钮（不依赖名次、不依赖网络）
+    this.el.overVipText.innerHTML = '';
+    this.el.overVipText.classList.add('hidden');
+    this.el.overVipLeft.classList.add('hidden');
+    this.el.vipCode.textContent = t('vip_code');
+    this.el.vipBuy.textContent = t('vip_buy');
+    this.el.vipBuy.href = SHOP.buyUrl;
+    this.el.overVip.classList.remove('hidden');
+    // 下面是“名次提示”（前 10 名灰字警告 / 超过 80% 玩家）：只有历史最高分 > 0 且后端可用时才追加一行文字
+    if (!LEADERBOARD_API.baseUrl || Storage.getHighScore() <= 0) return;
     const token = (this._vipTok = (this._vipTok || 0) + 1);
     await syncPlayer();
     const p = await fetchPlayer(Storage.getPlayer().id);
@@ -336,13 +346,12 @@ export class UIManager {
     const total = p.totalPlayers || 0;
     const pct = total >= 20 ? Math.floor(((total - p.rank) / total) * 100) : 0;
     let html = '';
+    if (!(p.rank <= 10) && !(pct >= 80)) return;   // 名次一般：不加文字，按钮保持显示
     if (p.rank <= 10) html = t('vip_warn', { score: Number(p.score), rank: Number(p.rank) });
     else if (pct >= 80) html = t('vip_beat', { pct }) + '<br>' + escapeHtml(t('vip_locked'));
     else return;
     this.el.overVipText.innerHTML = html;
-    this.el.vipCode.textContent = t('vip_code');
-    this.el.vipBuy.textContent = t('vip_buy');
-    this.el.vipBuy.href = SHOP.buyUrl;
+    this.el.overVipText.classList.remove('hidden');
     // 只有填写了真实截止时间才显示倒计时
     const end = SHOP.offerEndsAt ? Date.parse(SHOP.offerEndsAt) : NaN;
     const left = this.el.overVipLeft;
