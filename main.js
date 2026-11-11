@@ -4,6 +4,7 @@ import { Storage } from './Storage.js?v=20261111d';
 import { pullProgress } from './Account.js?v=20261111d';
 import { Room } from './Room.js?v=20261111d';
 import { RogueUI } from './RogueUI.js?v=20261111d';
+import { initInstall } from './Install.js?v=20261111d';
 
 function showError(err) {
   console.error(err);
