@@ -2,7 +2,7 @@
 // 规则（照 Excel《SodaJump_Phygital_Architecture_and_Buffs》）：
 //   BUFF_01~22 进入每 5 层的【三选一抽卡池】；BUFF_23~30 是 VIP 常驻被动，绝不占三选一的格子。
 //   VIP = 已经拥有任一兑换罐的玩家（沿用游戏里现有的 VIP 判断）。
-import { L } from './i18n.js?v=20261112c';
+import { L } from './i18n.js?v=20261113a';
 
 const tri = (zh, en, ar) => ({ zh, en, ar });
 const B = (id, cat, icon, name, desc, extra = {}) => ({ id: 'BUFF_' + String(id).padStart(2, '0'), cat, icon, name, desc, pool: id <= 22 ? 'run' : 'vip', ...extra });
@@ -12,6 +12,7 @@ export const CATS = {
   crit: { name: tri('暴击得分流', 'Crit Score', 'النقاط'), color: '#ff8a3d' },
   chaos: { name: tri('机制混沌流', 'Chaos', 'الفوضى'), color: '#9a6bff' },
   vip: { name: tri('VIP 专属流', 'VIP', 'VIP'), color: '#e0a800' },
+  counter: { name: tri('反击流', 'Counter', 'الهجوم المضاد'), color: '#e5484d' },
 };
 
 export const BUFFS = [
@@ -44,6 +45,13 @@ export const BUFFS = [
   B(27, 'vip', '🔋', tri('能量永动机', 'Perpetual Energy', 'طاقة لا تنفد'), tri('无限重开，没有次数限制', 'Unlimited restarts, no daily cap', 'إعادة بدء بلا حدود')),
   B(29, 'vip', '👑', tri('王者降临', 'King Arrives', 'وصول الملك'), tri('破 Roguelike 纪录时全屏王者横幅；排行榜里 VIP 自带金色发光边框', 'Breaking your Roguelike record shows a full-screen crown banner; VIPs glow gold on the leaderboard', 'كسر رقمك يعرض لافتة تاج بملء الشاشة، وتتوهج كلاعب VIP في لوحة الصدارة')),
   B(30, 'vip', '🎟️', tri('降维打击', 'Dimension Strike', 'ضربة الأبعاد'), tri('本局得分永久 x2，并盯着排行榜第 10 名作为挑战目标', 'Score x2 for the whole run, with the leaderboard #10 shown as your target', 'نقاطك x2 طوال الجولة مع عرض المركز العاشر كهدف')),
+  // ---- 反击流（对付空中飞来的敌人：鸟 / 气球 / 飞镖）。全部自动触发，不需要多一个按键 ----
+  B(31, 'counter', '🪞', tri('反弹护盾', 'Reflect Shield', 'درع عاكس'), tri('立刻 +1 护盾；护盾挡下敌人时有 50% 不消耗，并把敌人弹回去击落得分', 'Gain 1 shield now; when a shield blocks an enemy there is a 50% chance it is not used up and the enemy is knocked out for points', 'درع واحد الآن؛ عند صدّ عدو فرصة 50% ألا يُستهلك الدرع ويُسقط العدو'), { pool: 'run', repeat: true }),
+  B(32, 'counter', '💥', tri('落地冲击波', 'Landing Shockwave', 'موجة الهبوط'), tri('每次落地震飞身边 3.5 格内的敌人（完美落地范围 5.5 格），每只得分', 'Every landing blasts enemies within 3.5 tiles (5.5 on a perfect), scoring for each', 'كل هبوط يدمّر الأعداء ضمن 3.5 (5.5 عند المثالي) ويمنح نقاطاً'), { pool: 'run' }),
+  B(33, 'counter', '🔫', tri('连击炮', 'Combo Cannon', 'مدفع الكومبو'), tri('每连续 3 次 Perfect 装填 1 发（最多 3 发），自动击落最近的敌人', 'Every 3 perfects in a row loads 1 shot (max 3) that auto-hits the nearest enemy', 'كل 3 هبوطات مثالية متتالية تملأ طلقة (حتى 3) تصيب أقرب عدو تلقائياً'), { pool: 'run' }),
+  B(34, 'counter', '🗼', tri('自动炮塔', 'Auto Turret', 'برج آلي'), tri('每 4 秒自动朝最近的敌人开一炮，不需要连击', 'Every 4 seconds it shoots the nearest enemy automatically — no combo needed', 'كل 4 ثوانٍ يطلق على أقرب عدو تلقائياً بدون كومبو'), { pool: 'run' }),
+  B(35, 'counter', '🔰', tri('硬化罐壳', 'Hardened Shell', 'غلاف مقوّى'), tri('免疫 1 次敌人攻击；之后每 5 层自动恢复', 'Immune to one enemy hit; recharges every 5 floors', 'مناعة ضد ضربة عدو واحدة؛ تُشحن كل 5 طوابق'), { pool: 'run' }),
+  B(36, 'counter', '💰', tri('赏金猎人', 'Bounty Hunter', 'صائد الجوائز'), tri('击落敌人得分 ×3；每击落 5 只，奖励 1 层护盾', 'Kills score x3; every 5 kills grant 1 shield', 'نقاط إسقاط الأعداء x3؛ كل 5 إسقاطات تمنح درعاً'), { pool: 'run' }),
 ];
 
 export const BUFF_BY_ID = Object.fromEntries(BUFFS.map((b) => [b.id, b]));
@@ -78,7 +86,7 @@ const TXT = {
   pick: tri('第 {n} 层 · 选一个 Buff', 'Floor {n} · pick a buff', 'الطابق {n} · اختر ميزة'),
   reroll: tri('🧰 刷新重抽（无限）', '🧰 Reroll (unlimited)', '🧰 إعادة السحب (بلا حدود)'),
   title: tri('Roguelike 模式', 'Roguelike mode', 'وضع Roguelike'),
-  intro: tri('每跳 5 层，从 3 张 Buff 里选 1 张，越玩越强。有自己的 Roguelike 排行榜，不进总榜。每一个方块都是随机的机制方块（击退、冰面、移动、传送、炸弹、黑洞……共 19 种），难度爬升极快，约 65 个方块就到最终档，第 35 个方块起还会下沉。', 'Every 5 floors pick 1 of 3 buffs and snowball your build. It has its own Roguelike leaderboard, separate from the main one. Every single block is a random mechanic block (19 kinds) and the difficulty ramps up fast — max difficulty by block ~65, platforms start to sink from block ~35.', 'كل 5 طوابق اختر ميزة من 3 وقوِّ بناءك. لها لوحة صدارة خاصة. كل كتلة هي كتلة آلية عشوائية (19 نوعاً) والصعوبة ترتفع بسرعة، وتبدأ المنصات بالغرق من الكتلة 35 تقريباً.'),
+  intro: tri('每跳 5 层，从 3 张 Buff 里选 1 张，越玩越强。有自己的 Roguelike 排行榜，不进总榜。每一个方块都是随机的机制方块（击退、冰面、移动、传送、炸弹、黑洞……共 19 种），难度爬升极快，约 65 个方块就到最终档，第 35 个方块起还会下沉。从第一层起就有 20 种敌人（鸟、蝙蝠、飞镖、炸弹、流星、保龄球、追踪导弹……）从空中和地面袭来，靠「反击流」Buff 自动打回去。', 'Every 5 floors pick 1 of 3 buffs and snowball your build. It has its own Roguelike leaderboard, separate from the main one. Every single block is a random mechanic block (19 kinds) and the difficulty ramps up fast — max difficulty by block ~65, platforms start to sink from block ~35. From floor 1, 20 kinds of enemies (birds, bats, darts, bombs, meteors, bowling balls, homing missiles…) attack from the air and the ground — counter them with the Counter-build buffs.', 'كل 5 طوابق اختر ميزة من 3 وقوِّ بناءك. لها لوحة صدارة خاصة. كل كتلة هي كتلة آلية عشوائية (19 نوعاً) والصعوبة ترتفع بسرعة، وتبدأ المنصات بالغرق من الكتلة 35 تقريباً.'),
   rankBtn: tri('🏆 Roguelike 排行榜', '🏆 Roguelike leaderboard', '🏆 لوحة صدارة Roguelike'),
   start: tri('开始 Roguelike', 'Start Roguelike', 'ابدأ Roguelike'),
   vipOn: tri('👑 VIP 被动已生效：{n} 项', '👑 VIP passives active: {n}', '👑 مزايا VIP مفعّلة: {n}'),
@@ -119,6 +127,15 @@ const TXT = {
   beat: tri('🎯 已超过排行榜第 10 名！', '🎯 You passed leaderboard #10!', '🎯 تجاوزت المركز العاشر!'),
   windL: tri('💨 左 {n}', '💨 left {n}', '💨 يسار {n}'),
   windR: tri('💨 右 {n}', '💨 right {n}', '💨 يمين {n}'),
+  enemyNew: tri('⚠️ 新敌人 {icon} {name}：{desc}', '⚠️ New enemy {icon} {name}: {desc}', '⚠️ عدو جديد {icon} {name}: {desc}'),
+  enemyHit: tri('{icon} 被{name}击中了！', '{icon} Hit by {name}!', '{icon} أصابك {name}!'),
+  shieldHit: tri('🛡️ 护盾挡下了敌人！', '🛡️ Shield blocked an enemy!', '🛡️ الدرع صدّ عدواً!'),
+  reflect: tri('🪞 反弹！敌人被击落', '🪞 Reflected! Enemy knocked out', '🪞 انعكاس! سقط العدو'),
+  armorUsed: tri('🔰 硬化罐壳挡下了攻击', '🔰 Hardened Shell absorbed the hit', '🔰 الغلاف امتص الضربة'),
+  armorBack: tri('🔰 罐壳恢复了', '🔰 Shell recharged', '🔰 عاد الغلاف'),
+  waveKill: tri('💥 冲击波震飞 {n} 只', '💥 Shockwave blasted {n}', '💥 الموجة دمّرت {n}'),
+  cannon: tri('🔫 炮弹装填（{n}）', '🔫 Cannon loaded ({n})', '🔫 تم التحميل ({n})'),
+  bounty: tri('💰 赏金！+1 护盾', '💰 Bounty! +1 shield', '💰 مكافأة! +1 درع'),
   best: tri('Roguelike 最高', 'Roguelike best', 'أفضل Roguelike'),
 };
 export const rt = (k, vars = {}) => L(TXT[k]).replace(/\{(\w+)\}/g, (_, v) => (v in vars ? vars[v] : ''));
@@ -139,6 +156,7 @@ export class RunState {
     this.invis = false;
     this.target10 = null;     // 降维打击：排行榜第 10 名的分数
     this.beat10 = false;
+    this.kills = 0; this.ammo = 0; this.armor = 0; this.turretT = 0; this.seenEnemies = {};   // 敌人 / 反击流
     if (this.vip) this.shield += 1;     // BUFF_23 黄金护甲
   }
 
@@ -150,7 +168,8 @@ export class RunState {
   take(id) {
     this.buffs[id] = (this.buffs[id] || 0) + 1;
     this.picks.push(id);
-    if (id === 'BUFF_02') this.shield += 1;
+    if (id === 'BUFF_02' || id === 'BUFF_31') this.shield += 1;
+    if (id === 'BUFF_35') this.armor = 1;
   }
 
   /** 抽 n 张不重复的候选；已选过且不可叠加的不会再出现 */
@@ -158,6 +177,11 @@ export class RunState {
     const pool = RUN_POOL.filter((b) => (b.repeat || !this.buffs[b.id]) && !exclude.includes(b.id));
     const out = [];
     while (out.length < n && pool.length) out.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0]);
+    // 前两次抽卡保证至少有 1 张反击流（第 8 层起会飞来敌人，别让玩家到时候没得选）
+    if (out.length === n && this.picks.length < 2 && !this.picks.some((id) => BUFF_BY_ID[id].cat === 'counter') && !out.some((b) => b.cat === 'counter')) {
+      const cs = RUN_POOL.filter((b) => b.cat === 'counter' && (b.repeat || !this.buffs[b.id]) && !exclude.includes(b.id));
+      if (cs.length) out[out.length - 1] = cs[Math.floor(Math.random() * cs.length)];
+    }
     return out;
   }
 

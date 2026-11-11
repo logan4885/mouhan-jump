@@ -1,7 +1,7 @@
 // Roguelike 模式的界面：入口说明、三选一抽卡、局内 Buff 栏、先知之眼标记、各种全屏闪光
-import { t, L } from './i18n.js?v=20261112c';
-import { escapeHtml } from './utils.js?v=20261112c';
-import { BUFF_BY_ID, CATS, VIP_BUFFS, HZ, rt } from './Roguelike.js?v=20261112c';
+import { t, L } from './i18n.js?v=20261113a';
+import { escapeHtml } from './utils.js?v=20261113a';
+import { BUFF_BY_ID, CATS, VIP_BUFFS, HZ, rt } from './Roguelike.js?v=20261113a';
 
 const $ = (id) => document.getElementById(id);
 
@@ -96,6 +96,9 @@ export class RogueUI {
     if (rg.stage) chips.push(`<span class="rg-chip">${rg.zoneIcon || ''} ${rg.stage}</span>`);
     if (rg.nextHz) chips.push(`<span class="rg-chip">${escapeHtml(rt('nextHz'))} ${rg.nextHz}</span>`);
     if (rg.hazWind) chips.push(`<span class="rg-chip wind">${escapeHtml('💨 ' + (rg.hazWind > 0 ? '+' : '') + rg.hazWind.toFixed(1))}</span>`);
+    if (rg.armor > 0) chips.push(`<span class="rg-chip">🔰</span>`);
+    if (rg.ammo > 0) chips.push(`<span class="rg-chip">🔫×${rg.ammo}</span>`);
+    if (rg.kills > 0) chips.push(`<span class="rg-chip">☠️ ${rg.kills}</span>`);
     if (rg.bonusBase) chips.push(`<span class="rg-chip">📈+${rg.bonusBase}</span>`);
     if (rg.has('BUFF_21')) chips.push(`<span class="rg-chip wind">${escapeHtml(rg.wind === 0 ? '💨 0' : rt(rg.wind < 0 ? 'windL' : 'windR', { n: Math.abs(rg.wind).toFixed(2) }))}</span>`);
     if (rg.vip && rg.target10 != null) chips.push(`<span class="rg-chip">${escapeHtml(rt('target', { n: rg.target10 }))}</span>`);

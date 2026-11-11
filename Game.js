@@ -1,22 +1,23 @@
 // 游戏主控：渲染器 / 场景 / 正交相机 / 灯光、输入、状态机、计分与落点判定
 import * as THREE from 'three';
-import { CONFIG } from './config.js?v=20261112c';
-import { Storage } from './Storage.js?v=20261112c';
-import { Tweens, clamp, Ease } from './utils.js?v=20261112c';
-import { SkinManager } from './SkinManager.js?v=20261112c';
-import { BlockManager } from './BlockManager.js?v=20261112c';
-import { Player } from './Player.js?v=20261112c';
-import { UIManager } from './UIManager.js?v=20261112c';
-import { Sound } from './Sound.js?v=20261112c';
-import { t, L } from './i18n.js?v=20261112c';
-import { getPerk } from './canPerks.js?v=20261112c';
-import { getSignature, RARITY } from './canSignature.js?v=20261112c';
-import { PLAYER_SKINS } from './SkinManager.js?v=20261112c';
-import { Music, playSfx } from './SkinAudio.js?v=20261112c';
-import { SignatureFX } from './SignatureFX.js?v=20261112c';
-import { RunState, rt, chargeTimeFor, HZ } from './Roguelike.js?v=20261112c';
-import { fetchTop } from './Leaderboard.js?v=20261112c';
-import { stairParams, STAND_HZ, STAIR, HZT } from './Staircase.js?v=20261112c';
+import { CONFIG } from './config.js?v=20261113a';
+import { Storage } from './Storage.js?v=20261113a';
+import { Tweens, clamp, Ease } from './utils.js?v=20261113a';
+import { SkinManager } from './SkinManager.js?v=20261113a';
+import { BlockManager } from './BlockManager.js?v=20261113a';
+import { Player } from './Player.js?v=20261113a';
+import { UIManager } from './UIManager.js?v=20261113a';
+import { Sound } from './Sound.js?v=20261113a';
+import { t, L } from './i18n.js?v=20261113a';
+import { getPerk } from './canPerks.js?v=20261113a';
+import { getSignature, RARITY } from './canSignature.js?v=20261113a';
+import { PLAYER_SKINS } from './SkinManager.js?v=20261113a';
+import { Music, playSfx } from './SkinAudio.js?v=20261113a';
+import { SignatureFX } from './SignatureFX.js?v=20261113a';
+import { RunState, rt, chargeTimeFor, HZ } from './Roguelike.js?v=20261113a';
+import { fetchTop } from './Leaderboard.js?v=20261113a';
+import { Enemies, ENEMY, KINDS } from './Enemies.js?v=20261113a';
+import { stairParams, STAND_HZ, STAIR, HZT } from './Staircase.js?v=20261113a';
 const hz = (b, k) => !!(b && b.hzs && b.hzs.includes(k));      // 方块是否带某个机制
 
 // 踩中星号方块后的免费体验时长（秒）
@@ -56,6 +57,7 @@ export class Game {
     this.skins.checkUnlocks(this.best);
     this.blocks = new BlockManager(this.scene, this.skins, this.tweens);
     this.player = new Player(this.scene, this.skins);
+    this.enemies = new Enemies(this);          // Roguelike 的空中敌人 + 自动反击（普通模式不会刷怪）
     this.trial = null;
     this._sinceTrial = 0; this._trialsThisRound = 0;
     this.blocks.trialRoll = (score) => this._rollTrial(score);
@@ -405,6 +407,7 @@ export class Game {
   /** 弹回起跳的方块，连击清零，继续游戏 */
   _revive(msg) {
     this.reviveUsed = true;
+    if (this.enemies) this.enemies.clear();
     this.combo = 0; this.thunderReady = false; this.thunderCount = 0;
     this.ui.setCombo(0);
     this._comboFx();
@@ -418,6 +421,7 @@ export class Game {
       const sq = this.player.squashG.scale;
       this.tweens.add({ duration: 0.35, ease: Ease.outElastic, update: (e) => sq.setScalar(0.3 + 0.7 * e) });
       this.sound.perfect();
+      if (this.blocks.next) this.blocks.next.frozen = false;
       this.state = 'ready';
     }, 550);
   }
@@ -586,6 +590,9 @@ export class Game {
         this.ui.toast(rt('resonance'));
       }
     }
+    if (rg.has('BUFF_32') && this.enemies) this.enemies.shockwave(perfect ? ENEMY.wave[1] : ENEMY.wave[0]);       // 落地冲击波
+    if (rg.has('BUFF_33') && perfect && this.combo > 0 && this.combo % ENEMY.cannonEvery === 0 && rg.ammo < ENEMY.cannonMax) { rg.ammo++; this.ui.toast(rt('cannon', { n: rg.ammo })); }   // 连击炮装填
+    if (rg.has('BUFF_35') && rg.layers % 5 === 0 && !rg.armor) { rg.armor = 1; this.ui.toast(rt('armorBack')); }   // 硬化罐壳恢复
     if (rg.mirrorLeft > 0 && --rg.mirrorLeft === 0) { this._setMirror(false); this.ui.toast(rt('mirrorEnd')); }
     if (rg.vip && rg.target10 != null && !rg.beat10 && this.score > rg.target10) { rg.beat10 = true; this.ui.toast(rt('beat')); }
     this.rogueUI.refresh(rg);
@@ -638,6 +645,19 @@ export class Game {
     this.player.fall();
   }
 
+  /** 被空中的敌人打中且没有任何防护：和踩空一样掉下去（可被复苏 / 复活挡住） */
+  _enemyKill(kind) {
+    if (this.state === 'over' || this.state === 'falling') return;
+    const cur = this.blocks.current;
+    if (this.state === 'charging') { this.sound.chargeStop(); this.ui.hideCharge(); this.blocks.release(cur); }
+    const K = KINDS[kind]; this.ui.toast(rt('enemyHit', { icon: K.icon, name: L(K.name) }), 2400);
+    this.shake = 0.3; this.lastResult = 'miss';
+    this._sinkMax = 0; if (this.rogueUI) this.rogueUI.setSink(null);
+    this.state = 'jumping';
+    this.player.opts = { onFallen: () => this._onFallen() };
+    this.player.fall();
+  }
+
   _rogueBestCheck() {
     Storage.noteWeekRogue(this.score);
     if (this.score > this.rogueBest) {
@@ -683,6 +703,7 @@ export class Game {
     const record = this.score > this.rogueBestAtStart;
     this._rogueBestCheck();
     this.rogueUI.hide(); this._sinkMax = 0;
+    if (this.enemies) this.enemies.clear();
     if (rg.vip && record) this.rogueUI.king();       // 王者降临：VIP 破 Roguelike 纪录
     this.ui.showGameOver({ score: this.score, best: this.rogueBest, record, perfects: this.perfects, unlocked: [], rogue: { layers: rg.layers, picks: rg.picks, vip: rg.vip, king: rg.vip && record } });
   }
@@ -836,6 +857,7 @@ export class Game {
     this.freezeCredit = 0; this._creditScore = 0; this.freezeLeft = 0; this._endFreeze(false);
     this.rogue = this.rogueMode && this.skins ? new RunState(this._isVip()) : null;
     this.camTwist = 0; this._invisT = 0; this._stun = 0; this._setMirror(false);
+    if (this.enemies) this.enemies.clear();
     if (this.player) this.player.root.visible = true;
     if (this.rogueUI) this.rogueUI.reset(this.rogue);
     if (this.skins) this._refreshPerk();
@@ -1010,6 +1032,7 @@ export class Game {
     }
 
     this.player.update(dt);
+    if (this.enemies) this.enemies.update(dt);
 
     // 夜视光圈：标出下一个方块的完美区域
     const ringOn = this.perk && this.perk.perfectRing && (this.state === 'ready' || this.state === 'charging') && this.blocks.next;
