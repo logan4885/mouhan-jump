@@ -157,7 +157,7 @@ const CSS = `
 .inv-code.used { opacity: .5; }
 .inv-code button { border: 3px solid var(--ink); border-radius: 10px; background: #ffe36b; font-weight: 900; padding: 4px 10px; cursor: pointer; font-family: inherit; }
 .inv-msg { min-height: 18px; margin: 6px 0; font-size: 13px; font-weight: 800; color: var(--muted); }
-#btnInvite.hidden { display: none; }
+#btnInvite { width: 100%; margin: 10px 0 2px; background: #ffe36b; }
 `;
 
 export class Invite {
@@ -166,9 +166,10 @@ export class Invite {
     this.status = null;
     if (!document.getElementById('inviteCss')) { const st = document.createElement('style'); st.id = 'inviteCss'; st.textContent = CSS; document.head.appendChild(st); }
     this._captureRef();
-    const anchor = $('btnInstall') || $('btnAcctStart');
-    if (anchor) {
-      anchor.insertAdjacentHTML('beforebegin', '<button class="link-btn" id="btnInvite" type="button"></button>');
+    // 入口放在“游戏结束”弹窗里（皮肤/排行榜/首页那一排的下面），主菜单不放
+    const row = $('btnHome') && $('btnHome').parentNode;
+    if (row) {
+      row.insertAdjacentHTML('afterend', '<button class="btn" id="btnInvite" type="button"></button>');
       $('btnInvite').addEventListener('click', () => this.open());
     }
     const host = $('playerModal') ? $('playerModal').parentNode : document.body;
