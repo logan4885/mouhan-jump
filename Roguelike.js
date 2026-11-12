@@ -19,11 +19,13 @@ export const CATS = {
 /** 节奏与爆发玩法的调参面板 */
 export const RUSH = {
   window: 0.5,        // 落地后多少秒内按下起跳 = RUSH
-  charge: 2,          // RUSH 这一跳的蓄力速度倍率
+  charge: 1,          // RUSH 这一跳的蓄力速度倍率（1 = 和平时一样，不影响手感）
   mul: 2,             // RUSH 这一跳落地的得分倍率
-  crumbleFrom: 6,     // 从第几层开始，站着不动会剥落（前几层纯教学）
-  grace: 2.5,         // 落地后多少秒开始剥落
-  total: 6,           // 落地后总共多少秒必须起跳（含上面的缓冲）；档位倒计时更短时以档位的为准
+  crumbleFrom: 3,     // 从第几层开始，站着不动会剥落
+  grace: 0.8,         // 落地后多少秒开始剥落
+  total: 3.6,         // 起始：落地后总共多少秒必须起跳（含缓冲）；档位倒计时更短时以档位的为准
+  totalMin: 2.2,      // 越往上越短，最短这么多秒
+  tighten: 0.025,     // 每多一层少多少秒
 };
 export const FEVER = {
   streak: 3,          // 连续几次 PERFECT 触发

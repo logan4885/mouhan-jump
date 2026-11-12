@@ -4,7 +4,7 @@ import { CONFIG } from './config.js?v=20261114a';
 import { Storage } from './Storage.js?v=20261114a';
 import { Tweens, clamp, Ease } from './utils.js?v=20261114a';
 import { SkinManager } from './SkinManager.js?v=20261114a';
-import { BlockManager } from './BlockManager.js?v=20261114r';
+import { BlockManager } from './BlockManager.js?v=20261115r';
 import { Player } from './Player.js?v=20261114a';
 import { UIManager } from './UIManager.js?v=20261114a';
 import { Sound } from './Sound.js?v=20261114a';
@@ -14,9 +14,9 @@ import { getSignature, RARITY } from './canSignature.js?v=20261114a';
 import { PLAYER_SKINS } from './SkinManager.js?v=20261114a';
 import { Music, playSfx } from './SkinAudio.js?v=20261114a';
 import { SignatureFX } from './SignatureFX.js?v=20261114a';
-import { RunState, rt, chargeTimeFor, HZ, RUSH, FEVER, CONTRACTS, CONTRACT_BY_ID } from './Roguelike.js?v=20261114r';
+import { RunState, rt, chargeTimeFor, HZ, RUSH, FEVER, CONTRACTS, CONTRACT_BY_ID } from './Roguelike.js?v=20261115r';
 import { fetchTop } from './Leaderboard.js?v=20261114a';
-import { Enemies, ENEMY, KINDS } from './Enemies.js?v=20261114r';
+import { Enemies, ENEMY, KINDS } from './Enemies.js?v=20261115r';
 import { stairParams, STAND_HZ, STAIR, HZT } from './Staircase.js?v=20261114a';
 const hz = (b, k) => !!(b && b.hzs && b.hzs.includes(k));      // 方块是否带某个机制
 
@@ -649,7 +649,8 @@ export class Game {
       }
     }
     let max = p.timer || 0, icon = '⏳', grace = 0;
-    if (rg.layers + 1 >= RUSH.crumbleFrom && !(max > 0 && max <= RUSH.total)) { max = RUSH.total - RUSH.grace; grace = RUSH.grace; }   // 站着不动 2.5 秒后开始剥落，再过 3.5 秒掉下去
+    const rtotal = Math.max(RUSH.totalMin, RUSH.total - RUSH.tighten * rg.layers);   // 越往上留给你的时间越短
+    if (rg.layers + 1 >= RUSH.crumbleFrom && !(max > 0 && max <= rtotal)) { max = rtotal - RUSH.grace; grace = RUSH.grace; }   // 落地 0.8 秒后开始剥落，很快就掉下去
     if (hz(blk, 'sinking')) { max = max ? Math.min(max, HZT.sinking) : HZT.sinking; grace = 0; }
     if (hz(blk, 'explosive')) { max = max ? Math.min(max, HZT.explosive) : HZT.explosive; icon = '💣'; grace = 0; }
     this._sinkMax = max; this._sinkT = max; this._sinkIcon = icon; this._sinkGrace = grace;
