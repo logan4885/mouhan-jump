@@ -1,5 +1,5 @@
 // 邀请好友：每个玩家有自己的邀请二维码/链接；朋友通过它进来、玩完 1 局才算 1 个有效邀请；
-// 每满 10 个，服务器发 1 个兑换码（INV-XXXX-XXXX），在商店里输入就随机解锁 1 款特效罐。
+// 每满 3 个，服务器发 1 个兑换码（INV-XXXX-XXXX），在商店里输入就随机解锁 1 款特效罐。
 // 自己带一个很小的二维码生成器（固定 3 号版本、纠错 M，够放 42 个字符的网址），不依赖任何外部库。
 import { Storage } from './Storage.js?v=20261114a';
 import { LEADERBOARD_API, syncPlayer } from './Leaderboard.js?v=20261114a';
@@ -115,7 +115,7 @@ export function drawQr(canvas, text, px = 8) {
 const TX = {
   btn: { zh: '📨 邀请好友，赢皮肤', en: '📨 Invite friends, win skins', ar: '📨 ادعُ أصدقاءك واربح سكنات' },
   title: { zh: '邀请好友', en: 'Invite friends', ar: 'ادعُ أصدقاءك' },
-  sub: { zh: '每邀请 10 位好友，送你 1 个兑换码，随机解锁 1 款特效罐！', en: 'Every 10 friends you invite earns a redeem code that unlocks a random special can!', ar: 'كل 10 أصدقاء تدعوهم = رمز استبدال يفتح علبة خاصة عشوائية!' },
+  sub: { zh: '每邀请 3 位好友，送你 1 个兑换码，随机解锁 1 款特效罐！', en: 'Every 3 friends you invite earns a redeem code that unlocks a random special can!', ar: 'كل 3 أصدقاء تدعوهم = رمز استبدال يفتح علبة خاصة عشوائية!' },
   prog: { zh: '已邀请 {n} 人 · 再邀请 {m} 人得 1 个兑换码', en: '{n} invited · {m} more for a redeem code', ar: 'تمت دعوة {n} · {m} آخرون للحصول على رمز' },
   done: { zh: '特效罐已全部集齐，太强了！', en: 'You have collected every special can!', ar: 'لقد جمعت كل العلب الخاصة!' },
   how: { zh: '朋友通过你的二维码或链接进来，玩完 1 局才算 1 位有效邀请（同一网络重复邀请只算一次）。', en: 'A friend counts once they open your QR/link and finish 1 game (the same network counts once).', ar: 'يُحتسب الصديق بعد فتح رمزك/رابطك وإنهاء جولة واحدة (الشبكة نفسها تُحتسب مرة واحدة).' },
