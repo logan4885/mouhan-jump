@@ -8,7 +8,6 @@ import { initInstall } from './Install.js?v=20261114a';
 import { Invite } from './Invite.js?v=20261114a';
 import { Chat } from './Chat.js?v=20261114a';
 import { WhatsApp } from './WhatsApp.js?v=20261114a';
-import { Milestones } from './Milestones.js?v=20261114a';
 
 function showError(err) {
   console.error(err);
@@ -24,7 +23,6 @@ try {
   window.__invite = new Invite(game);   // 邀请好友：二维码、分享、每 10 人送兑换码
   window.__chat = new Chat(game);   // 留言板（聊天大厅）
   window.__wa = new WhatsApp(game);   // 填 WhatsApp 领随机皮肤
-  window.__ms = new Milestones(game);   // 成绩挑战：达到目标分数送随机皮肤
   window.__game = game;      // 方便在控制台调试
   window.__jumpReady = true;
 
