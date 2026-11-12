@@ -1,8 +1,8 @@
 // 备份 / 恢复进度：不需要注册登录。
 // 恢复码 = 本机的玩家 ID + 密钥（等于“密码”，不要发给别人）。在新设备上粘贴恢复码，
 // 就会从服务器取回最高分、已解锁的罐子和 VIP 身份，并把这台设备绑定到同一个账号。
-import { Storage } from './Storage.js?v=20261113b';
-import { LEADERBOARD_API } from './Leaderboard.js?v=20261113b';
+import { Storage } from './Storage.js?v=20261114a';
+import { LEADERBOARD_API } from './Leaderboard.js?v=20261114a';
 
 export const recoveryAvailable = () => !!LEADERBOARD_API.baseUrl;
 

@@ -1,8 +1,8 @@
 // 留言板（聊天大厅）：所有玩家共用一个房间，打开时每 3 秒自动刷新。
 // 登录账号才能发言（未登录只能看）；服务器限频 + 敏感词过滤，玩家可举报，管理员可删帖 / 禁言。
-import { Storage } from './Storage.js?v=20261113b';
-import { LEADERBOARD_API } from './Leaderboard.js?v=20261113b';
-import { L, onLangChange } from './i18n.js?v=20261113b';
+import { Storage } from './Storage.js?v=20261114a';
+import { LEADERBOARD_API } from './Leaderboard.js?v=20261114a';
+import { L, onLangChange } from './i18n.js?v=20261114a';
 
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));

@@ -1,6 +1,6 @@
 // “下载到手机”：把游戏装到手机主屏幕（PWA）。联网时仍和服务器同步，进度不变。
 // 弹窗里安卓和苹果分开讲：当前设备的那一栏排在前面并高亮，另一栏也能看到。
-import { t, L, onLangChange } from './i18n.js?v=20261113b';
+import { t, L, onLangChange } from './i18n.js?v=20261114a';
 
 const $ = (id) => document.getElementById(id);
 const ua = navigator.userAgent || '';

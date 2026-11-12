@@ -1,8 +1,8 @@
 // 同图比赛：开房间 / 加入 / 大厅 / 结果。服务器只发地图种子和收最终成绩，没有实时通信。
-import { Storage } from './Storage.js?v=20261113b';
-import { syncPlayer, LEADERBOARD_API } from './Leaderboard.js?v=20261113b';
-import { t as t0, getLang } from './i18n.js?v=20261113b';
-import { escapeHtml } from './utils.js?v=20261113b';
+import { Storage } from './Storage.js?v=20261114a';
+import { syncPlayer, LEADERBOARD_API } from './Leaderboard.js?v=20261114a';
+import { t as t0, getLang } from './i18n.js?v=20261114a';
+import { escapeHtml } from './utils.js?v=20261114a';
 
 // 新增文案放在这里（不改 i18n.js，避免整站换版本号）；没有的键回落到 i18n
 const NEW = {

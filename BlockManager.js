@@ -1,8 +1,8 @@
 // 方块管理：生成（正方体 / 圆柱体，随机颜色与方向）、落点判定、挤压回弹、回收
 import * as THREE from 'three';
-import { CONFIG } from './config.js?v=20261113b';
-import { rand, clamp, Ease, disposeObject } from './utils.js?v=20261113b';
-import { HZT } from './Staircase.js?v=20261113b';
+import { CONFIG } from './config.js?v=20261114a';
+import { rand, clamp, Ease, disposeObject } from './utils.js?v=20261114a';
+import { HZT } from './Staircase.js?v=20261114a';
 
 function mulberry32(a) {
   return () => {
@@ -18,8 +18,8 @@ const DIRS = { x: new THREE.Vector3(1, 0, 0), z: new THREE.Vector3(0, 0, -1) };
 export class BlockManager {
   /**
    * @param {THREE.Scene} scene
-   * @param {import('./SkinManager.js?v=20261113b').SkinManager} skins
-   * @param {import('./utils.js?v=20261113b').Tweens} tweens
+   * @param {import('./SkinManager.js?v=20261114a').SkinManager} skins
+   * @param {import('./utils.js?v=20261114a').Tweens} tweens
    */
   constructor(scene, skins, tweens) {
     this.scene = scene;
@@ -31,6 +31,7 @@ export class BlockManager {
     this.rng = null;
     this.sizeBoostLeft = 0;  // Roguelike：接下来 N 个方块变宽（绝对防御）
     this.diamondLeft = 0;    // Roguelike：接下来 N 个方块是 2 倍积分的钻石方块
+    this.chestChance = 0;    // Roguelike：新方块是 🎁 宝箱方块的概率（0 = 不出）
     this.nearNext = false;   // Roguelike：下一个方块用最近距离（安全气囊）
     this.stairFn = null;     // Roguelike：Game 注入 (层数) => 关卡参数（阶梯难度）；为空 = 普通难度
     this.stairFloor = 2;     // 正在生成的方块对应的层数
@@ -88,6 +89,7 @@ export class BlockManager {
     block.dirKey = dirKey;
     if (this.trialRoll && this.trialRoll(score)) this._markTrial(block);
     if (this.diamondLeft > 0) { this.diamondLeft--; this.markDiamond(block); }
+    if (!haz && !block.diamond && !block.trial && this.chestChance > 0 && this.blocks.length >= 3 && R() < this.chestChance) this.markChest(block);
     if (haz) { block.windSign = R() < 0.5 ? -1 : 1; block.mPh = R() * 6.28; this.markHazard(block, haz, chaos); }
     this.blocks.push(block);
     return block;
@@ -147,6 +149,13 @@ export class BlockManager {
     if (!block || block.diamond || block.trial) return;
     block.diamond = true;
     this._glow(block, '#5fe7ff', '#0a6a8a', '◆', '#e8fdff');
+  }
+
+  /** Roguelike：宝箱方块（落上去开奖：护盾 / 满能量 / 分数 / 免费抽卡）——金橙色发光 + 顶面一个 🎁 */
+  markChest(block) {
+    if (!block || block.chest || block.trial) return;
+    block.chest = true;
+    this._glow(block, '#ffcf4a', '#a05a00', '🎁', '#ffffff');
   }
 
   /** Roguelike：量子方块（位置偏移，命中 3 倍积分）——紫色发光 + 顶面一颗 ✦ */
@@ -215,8 +224,8 @@ export class BlockManager {
 
   /** 踩过之后去掉钻石 / 量子外观 */
   clearMark(block) {
-    if (!block || (!block.diamond && !block.quantum && !block.hzs)) return;
-    block.diamond = false; block.quantum = false; block.hzs = null; block.chaos = false;
+    if (!block || (!block.diamond && !block.quantum && !block.hzs && !block.chest)) return;
+    block.chest = false; block.diamond = false; block.quantum = false; block.hzs = null; block.chaos = false;
     block.sc = 1; block.root.scale.x = 1; block.root.scale.z = 1; block.root.visible = true;
     if (block.star) { block.root.remove(block.star); disposeObject(block.star); block.star = null; }
     const old = block.mesh;
@@ -275,6 +284,7 @@ export class BlockManager {
       b.root.remove(old); disposeObject(old);
       b.root.add(fresh); b.mesh = fresh;
       if (b.trial) this._goldify(b);
+      else if (b.chest) { b.chest = false; this.markChest(b); }
       else if (b.diamond) { b.diamond = false; this.markDiamond(b); }
       else if (b.quantum) { b.quantum = false; this.markQuantum(b); }
       else if (b.hzs) { const k = b.hzs, c = b.chaos; b.hzs = null; this.markHazard(b, k, c); }

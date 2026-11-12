@@ -2,7 +2,7 @@
 // 规则（照 Excel《SodaJump_Phygital_Architecture_and_Buffs》）：
 //   BUFF_01~22 进入每 5 层的【三选一抽卡池】；BUFF_23~30 是 VIP 常驻被动，绝不占三选一的格子。
 //   VIP = 已经拥有任一兑换罐的玩家（沿用游戏里现有的 VIP 判断）。
-import { L } from './i18n.js?v=20261113b';
+import { L } from './i18n.js?v=20261114a';
 
 const tri = (zh, en, ar) => ({ zh, en, ar });
 const B = (id, cat, icon, name, desc, extra = {}) => ({ id: 'BUFF_' + String(id).padStart(2, '0'), cat, icon, name, desc, pool: id <= 22 ? 'run' : 'vip', ...extra });
@@ -86,7 +86,7 @@ const TXT = {
   pick: tri('第 {n} 层 · 选一个 Buff', 'Floor {n} · pick a buff', 'الطابق {n} · اختر ميزة'),
   reroll: tri('🧰 刷新重抽（无限）', '🧰 Reroll (unlimited)', '🧰 إعادة السحب (بلا حدود)'),
   title: tri('Roguelike 模式', 'Roguelike mode', 'وضع Roguelike'),
-  intro: tri('每跳 5 层，从 3 张 Buff 里选 1 张，越玩越强。有自己的 Roguelike 排行榜，不进总榜。前 10 个方块是新手教学，很轻松；之后每 10 个方块难度提升一档：机制方块（击退、冰面、移动、传送、炸弹、黑洞……共 19 种）、下沉倒计时和 20 种会袭击你的敌人会逐步登场，靠「反击流」Buff 自动打回去。', 'Every 5 floors pick 1 of 3 buffs and snowball your build. It has its own Roguelike leaderboard, separate from the main one. The first 10 blocks are an easy warm-up; after that the difficulty rises every 10 blocks — mechanic blocks (19 kinds), sinking timers and 20 kinds of enemies phase in. Fight back with the Counter-build buffs.', 'كل 5 طوابق اختر ميزة من 3 وقوِّ بناءك. لها لوحة صدارة خاصة. أول 10 كتل للإحماء، وبعدها ترتفع الصعوبة كل 10 كتل: كتل ميكانيكية (19 نوعاً) ومؤقتات غرق و20 نوعاً من الأعداء. قاوم بميزات الهجوم المضاد.'),
+  intro: tri('第 3 层先抽第一张 Buff，之后每 5 层再抽一次，越玩越强。险险躲过敌人（擦弹）会攒能量，攒满点「⚡爆发」清场；金色 🎁 方块落上去开奖；每 10 层有敌潮，撑过去有奖励。有自己的 Roguelike 排行榜，不进总榜。前 10 个方块是新手教学，很轻松；之后每 10 个方块难度提升一档：机制方块（击退、冰面、移动、传送、炸弹、黑洞……共 19 种）、下沉倒计时和 20 种会袭击你的敌人会逐步登场，靠「反击流」Buff 自动打回去。', 'Pick your first buff at floor 3, then every 5 floors. Close calls with enemies charge your energy — tap ⚡ Burst to clear the screen; land on golden 🎁 blocks for prizes; every 10 floors an enemy wave hits and surviving it pays off. It has its own Roguelike leaderboard, separate from the main one. The first 10 blocks are an easy warm-up; after that the difficulty rises every 10 blocks — mechanic blocks (19 kinds), sinking timers and 20 kinds of enemies phase in. Fight back with the Counter-build buffs.', 'اختر أول ميزة في الطابق 3 ثم كل 5 طوابق. النجاة بصعوبة من الأعداء تملأ الطاقة — اضغط ⚡ لتنظيف الشاشة؛ اهبط على منصات 🎁 للجوائز؛ كل 10 طوابق موجة أعداء ومكافأة لمن ينجو. لها لوحة صدارة خاصة. أول 10 كتل للإحماء، وبعدها ترتفع الصعوبة كل 10 كتل: كتل ميكانيكية (19 نوعاً) ومؤقتات غرق و20 نوعاً من الأعداء. قاوم بميزات الهجوم المضاد.'),
   rankBtn: tri('🏆 Roguelike 排行榜', '🏆 Roguelike leaderboard', '🏆 لوحة صدارة Roguelike'),
   start: tri('开始 Roguelike', 'Start Roguelike', 'ابدأ Roguelike'),
   vipOn: tri('👑 VIP 被动已生效：{n} 项', '👑 VIP passives active: {n}', '👑 مزايا VIP مفعّلة: {n}'),
@@ -139,6 +139,19 @@ const TXT = {
   waveKill: tri('💥 冲击波震飞 {n} 只', '💥 Shockwave blasted {n}', '💥 الموجة دمّرت {n}'),
   cannon: tri('🔫 炮弹装填（{n}）', '🔫 Cannon loaded ({n})', '🔫 تم التحميل ({n})'),
   bounty: tri('💰 赏金！+1 护盾', '💰 Bounty! +1 shield', '💰 مكافأة! +1 درع'),
+  graze: tri('🌀 擦过！+{n}', '🌀 Close call! +{n}', '🌀 نجاة بصعوبة! +{n}'),
+  energyFull: tri('⚡ 能量满了！点右下角按钮（或按 Q）释放爆发', '⚡ Energy full! Tap the button (or press Q) to unleash', '⚡ الطاقة ممتلئة! اضغط الزر (أو Q)'),
+  skillUse: tri('⚡ 爆发！清场 + 5 秒无敌 + 1 护盾（击落 {n} 只）', '⚡ Burst! Screen cleared + 5s invincible + 1 shield ({n} down)', '⚡ انفجار! تنظيف + حصانة 5 ثوانٍ + درع ({n})'),
+  skillBtn: tri('⚡ 爆发', '⚡ Burst', '⚡ انفجار'),
+  invulnHit: tri('✨ 无敌！', '✨ Invincible!', '✨ حصانة!'),
+  chestShield: tri('🎁 宝箱：+1 护盾', '🎁 Chest: +1 shield', '🎁 صندوق: +1 درع'),
+  chestEnergy: tri('🎁 宝箱：能量全满！', '🎁 Chest: energy full!', '🎁 صندوق: طاقة كاملة!'),
+  chestScore: tri('🎁 宝箱：+{n} 分', '🎁 Chest: +{n} pts', '🎁 صندوق: +{n} نقطة'),
+  chestCard: tri('🎁 宝箱：免费抽一张 Buff！', '🎁 Chest: a free buff pick!', '🎁 صندوق: اختيار مجاني!'),
+  chestSpot: tri('🎁 前面有宝箱方块，落上去开奖', '🎁 Chest block ahead — land on it for a prize', '🎁 منصة صندوق أمامك — اهبط عليها'),
+  waveWarn: tri('⚠️ 敌潮来袭！一次来 {n} 只，撑过去有奖励', '⚠️ Enemy wave! {n} at once — survive for a reward', '⚠️ موجة أعداء! {n} معاً — انجُ للحصول على مكافأة'),
+  waveWin: tri('🎉 击退敌潮！+{n} 分，能量 +50', '🎉 Wave beaten! +{n} pts, energy +50', '🎉 تم صدّ الموجة! +{n} نقطة، طاقة +50'),
+  milestone: tri('🏆 {n} 层！', '🏆 Floor {n}!', '🏆 الطابق {n}!'),
   best: tri('Roguelike 最高', 'Roguelike best', 'أفضل Roguelike'),
 };
 export const rt = (k, vars = {}) => L(TXT[k]).replace(/\{(\w+)\}/g, (_, v) => (v in vars ? vars[v] : ''));
@@ -159,6 +172,7 @@ export class RunState {
     this.invis = false;
     this.target10 = null;     // 降维打击：排行榜第 10 名的分数
     this.beat10 = false;
+    this.energy = 0; this.grazes = 0; this.chests = 0; this.waves = 0; this.waveLeft = 0; this.waveHit = false;   // 主动玩法：能量 / 擦弹 / 宝箱 / 敌潮
     this.kills = 0; this.ammo = 0; this.armor = 0; this.turretT = 0; this.seenEnemies = {};   // 敌人 / 反击流
     if (this.vip) this.shield += 1;     // BUFF_23 黄金护甲
   }

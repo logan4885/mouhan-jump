@@ -1,13 +1,13 @@
 // 入口：创建游戏实例
-import { Game } from './Game.js?v=20261113b';
-import { Storage } from './Storage.js?v=20261113b';
-import { pullProgress } from './Account.js?v=20261113b';
-import { Room } from './Room.js?v=20261113b';
-import { RogueUI } from './RogueUI.js?v=20261113b';
-import { initInstall } from './Install.js?v=20261113b';
-import { Invite } from './Invite.js?v=20261113b';
-import { Chat } from './Chat.js?v=20261113b';
-import { WhatsApp } from './WhatsApp.js?v=20261113b';
+import { Game } from './Game.js?v=20261114a';
+import { Storage } from './Storage.js?v=20261114a';
+import { pullProgress } from './Account.js?v=20261114a';
+import { Room } from './Room.js?v=20261114a';
+import { RogueUI } from './RogueUI.js?v=20261114a';
+import { initInstall } from './Install.js?v=20261114a';
+import { Invite } from './Invite.js?v=20261114a';
+import { Chat } from './Chat.js?v=20261114a';
+import { WhatsApp } from './WhatsApp.js?v=20261114a';
 
 function showError(err) {
   console.error(err);

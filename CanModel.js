@@ -1,7 +1,7 @@
 // 易拉罐 3D 模型：罐身贴图（Canvas 生成或图片）+ 金属顶盖 / 拉环 / 底座
 // 脚底在 y=0，总高约 1.1，和原来的角色尺寸一致
 import * as THREE from 'three';
-import { EFFECTS } from './canEffects.js?v=20261113b';
+import { EFFECTS } from './canEffects.js?v=20261114a';
 
 const R = 0.3;          // 罐身半径
 const BODY_H = 0.82;    // 罐身（贴图部分）高度

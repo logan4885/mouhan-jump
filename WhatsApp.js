@@ -1,9 +1,9 @@
 // 填 WhatsApp 号码领随机皮肤：必须登录账号 + 勾选同意联系；每个账号 / 每个号码只能领一次。
 // 号码只做格式检查（没有验证码），名单存在服务器（wa_leads 表），管理页可查看和导出。
-import { Storage } from './Storage.js?v=20261113b';
-import { LEADERBOARD_API, syncPlayer } from './Leaderboard.js?v=20261113b';
-import { L, onLangChange, getLang } from './i18n.js?v=20261113b';
-import { PLAYER_SKINS } from './SkinManager.js?v=20261113b';
+import { Storage } from './Storage.js?v=20261114a';
+import { LEADERBOARD_API, syncPlayer } from './Leaderboard.js?v=20261114a';
+import { L, onLangChange, getLang } from './i18n.js?v=20261114a';
+import { PLAYER_SKINS } from './SkinManager.js?v=20261114a';
 
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));

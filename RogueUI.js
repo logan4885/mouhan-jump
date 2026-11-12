@@ -1,7 +1,7 @@
 // Roguelike 模式的界面：入口说明、三选一抽卡、局内 Buff 栏、先知之眼标记、各种全屏闪光
-import { t, L } from './i18n.js?v=20261113b';
-import { escapeHtml } from './utils.js?v=20261113b';
-import { BUFF_BY_ID, CATS, VIP_BUFFS, HZ, rt } from './Roguelike.js?v=20261113b';
+import { t, L } from './i18n.js?v=20261114a';
+import { escapeHtml } from './utils.js?v=20261114a';
+import { BUFF_BY_ID, CATS, VIP_BUFFS, HZ, rt } from './Roguelike.js?v=20261114a';
 
 const $ = (id) => document.getElementById(id);
 
@@ -16,6 +16,7 @@ export class RogueUI {
       <div id="rgBar" class="rg-bar hidden" aria-live="polite"></div>
       <div id="rgHint" class="rg-hint" aria-hidden="true"></div>
       <div id="rgSink" class="rg-sink hidden" aria-hidden="true"><i></i><b></b></div>
+      <button type="button" id="rgSkill" class="rg-skill hidden" aria-label="Burst"><i></i><span>⚡</span><em></em></button>
       <div id="rgFlash" class="rg-flash" aria-hidden="true"></div>
       <div id="rgKing" class="rg-king hidden" aria-hidden="true"></div>
       <div class="modal-wrap hidden" id="rgIntro" role="dialog" aria-modal="true">
@@ -24,7 +25,10 @@ export class RogueUI {
       <div class="modal-wrap hidden" id="rgModal" role="dialog" aria-modal="true">
         <div class="modal rgpick"><h2 id="rgPickTitle"></h2><div class="rg-cards" id="rgCards"></div><button type="button" class="btn rg-reroll hidden" id="rgReroll"></button></div>
       </div>`);
-    this.bar = $('rgBar'); this.sink = $('rgSink'); this.hintEl = $('rgHint');
+    this.bar = $('rgBar'); this.sink = $('rgSink'); this.hintEl = $('rgHint'); this.skill = $('rgSkill');
+    this._css();
+    this.skill.addEventListener('click', (e) => { e.stopPropagation(); this.game.rogueSkill(); });
+    this.skill.addEventListener('touchstart', (e) => { e.stopPropagation(); }, { passive: true });
     const track = document.querySelector('.charge-track');
     if (track) { track.insertAdjacentHTML('beforeend', '<i class="rg-mark hidden" id="rgMark"></i>'); this.mark = $('rgMark'); }
     const btn = $('btnRogueStart');
@@ -41,6 +45,33 @@ export class RogueUI {
       if (e.key >= '1' && e.key <= '3') { const b = $('rgCards').children[Number(e.key) - 1]; if (b) this._take(b.dataset.id); }
       e.stopPropagation();
     }, true);
+  }
+
+  /** 新增样式放在这里（不改 style.css）：爆发按钮、无敌边框 */
+  _css() {
+    const st = document.createElement('style');
+    st.textContent = `
+.rg-skill{position:fixed;right:14px;bottom:calc(22px + env(safe-area-inset-bottom,0px));z-index:30;width:68px;height:68px;border-radius:50%;border:3px solid #ffd23d;background:#1b1530;color:#fff;font:700 28px/1 system-ui,sans-serif;display:flex;align-items:center;justify-content:center;overflow:hidden;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.45);opacity:.75}
+.rg-skill i{position:absolute;left:0;right:0;bottom:0;height:0%;background:linear-gradient(0deg,#ff9f1c,#ffe45c);opacity:.85;transition:height .25s}
+.rg-skill span{position:relative;z-index:1;text-shadow:0 1px 3px rgba(0,0,0,.7)}
+.rg-skill em{position:absolute;z-index:1;bottom:3px;left:0;right:0;font:700 11px/1 system-ui,sans-serif;font-style:normal;text-align:center;color:#fff;text-shadow:0 1px 2px #000}
+.rg-skill.ready{opacity:1;animation:rg-skill-pulse .8s ease-in-out infinite;border-color:#fff}
+@keyframes rg-skill-pulse{0%,100%{transform:scale(1);box-shadow:0 0 0 0 rgba(255,210,61,.8)}50%{transform:scale(1.1);box-shadow:0 0 0 12px rgba(255,210,61,0)}}
+body.rg-invuln::after{content:"";position:fixed;inset:0;z-index:25;pointer-events:none;box-shadow:inset 0 0 60px 10px rgba(255,228,92,.75);animation:rg-inv 0.6s ease-in-out infinite alternate}
+@keyframes rg-inv{from{opacity:.45}to{opacity:1}}
+`;
+    document.head.appendChild(st);
+  }
+
+  /** 能量：按钮里的填充 + 满了就脉冲 */
+  setEnergy(rg) {
+    const b = this.skill; if (!b) return;
+    if (!rg) { b.classList.add('hidden'); return; }
+    b.classList.remove('hidden');
+    const e = Math.max(0, Math.min(100, rg.energy || 0));
+    b.firstChild.style.height = e + '%';
+    b.lastChild.textContent = e >= 100 ? 'Q' : Math.floor(e) + '%';
+    b.classList.toggle('ready', e >= 100);
   }
 
   /* ---------- 开始前的说明 ---------- */
@@ -60,11 +91,12 @@ export class RogueUI {
   reset(rg) {
     this.hide();
     this.bar.classList.toggle('hidden', !rg);
+    this.setEnergy(rg);
     if (rg) this.refresh(rg);
   }
   hide() {
     $('rgModal').classList.add('hidden'); this.pick = null;
-    this.bar.classList.add('hidden'); this.setMark(null); this.setSink(null); this.hideHint();
+    this.bar.classList.add('hidden'); this.setEnergy(null); this.setMark(null); this.setSink(null); this.hideHint();
   }
   /** 机制方块出现时的效果提示卡：图标 + 名称 + 一句话效果（混沌方块列出两种） */
   showHint(kinds, chaos) {
@@ -99,6 +131,7 @@ export class RogueUI {
     if (rg.armor > 0) chips.push(`<span class="rg-chip">🔰</span>`);
     if (rg.ammo > 0) chips.push(`<span class="rg-chip">🔫×${rg.ammo}</span>`);
     if (rg.kills > 0) chips.push(`<span class="rg-chip">☠️ ${rg.kills}</span>`);
+    if (rg.grazes > 0) chips.push(`<span class="rg-chip">🌀 ${rg.grazes}</span>`);
     if (rg.bonusBase) chips.push(`<span class="rg-chip">📈+${rg.bonusBase}</span>`);
     if (rg.has('BUFF_21')) chips.push(`<span class="rg-chip wind">${escapeHtml(rg.wind === 0 ? '💨 0' : rt(rg.wind < 0 ? 'windL' : 'windR', { n: Math.abs(rg.wind).toFixed(2) }))}</span>`);
     if (rg.vip && rg.target10 != null) chips.push(`<span class="rg-chip">${escapeHtml(rt('target', { n: rg.target10 }))}</span>`);
@@ -106,6 +139,7 @@ export class RogueUI {
       const b = BUFF_BY_ID[id]; const n = rg.buffs[id];
       return `<span class="rg-ic" style="border-color:${CATS[b.cat].color}" title="${escapeHtml(L(b.name))}">${b.icon}${n > 1 ? `<small>${n}</small>` : ''}</span>`;
     }).join('');
+    this.setEnergy(rg);
     this.bar.innerHTML = chips.join('') + (icons ? `<div class="rg-icons">${icons}</div>` : '');
   }
 

@@ -1,29 +1,31 @@
 // 游戏主控：渲染器 / 场景 / 正交相机 / 灯光、输入、状态机、计分与落点判定
 import * as THREE from 'three';
-import { CONFIG } from './config.js?v=20261113b';
-import { Storage } from './Storage.js?v=20261113b';
-import { Tweens, clamp, Ease } from './utils.js?v=20261113b';
-import { SkinManager } from './SkinManager.js?v=20261113b';
-import { BlockManager } from './BlockManager.js?v=20261113b';
-import { Player } from './Player.js?v=20261113b';
-import { UIManager } from './UIManager.js?v=20261113b';
-import { Sound } from './Sound.js?v=20261113b';
-import { t, L } from './i18n.js?v=20261113b';
-import { getPerk } from './canPerks.js?v=20261113b';
-import { getSignature, RARITY } from './canSignature.js?v=20261113b';
-import { PLAYER_SKINS } from './SkinManager.js?v=20261113b';
-import { Music, playSfx } from './SkinAudio.js?v=20261113b';
-import { SignatureFX } from './SignatureFX.js?v=20261113b';
-import { RunState, rt, chargeTimeFor, HZ } from './Roguelike.js?v=20261113b';
-import { fetchTop } from './Leaderboard.js?v=20261113b';
-import { Enemies, ENEMY, KINDS } from './Enemies.js?v=20261113b';
-import { stairParams, STAND_HZ, STAIR, HZT } from './Staircase.js?v=20261113b';
+import { CONFIG } from './config.js?v=20261114a';
+import { Storage } from './Storage.js?v=20261114a';
+import { Tweens, clamp, Ease } from './utils.js?v=20261114a';
+import { SkinManager } from './SkinManager.js?v=20261114a';
+import { BlockManager } from './BlockManager.js?v=20261114a';
+import { Player } from './Player.js?v=20261114a';
+import { UIManager } from './UIManager.js?v=20261114a';
+import { Sound } from './Sound.js?v=20261114a';
+import { t, L } from './i18n.js?v=20261114a';
+import { getPerk } from './canPerks.js?v=20261114a';
+import { getSignature, RARITY } from './canSignature.js?v=20261114a';
+import { PLAYER_SKINS } from './SkinManager.js?v=20261114a';
+import { Music, playSfx } from './SkinAudio.js?v=20261114a';
+import { SignatureFX } from './SignatureFX.js?v=20261114a';
+import { RunState, rt, chargeTimeFor, HZ } from './Roguelike.js?v=20261114a';
+import { fetchTop } from './Leaderboard.js?v=20261114a';
+import { Enemies, ENEMY, KINDS } from './Enemies.js?v=20261114a';
+import { stairParams, STAND_HZ, STAIR, HZT } from './Staircase.js?v=20261114a';
 const hz = (b, k) => !!(b && b.hzs && b.hzs.includes(k));      // 方块是否带某个机制
 
 // 踩中星号方块后的免费体验时长（秒）
 const TRIAL_SEC = 8;
 
 // 状态：menu 首页 | ready 等待按压 | charging 蓄力 | jumping 空中 | falling 摔落 | over 结算
+const MILESTONES = [10, 25, 50, 75, 100, 150, 200, 300];   // Roguelike 里程碑层数：弹一句庆祝
+
 export class Game {
   constructor(canvas) {
     this.canvas = canvas;
@@ -182,6 +184,7 @@ export class Game {
       e.preventDefault();
       if (!e.repeat) this.press();
     });
+    window.addEventListener('keydown', (e) => { if ((e.key === 'q' || e.key === 'Q') && !(e.target && e.target.tagName === 'INPUT') && this.rogue) this.rogueSkill(); });   // Roguelike：Q 键释放爆发
     window.addEventListener('keyup', (e) => { if (e.code === 'Space' || e.key === ' ') this.release(); });
 
     // 切到后台时自动松手，防止卡在蓄力状态
@@ -306,9 +309,9 @@ export class Game {
     if (result === 'stay') { if (this.blocks.next) this.blocks.next.frozen = false; this.state = 'ready'; this._rogueReady(); this._updatePerkHud(); return; }
     const landed = this.blocks.next;
     if (landed && landed.trial) this._startTrial(landed);
-    let diamond = false, quantum = false, landedHz = [];
+    let diamond = false, quantum = false, landedHz = [], chest = false;
     if (this.rogue && landed) {
-      diamond = !!landed.diamond; quantum = !!landed.quantum; landedHz = landed.hzs ? landed.hzs.slice() : [];
+      chest = !!landed.chest; diamond = !!landed.diamond; quantum = !!landed.quantum; landedHz = landed.hzs ? landed.hzs.slice() : [];
       if (hz(landed, 'shocking')) { if (result === 'perfect') result = 'hit'; this._stun = HZT.stun; this.ui.toast(HZ.shocking.icon + ' ' + L(HZ.shocking.desc)); }   // 高压电击：不算完美 + 麻痹
       if (!landed.hzs || !landed.hzs.some((k) => STAND_HZ.includes(k))) this.blocks.clearMark(landed);       // 落地即生效的机制用完就恢复；站着生效的留到离开
     }
@@ -352,6 +355,7 @@ export class Game {
     if (bonus) setTimeout(() => this.ui.popScore(`${this.perk.icon} +1`, sp.x + 40, sp.y + 10, true), 250);
     this._updatePerkHud();
     if (this.rogue) this._rogueAfterLand(perfect, before);
+    if (this.rogue && chest) this._chestReward();
 
     // 最高分实时刷新并写入本地（Roguelike 单独记录，不进总榜）
     Storage[this.rogue ? 'noteWeekRogue' : 'noteWeekScore'](this.score);   // 每周榜成绩
@@ -370,7 +374,7 @@ export class Game {
     }
     if (this.rogue) { this.blocks.stairFloor = this.rogue.layers + 2; this._sinkReset(landed); }
     this.blocks.advance(this.score);
-    if (this.rogue && this.rogue.layers % 5 === 0) { this._rogueChoose(); return; }   // 每 5 层三选一
+    if (this.rogue && (this.rogue.layers % 5 === 0 || this.rogue.layers === 3 || this._chestCard)) { this._chestCard = false; this._rogueChoose(); return; }   // 第 3 层先抽第一张，之后每 5 层三选一（宝箱也可能送一次）
     this.state = 'ready';
     this._rogueReady();
     this._updatePerkHud();
@@ -555,6 +559,8 @@ export class Game {
     rg.hazWind = nx && hz(nx, 'windy') ? nx.windSign * HZT.wind : 0;                       // 强侧风方块：这一跳被额外吹偏
     this._setMirror(rg.mirrorLeft > 0 || !!(nx && hz(nx, 'mirrored')));                  // 镜像方块：瞄准时画面翻转
     this.player.root.visible = this._invisT <= 0;
+    if (rg.wavePending && this.state === 'ready' && this.enemies) { rg.wavePending = false; this.enemies.spawnWave(this.enemies.waveSize(rg.layers)); }
+    if (nx && nx.chest && !nx.chestHinted) { nx.chestHinted = true; this.ui.toast(rt('chestSpot'), 2400); }
     if (nx && nx.hzs && !nx.hinted) { nx.hinted = true; this.rogueUI.showHint(nx.hzs, nx.chaos); }   // 每个机制方块出现时提示一次它的效果
     else if (!(nx && nx.hzs)) this.rogueUI.hideHint();
     this.rogueUI.refresh(rg);
@@ -564,6 +570,7 @@ export class Game {
   _rogueTick(dt) {
     const rg = this.rogue;
     if (this._invisT > 0) { this._invisT -= dt; if (this._invisT <= 0) this.player.root.visible = true; }
+    if (this._invulnT > 0) { this._invulnT = Math.max(0, this._invulnT - dt); if (this._invulnT <= 0) document.body.classList.remove('rg-invuln'); }
     if (!['ready', 'charging', 'jumping'].includes(this.state)) return;
     if (rg.twistT > 0) rg.twistT = Math.max(0, rg.twistT - dt);
     this._sinkTick(dt);
@@ -576,6 +583,9 @@ export class Game {
   _rogueAfterLand(perfect, before) {
     const rg = this.rogue;
     rg.layers++;
+    this.addEnergy(perfect ? 8 : 3);
+    if (MILESTONES.includes(rg.layers)) { this.ui.toast(rt('milestone', { n: rg.layers }), 2200); this.rogueUI.flash(); playSfx(this.sound, 'icechime', 1, 1); }
+    if (rg.layers % 10 === 0) rg.wavePending = true;     // 每 10 层一波敌潮（落地后、下一次等待起跳时刷出）
     if (perfect && rg.has('BUFF_05') && this.combo > 0 && this.combo % 5 === 0) { rg.shield++; this.ui.toast(rt('vamp')); }   // 吸血易拉罐
     if (rg.has('BUFF_06') && Math.floor(this.score / 50) > Math.floor(before / 50)) { this.blocks.nearNext = true; this.ui.toast(rt('airbag')); }   // 安全气囊
     if (rg.vip && perfect) {
@@ -646,6 +656,38 @@ export class Game {
     this.player.fall();
   }
 
+  /** 能量：擦弹 / 完美 / 击落都会充能，满了点「⚡爆发」 */
+  addEnergy(n) {
+    const rg = this.rogue; if (!rg) return;
+    const was = rg.energy;
+    rg.energy = Math.min(100, rg.energy + n);
+    if (was < 100 && rg.energy >= 100) { this.ui.toast(rt('energyFull'), 2800); playSfx(this.sound, 'icechime', 1, 1.3); }
+    if (this.rogueUI) this.rogueUI.setEnergy(rg);
+  }
+
+  /** ⚡爆发：清场（照常得分）+ 5 秒无敌 + 1 护盾 */
+  rogueSkill() {
+    const rg = this.rogue;
+    if (!rg || rg.energy < 100 || !['ready', 'charging', 'jumping'].includes(this.state)) return false;
+    const n = this.enemies ? this.enemies.nukeAll() : 0;
+    rg.energy = 0; rg.shield++; this._invulnT = 5; document.body.classList.add('rg-invuln'); rg.skillUses = (rg.skillUses || 0) + 1;
+    this.ui.toast(rt('skillUse', { n }), 2600); this.rogueUI.flash(); this.shake = 0.2;
+    playSfx(this.sound, 'icechime', 1, 0.7);
+    this.rogueUI.refresh(rg);
+    return true;
+  }
+
+  /** 🎁 宝箱方块开奖 */
+  _chestReward() {
+    const rg = this.rogue; rg.chests++;
+    const r = Math.random();
+    if (r < 0.3) { this._chestCard = true; this.ui.toast(rt('chestCard'), 2400); }
+    else if (r < 0.55) { rg.shield++; this.ui.toast(rt('chestShield'), 2400); }
+    else if (r < 0.8) { rg.energy = Math.max(rg.energy, 99); this.addEnergy(1); this.ui.toast(rt('chestEnergy'), 2400); }
+    else { const n = 20 + rg.layers; this.score += n; this.ui.setScore(this.score); this.ui.toast(rt('chestScore', { n }), 2400); this._rogueBestCheck(); }
+    playSfx(this.sound, 'icechime', 1, 1.2); this.rogueUI.flash(); this.rogueUI.refresh(rg);
+  }
+
   /** 被空中的敌人打中且没有任何防护：和踩空一样掉下去（可被复苏 / 复活挡住） */
   _enemyKill(kind) {
     if (this.state === 'over' || this.state === 'falling') return;
@@ -703,7 +745,7 @@ export class Game {
     this.player.root.visible = true;
     const record = this.score > this.rogueBestAtStart;
     this._rogueBestCheck();
-    this.rogueUI.hide(); this._sinkMax = 0;
+    this.rogueUI.hide(); this._sinkMax = 0; this._invulnT = 0; document.body.classList.remove('rg-invuln');
     if (this.enemies) this.enemies.clear();
     if (rg.vip && record) this.rogueUI.king();       // 王者降临：VIP 破 Roguelike 纪录
     this.ui.showGameOver({ score: this.score, best: this.rogueBest, record, perfects: this.perfects, unlocked: [], rogue: { layers: rg.layers, picks: rg.picks, vip: rg.vip, king: rg.vip && record } });
@@ -851,13 +893,14 @@ export class Game {
   reset() {
     this.tweens.clear();
     this.blocks.stairFn = this.rogueMode ? stairParams : null;     // Roguelike：阶梯式关卡难度
+    this.blocks.chestChance = this.rogueMode ? 0.13 : 0;           // Roguelike：约 13% 的方块是 🎁 宝箱方块
     this.blocks.reset();
     this.player.place(0, CONFIG.BLOCK_HEIGHT, 0);
     this.score = 0; this.combo = 0; this.perfects = 0; this.chargeT = 0;
     this.reviveUsed = false; this.thunderReady = false; this.thunderCount = 0; this.lastResult = null;
     this.freezeCredit = 0; this._creditScore = 0; this.freezeLeft = 0; this._endFreeze(false);
     this.rogue = this.rogueMode && this.skins ? new RunState(this._isVip()) : null;
-    this.camTwist = 0; this._invisT = 0; this._stun = 0; this._setMirror(false);
+    this.camTwist = 0; this._invisT = 0; this._stun = 0; this._invulnT = 0; document.body.classList.remove('rg-invuln'); this._setMirror(false);
     if (this.enemies) this.enemies.clear();
     if (this.player) this.player.root.visible = true;
     if (this.rogueUI) this.rogueUI.reset(this.rogue);
