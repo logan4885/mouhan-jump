@@ -13,7 +13,7 @@
 import * as THREE from 'three';
 import { CONFIG } from './config.js?v=20261114a';
 import { L } from './i18n.js?v=20261114a';
-import { rt } from './Roguelike.js?v=20261114a';
+import { rt } from './Roguelike.js?v=20261114r';
 import { playSfx } from './SkinAudio.js?v=20261114a';
 
 const tri = (zh, en, ar) => ({ zh, en, ar });
@@ -357,7 +357,7 @@ export class Enemies {
   /* ---------------- 被撞 / 被击落 ---------------- */
   _hit(e) {
     const g = this.g, rg = g.rogue;
-    if (g._invulnT > 0) {                                                // 爆发无敌：直接穿过去并击落
+    if (g._invulnT > 0 || g._feverT > 0) {                               // 爆发无敌 / 狂暴：直接穿过去并击落
       this._kill(e, true); return;
     }
     if (rg.armor > 0) {                                                  // 硬化罐壳：免疫一次

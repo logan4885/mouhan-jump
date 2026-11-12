@@ -1,7 +1,7 @@
 // Roguelike 模式的界面：入口说明、三选一抽卡、局内 Buff 栏、先知之眼标记、各种全屏闪光
 import { t, L } from './i18n.js?v=20261114a';
 import { escapeHtml } from './utils.js?v=20261114a';
-import { BUFF_BY_ID, CATS, VIP_BUFFS, HZ, rt } from './Roguelike.js?v=20261114a';
+import { BUFF_BY_ID, CATS, VIP_BUFFS, HZ, rt } from './Roguelike.js?v=20261114r';
 
 const $ = (id) => document.getElementById(id);
 
@@ -16,6 +16,7 @@ export class RogueUI {
       <div id="rgBar" class="rg-bar hidden" aria-live="polite"></div>
       <div id="rgHint" class="rg-hint" aria-hidden="true"></div>
       <div id="rgSink" class="rg-sink hidden" aria-hidden="true"><i></i><b></b></div>
+      <div id="rgFever" class="rg-fever-tag hidden" aria-hidden="true"></div>
       <button type="button" id="rgSkill" class="rg-skill hidden" aria-label="Burst"><i></i><span>⚡</span><em></em></button>
       <div id="rgFlash" class="rg-flash" aria-hidden="true"></div>
       <div id="rgKing" class="rg-king hidden" aria-hidden="true"></div>
@@ -57,10 +58,23 @@ export class RogueUI {
 .rg-skill em{position:absolute;z-index:1;bottom:3px;left:0;right:0;font:700 11px/1 system-ui,sans-serif;font-style:normal;text-align:center;color:#fff;text-shadow:0 1px 2px #000}
 .rg-skill.ready{opacity:1;animation:rg-skill-pulse .8s ease-in-out infinite;border-color:#fff}
 @keyframes rg-skill-pulse{0%,100%{transform:scale(1);box-shadow:0 0 0 0 rgba(255,210,61,.8)}50%{transform:scale(1.1);box-shadow:0 0 0 12px rgba(255,210,61,0)}}
+body.rg-fever::before{content:"";position:fixed;inset:0;z-index:24;pointer-events:none;box-shadow:inset 0 0 70px 14px rgba(255,61,240,.7),inset 0 0 0 3px rgba(255,61,240,.9);animation:rg-fv .35s ease-in-out infinite alternate}
+@keyframes rg-fv{from{opacity:.5}to{opacity:1}}
+.rg-fever-tag{position:fixed;left:50%;top:calc(64px + env(safe-area-inset-top,0px));transform:translateX(-50%);z-index:31;padding:4px 14px;border-radius:999px;background:linear-gradient(90deg,#ff3df0,#ff9f1c);color:#fff;font:800 15px/1.3 system-ui,sans-serif;letter-spacing:1px;text-shadow:0 1px 3px rgba(0,0,0,.5);box-shadow:0 0 16px rgba(255,61,240,.8);pointer-events:none}
+body.rg-rush .charge-track{box-shadow:0 0 0 2px #ffb300,0 0 14px 2px rgba(255,179,0,.85)}
 body.rg-invuln::after{content:"";position:fixed;inset:0;z-index:25;pointer-events:none;box-shadow:inset 0 0 60px 10px rgba(255,228,92,.75);animation:rg-inv 0.6s ease-in-out infinite alternate}
 @keyframes rg-inv{from{opacity:.45}to{opacity:1}}
 `;
     document.head.appendChild(st);
+  }
+
+  /** 狂暴倒计时标签：sec <= 0 隐藏 */
+  setFever(sec) {
+    const el = $('rgFever'); if (!el) return;
+    if (!(sec > 0)) { if (!el.classList.contains('hidden')) el.classList.add('hidden'); return; }
+    el.classList.remove('hidden');
+    const txt = '🔥 FEVER ' + sec.toFixed(1);
+    if (el.textContent !== txt) el.textContent = txt;
   }
 
   /** 能量：按钮里的填充 + 满了就脉冲 */
@@ -96,7 +110,7 @@ body.rg-invuln::after{content:"";position:fixed;inset:0;z-index:25;pointer-event
   }
   hide() {
     $('rgModal').classList.add('hidden'); this.pick = null;
-    this.bar.classList.add('hidden'); this.setEnergy(null); this.setMark(null); this.setSink(null); this.hideHint();
+    this.bar.classList.add('hidden'); this.setEnergy(null); this.setFever(0); this.setMark(null); this.setSink(null); this.hideHint();
   }
   /** 机制方块出现时的效果提示卡：图标 + 名称 + 一句话效果（混沌方块列出两种） */
   showHint(kinds, chaos) {
@@ -132,6 +146,8 @@ body.rg-invuln::after{content:"";position:fixed;inset:0;z-index:25;pointer-event
     if (rg.ammo > 0) chips.push(`<span class="rg-chip">🔫×${rg.ammo}</span>`);
     if (rg.kills > 0) chips.push(`<span class="rg-chip">☠️ ${rg.kills}</span>`);
     if (rg.grazes > 0) chips.push(`<span class="rg-chip">🌀 ${rg.grazes}</span>`);
+    if (rg.rushes > 0) chips.push(`<span class="rg-chip">⚡RUSH ${rg.rushes}</span>`);
+    if (rg.contract) chips.push(`<span class="rg-chip" style="background:#5a0010;color:#fff">😈${rg.contract.icon}×${rg.contract.mul} · ${rg.contract.left}</span>`);
     if (rg.bonusBase) chips.push(`<span class="rg-chip">📈+${rg.bonusBase}</span>`);
     if (rg.has('BUFF_21')) chips.push(`<span class="rg-chip wind">${escapeHtml(rg.wind === 0 ? '💨 0' : rt(rg.wind < 0 ? 'windL' : 'windR', { n: Math.abs(rg.wind).toFixed(2) }))}</span>`);
     if (rg.vip && rg.target10 != null) chips.push(`<span class="rg-chip">${escapeHtml(rt('target', { n: rg.target10 }))}</span>`);
@@ -144,9 +160,9 @@ body.rg-invuln::after{content:"";position:fixed;inset:0;z-index:25;pointer-event
   }
 
   /* ---------- 三选一 ---------- */
-  choose(layer, opts, vip, rerollFn, pickFn) {
+  choose(layer, opts, vip, rerollFn, pickFn, title) {
     this.pick = { rerollFn, pickFn };
-    $('rgPickTitle').textContent = rt('pick', { n: layer });
+    $('rgPickTitle').textContent = title || rt('pick', { n: layer });
     $('rgReroll').textContent = rt('reroll');
     $('rgReroll').classList.toggle('hidden', !vip);      // 多维背包：VIP 才有无限 Reroll
     this._cards(opts);

@@ -31,6 +31,8 @@ export class BlockManager {
     this.rng = null;
     this.sizeBoostLeft = 0;  // Roguelike：接下来 N 个方块变宽（绝对防御）
     this.diamondLeft = 0;    // Roguelike：接下来 N 个方块是 2 倍积分的钻石方块
+    this.demonChance = 0;    // Roguelike：新方块是 😈 恶魔契约方块的概率
+    this.sizeMulLeft = 0;    // Roguelike：贪婪契约——接下来 N 个方块缩小
     this.chestChance = 0;    // Roguelike：新方块是 🎁 宝箱方块的概率（0 = 不出）
     this.nearNext = false;   // Roguelike：下一个方块用最近距离（安全气囊）
     this.stairFn = null;     // Roguelike：Game 注入 (层数) => 关卡参数（阶梯难度）；为空 = 普通难度
@@ -43,7 +45,7 @@ export class BlockManager {
 
   /** 清空并生成开局的两个方块 */
   reset() {
-    this.sizeBoostLeft = 0; this.diamondLeft = 0; this.nearNext = false;
+    this.sizeBoostLeft = 0; this.diamondLeft = 0; this.nearNext = false; this.sizeMulLeft = 0; this.spawned = 0;
     this.stairFloor = 2;
     this.rng = this.seed == null ? null : mulberry32(this.seed);
     this.blocks.forEach((b) => this._destroy(b));
@@ -56,6 +58,7 @@ export class BlockManager {
   /** 在当前方块前方随机生成下一个方块（沿 +X 或 -Z） */
   spawnNext(score = 0, animate = true) {
     const cur = this.blocks[this.blocks.length - 1];
+    this.spawned = (this.spawned || 0) + 1;       // 这一局一共生成过多少个方块（blocks 数组会回收旧方块，不能用它的长度）
     const R = this.rng ? () => this.rng() : Math.random;
     const rnd = (a, b) => a + R() * (b - a);
     if (this.rng) score = this.blocks.length - 1;      // 固定地图：按第几个方块缩小，保证大家的地图完全一致
@@ -79,6 +82,9 @@ export class BlockManager {
       } else haz = [pick];
     }
     if (this.sizeBoostLeft > 0) { size = Math.min(size * 1.3, 3.4); this.sizeBoostLeft--; }
+    if (this.sizeMulLeft > 0) { size = Math.max(0.95, size * 0.78); this.sizeMulLeft--; }
+    let demon = false;                                   // 恶魔契约方块：面积减半（边长 ×0.72），血红色
+    if (stair && !haz && this.diamondLeft <= 0 && this.demonChance > 0 && this.spawned >= 10 && R() < this.demonChance) { demon = true; size = Math.max(0.95, size * 0.72); }
     // 保证两个方块之间至少留出一点空隙
     const minGap = Math.max(stair ? stair.gapMin : CONFIG.BLOCK_MIN_GAP, cur.size / 2 + size / 2 + 0.5);
     let gap = stair ? Math.min(rnd(minGap, Math.max(minGap + 0.3, stair.gapMax)), CONFIG.JUMP_MAX_DIST - 0.8)
@@ -89,7 +95,8 @@ export class BlockManager {
     block.dirKey = dirKey;
     if (this.trialRoll && this.trialRoll(score)) this._markTrial(block);
     if (this.diamondLeft > 0) { this.diamondLeft--; this.markDiamond(block); }
-    if (!haz && !block.diamond && !block.trial && this.chestChance > 0 && this.blocks.length >= 3 && R() < this.chestChance) this.markChest(block);
+    if (demon) this.markDemon(block);
+    else if (!haz && !block.diamond && !block.trial && this.chestChance > 0 && this.spawned >= 3 && R() < this.chestChance) this.markChest(block);
     if (haz) { block.windSign = R() < 0.5 ? -1 : 1; block.mPh = R() * 6.28; this.markHazard(block, haz, chaos); }
     this.blocks.push(block);
     return block;
@@ -149,6 +156,13 @@ export class BlockManager {
     if (!block || block.diamond || block.trial) return;
     block.diamond = true;
     this._glow(block, '#5fe7ff', '#0a6a8a', '◆', '#e8fdff');
+  }
+
+  /** Roguelike：恶魔契约方块（面积减半，落上去签契约：从 2 张高风险高回报的卡里选 1 张）——血红色 + 顶面一个 😈 */
+  markDemon(block) {
+    if (!block || block.demon || block.trial) return;
+    block.demon = true;
+    this._glow(block, '#e0112b', '#5a0010', '😈', '#ffffff');
   }
 
   /** Roguelike：宝箱方块（落上去开奖：护盾 / 满能量 / 分数 / 免费抽卡）——金橙色发光 + 顶面一个 🎁 */
@@ -224,8 +238,8 @@ export class BlockManager {
 
   /** 踩过之后去掉钻石 / 量子外观 */
   clearMark(block) {
-    if (!block || (!block.diamond && !block.quantum && !block.hzs && !block.chest)) return;
-    block.chest = false; block.diamond = false; block.quantum = false; block.hzs = null; block.chaos = false;
+    if (!block || (!block.diamond && !block.quantum && !block.hzs && !block.chest && !block.demon)) return;
+    block.demon = false; block.chest = false; block.diamond = false; block.quantum = false; block.hzs = null; block.chaos = false;
     block.sc = 1; block.root.scale.x = 1; block.root.scale.z = 1; block.root.visible = true;
     if (block.star) { block.root.remove(block.star); disposeObject(block.star); block.star = null; }
     const old = block.mesh;
@@ -284,6 +298,7 @@ export class BlockManager {
       b.root.remove(old); disposeObject(old);
       b.root.add(fresh); b.mesh = fresh;
       if (b.trial) this._goldify(b);
+      else if (b.demon) { b.demon = false; this.markDemon(b); }
       else if (b.chest) { b.chest = false; this.markChest(b); }
       else if (b.diamond) { b.diamond = false; this.markDiamond(b); }
       else if (b.quantum) { b.quantum = false; this.markQuantum(b); }

@@ -13,7 +13,36 @@ export const CATS = {
   chaos: { name: tri('机制混沌流', 'Chaos', 'الفوضى'), color: '#9a6bff' },
   vip: { name: tri('VIP 专属流', 'VIP', 'VIP'), color: '#e0a800' },
   counter: { name: tri('反击流', 'Counter', 'الهجوم المضاد'), color: '#e5484d' },
+  contract: { name: tri('恶魔契约', 'Demon Contract', 'عقد الشيطان'), color: '#c4122f' },
 };
+
+/** 节奏与爆发玩法的调参面板 */
+export const RUSH = {
+  window: 0.5,        // 落地后多少秒内按下起跳 = RUSH
+  charge: 2,          // RUSH 这一跳的蓄力速度倍率
+  mul: 2,             // RUSH 这一跳落地的得分倍率
+  crumbleFrom: 6,     // 从第几层开始，站着不动会剥落（前几层纯教学）
+  grace: 2.5,         // 落地后多少秒开始剥落
+  total: 6,           // 落地后总共多少秒必须起跳（含上面的缓冲）；档位倒计时更短时以档位的为准
+};
+export const FEVER = {
+  streak: 3,          // 连续几次 PERFECT 触发
+  dur: 8,             // 持续秒数
+  mul: 2,             // 狂暴期间落地得分倍率
+  scale: 1.3,         // 罐体膨胀倍数
+  energy: 30,         // 触发时送的能量
+};
+
+/** 恶魔契约：落在血红色的恶魔方块上，从 2 张里选 1 张。mul = 接下来 left 次落地的得分倍率 */
+const ct = (id, icon, name, desc, extra) => ({ id, icon, name, desc, cat: 'contract', pool: 'contract', ...extra });
+export const CONTRACTS = [
+  ct('CT_BLIND', '🙈', tri('盲跳契约', 'Blind Pact', 'عقد الأعمى'), tri('接下来 5 次落地得分 ×5，但每次起跳罐子都会隐形', 'Next 5 landings score ×5, but your can turns invisible on every jump', 'الهبوطات الـ5 القادمة ×5 لكن العلبة تختفي عند كل قفزة'), { mul: 5, left: 5, invis: true }),
+  ct('CT_GREED', '💰', tri('贪婪契约', 'Greed Pact', 'عقد الجشع'), tri('立刻获得一大笔分数，但接下来 6 个方块缩小 22%', 'Get a big score bonus now, but the next 6 blocks shrink by 22%', 'نقاط كبيرة فوراً لكن المنصات الـ6 القادمة أصغر بـ22%'), { mul: 1, left: 0 }),
+  ct('CT_BLOOD', '🩸', tri('血契', 'Blood Pact', 'عقد الدم'), tri('失去全部护盾和罐壳，换来能量全满 + 接下来 6 次落地得分 ×3', 'Lose all shields and shell; energy full + next 6 landings ×3', 'تفقد كل الدروع مقابل طاقة كاملة وهبوطات ×3'), { mul: 3, left: 6 }),
+  ct('CT_SPEED', '🚀', tri('疾速契约', 'Haste Pact', 'عقد السرعة'), tri('接下来 6 次落地得分 ×3，但蓄力速度 ×1.5（更难控制）', 'Next 6 landings ×3, but charging is 1.5× faster', 'الهبوطات الـ6 القادمة ×3 لكن الشحن أسرع 1.5×'), { mul: 3, left: 6, chargeMul: 1.5 }),
+  ct('CT_GAMBLE', '☠️', tri('赌命契约', 'Death Gamble', 'مقامرة الموت'), tri('50% 获得一大笔分数；50% 失去全部护盾并清空连击', '50%: a huge score bonus. 50%: lose all shields and your combo', '50% نقاط ضخمة، 50% تفقد الدروع والكومبو'), { mul: 1, left: 0 }),
+];
+export const CONTRACT_BY_ID = Object.fromEntries(CONTRACTS.map((c) => [c.id, c]));
 
 export const BUFFS = [
   B(1, 'survive', '🧲', tri('强磁罐体', 'Magnet Can', 'علبة مغناطيسية'), tri('Perfect 落地判定范围扩大 25%', 'Perfect landing zone +25%', 'منطقة الهبوط المثالي +25%')),
@@ -86,7 +115,7 @@ const TXT = {
   pick: tri('第 {n} 层 · 选一个 Buff', 'Floor {n} · pick a buff', 'الطابق {n} · اختر ميزة'),
   reroll: tri('🧰 刷新重抽（无限）', '🧰 Reroll (unlimited)', '🧰 إعادة السحب (بلا حدود)'),
   title: tri('Roguelike 模式', 'Roguelike mode', 'وضع Roguelike'),
-  intro: tri('第 3 层先抽第一张 Buff，之后每 5 层再抽一次，越玩越强。险险躲过敌人（擦弹）会攒能量，攒满点「⚡爆发」清场；金色 🎁 方块落上去开奖；每 10 层有敌潮，撑过去有奖励。有自己的 Roguelike 排行榜，不进总榜。前 10 个方块是新手教学，很轻松；之后每 10 个方块难度提升一档：机制方块（击退、冰面、移动、传送、炸弹、黑洞……共 19 种）、下沉倒计时和 20 种会袭击你的敌人会逐步登场，靠「反击流」Buff 自动打回去。', 'Pick your first buff at floor 3, then every 5 floors. Close calls with enemies charge your energy — tap ⚡ Burst to clear the screen; land on golden 🎁 blocks for prizes; every 10 floors an enemy wave hits and surviving it pays off. It has its own Roguelike leaderboard, separate from the main one. The first 10 blocks are an easy warm-up; after that the difficulty rises every 10 blocks — mechanic blocks (19 kinds), sinking timers and 20 kinds of enemies phase in. Fight back with the Counter-build buffs.', 'اختر أول ميزة في الطابق 3 ثم كل 5 طوابق. النجاة بصعوبة من الأعداء تملأ الطاقة — اضغط ⚡ لتنظيف الشاشة؛ اهبط على منصات 🎁 للجوائز؛ كل 10 طوابق موجة أعداء ومكافأة لمن ينجو. لها لوحة صدارة خاصة. أول 10 كتل للإحماء، وبعدها ترتفع الصعوبة كل 10 كتل: كتل ميكانيكية (19 نوعاً) ومؤقتات غرق و20 نوعاً من الأعداء. قاوم بميزات الهجوم المضاد.'),
+  intro: tri('第 3 层先抽第一张 Buff，之后每 5 层再抽一次，越玩越强。险险躲过敌人（擦弹）会攒能量，攒满点「⚡爆发」清场；金色 🎁 方块落上去开奖；每 10 层有敌潮，撑过去有奖励。落地后 0.5 秒内起跳触发 ⚡RUSH（蓄力和得分翻倍），连续 3 次 PERFECT 进入 8 秒狂暴；血红色的 😈 恶魔方块可以签高风险契约；站着不动方块会剥落。有自己的 Roguelike 排行榜，不进总榜。前 10 个方块是新手教学，很轻松；之后每 10 个方块难度提升一档：机制方块（击退、冰面、移动、传送、炸弹、黑洞……共 19 种）、下沉倒计时和 20 种会袭击你的敌人会逐步登场，靠「反击流」Buff 自动打回去。', 'Pick your first buff at floor 3, then every 5 floors. Close calls with enemies charge your energy — tap ⚡ Burst to clear the screen; land on golden 🎁 blocks for prizes; every 10 floors an enemy wave hits and surviving it pays off. Jump within 0.5s of landing for ⚡RUSH (charge & score ×2); 3 PERFECTs in a row start an 8s Fever; blood-red 😈 demon blocks offer risky pacts; idle blocks crumble. It has its own Roguelike leaderboard, separate from the main one. The first 10 blocks are an easy warm-up; after that the difficulty rises every 10 blocks — mechanic blocks (19 kinds), sinking timers and 20 kinds of enemies phase in. Fight back with the Counter-build buffs.', 'اختر أول ميزة في الطابق 3 ثم كل 5 طوابق. النجاة بصعوبة من الأعداء تملأ الطاقة — اضغط ⚡ لتنظيف الشاشة؛ اهبط على منصات 🎁 للجوائز؛ كل 10 طوابق موجة أعداء ومكافأة لمن ينجو. اقفز خلال 0.5 ثانية من الهبوط لـ ⚡RUSH؛ 3 كاملة متتالية = هياج 8 ثوانٍ؛ المنصات الحمراء 😈 تعرض عقوداً خطرة؛ المنصة الواقفة عليها تتفتت. لها لوحة صدارة خاصة. أول 10 كتل للإحماء، وبعدها ترتفع الصعوبة كل 10 كتل: كتل ميكانيكية (19 نوعاً) ومؤقتات غرق و20 نوعاً من الأعداء. قاوم بميزات الهجوم المضاد.'),
   rankBtn: tri('🏆 Roguelike 排行榜', '🏆 Roguelike leaderboard', '🏆 لوحة صدارة Roguelike'),
   start: tri('开始 Roguelike', 'Start Roguelike', 'ابدأ Roguelike'),
   vipOn: tri('👑 VIP 被动已生效：{n} 项', '👑 VIP passives active: {n}', '👑 مزايا VIP مفعّلة: {n}'),
@@ -152,6 +181,19 @@ const TXT = {
   waveWarn: tri('⚠️ 敌潮来袭！一次来 {n} 只，撑过去有奖励', '⚠️ Enemy wave! {n} at once — survive for a reward', '⚠️ موجة أعداء! {n} معاً — انجُ للحصول على مكافأة'),
   waveWin: tri('🎉 击退敌潮！+{n} 分，能量 +50', '🎉 Wave beaten! +{n} pts, energy +50', '🎉 تم صدّ الموجة! +{n} نقطة، طاقة +50'),
   milestone: tri('🏆 {n} 层！', '🏆 Floor {n}!', '🏆 الطابق {n}!'),
+  rush: tri('⚡ RUSH！蓄力 ×2，落地得分 ×2', '⚡ RUSH! Charge ×2, landing score ×2', '⚡ RUSH! شحن ×2 ونقاط ×2'),
+  crumble: tri('🪨 方块开始剥落，快跳！', '🪨 The block is crumbling — jump!', '🪨 المنصة تتفتت — اقفز!'),
+  feverOn: tri('🔥 狂暴模式！8 秒内不会摔落、撞碎一切障碍，得分 ×2', '🔥 FEVER! 8s: no falling, smash everything, score ×2', '🔥 الهياج! 8 ثوانٍ: لا سقوط، تحطيم كل شيء، نقاط ×2'),
+  feverOff: tri('🔥 狂暴结束', '🔥 Fever over', '🔥 انتهى الهياج'),
+  bridge: tri('🌈 霓虹桥接住了你！', '🌈 The neon bridge caught you!', '🌈 جسر النيون أنقذك!'),
+  demonTitle: tri('😈 恶魔契约 · 选一份', '😈 Demon Contract · pick one', '😈 عقد الشيطان · اختر واحداً'),
+  demonSpot: tri('😈 前面有恶魔方块！很小，但落上去能签契约', '😈 A demon block ahead — tiny, but land on it to sign a pact', '😈 منصة شيطان أمامك — صغيرة لكن عقدها مغرٍ'),
+  contractLeft: tri('😈 契约剩 {n} 次', '😈 Pact: {n} left', '😈 العقد: {n}'),
+  contractEnd: tri('😈 契约结束', '😈 Pact ended', '😈 انتهى العقد'),
+  greedGain: tri('💰 贪婪契约：+{n} 分，方块缩小', '💰 Greed Pact: +{n} pts, blocks shrink', '💰 عقد الجشع: +{n} نقطة'),
+  bloodGain: tri('🩸 血契：护盾清空，能量全满', '🩸 Blood Pact: shields gone, energy full', '🩸 عقد الدم: بلا دروع، طاقة كاملة'),
+  gambleWin: tri('☠️ 赌赢了！+{n} 分', '☠️ You won the gamble! +{n} pts', '☠️ ربحت المقامرة! +{n}'),
+  gambleLose: tri('☠️ 赌输了…护盾和连击清空', '☠️ Lost the gamble… shields and combo gone', '☠️ خسرت… ضاعت الدروع والكومبو'),
   best: tri('Roguelike 最高', 'Roguelike best', 'أفضل Roguelike'),
 };
 export const rt = (k, vars = {}) => L(TXT[k]).replace(/\{(\w+)\}/g, (_, v) => (v in vars ? vars[v] : ''));
@@ -172,6 +214,7 @@ export class RunState {
     this.invis = false;
     this.target10 = null;     // 降维打击：排行榜第 10 名的分数
     this.beat10 = false;
+    this.feverStreak = 0; this.rushes = 0; this.fevers = 0; this.contract = null; this.contracts = 0;   // 极速连跳 / 狂暴 / 恶魔契约
     this.energy = 0; this.grazes = 0; this.chests = 0; this.waves = 0; this.waveLeft = 0; this.waveHit = false;   // 主动玩法：能量 / 擦弹 / 宝箱 / 敌潮
     this.kills = 0; this.ammo = 0; this.armor = 0; this.turretT = 0; this.seenEnemies = {};   // 敌人 / 反击流
     if (this.vip) this.shield += 1;     // BUFF_23 黄金护甲
@@ -206,7 +249,7 @@ export class RunState {
   perkMods() {
     return {
       perfectMul: this.has('BUFF_01') ? 1.25 : 1,
-      chargeMul: this.has('BUFF_12') ? 1.5 : 1,
+      chargeMul: (this.has('BUFF_12') ? 1.5 : 1) * ((this.contract && this.contract.chargeMul) || 1),
     };
   }
   floatAdd() { return this.has('BUFF_03') ? 0.3 : 0; }
@@ -221,6 +264,7 @@ export class RunState {
     if (quantum) g *= 3;
     if (invisible) g *= 1.5;
     if (this.vip) g *= 2;            // BUFF_30 降维打击
+    if (this.contract) g *= this.contract.mul;   // 恶魔契约
     return Math.max(1, Math.round(g));
   }
 
