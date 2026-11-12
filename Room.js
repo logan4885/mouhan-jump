@@ -1,8 +1,21 @@
 // 同图比赛：开房间 / 加入 / 大厅 / 结果。服务器只发地图种子和收最终成绩，没有实时通信。
 import { Storage } from './Storage.js?v=20261113b';
 import { syncPlayer, LEADERBOARD_API } from './Leaderboard.js?v=20261113b';
-import { t } from './i18n.js?v=20261113b';
+import { t as t0, getLang } from './i18n.js?v=20261113b';
 import { escapeHtml } from './utils.js?v=20261113b';
+
+// 新增文案放在这里（不改 i18n.js，避免整站换版本号）；没有的键回落到 i18n
+const NEW = {
+  zh: { rm_wait_others: '等待其他玩家结束…', rm_confirm_next: '✅ 确认开始新的一局', rm_wait_ready: '已确认，等待其他玩家确认（{n}/{m}）', rm_ready_tag: '已确认', rm_dead_hint: '你已结算，不能再开新局，要等所有人都结束后一起确认。', rm_all_done_hint: '所有人都结束了，点确认；所有人都确认后自动开始下一局。', rm_sync: '同步中…' },
+  en: { rm_wait_others: 'Waiting for the others to finish…', rm_confirm_next: '✅ Confirm next round', rm_wait_ready: 'Confirmed. Waiting for the others ({n}/{m})', rm_ready_tag: 'Ready', rm_dead_hint: 'Your run is settled. The next round starts once everyone has finished and confirmed.', rm_all_done_hint: 'Everyone has finished. Confirm to continue; the next round starts when all have confirmed.', rm_sync: 'Syncing…' },
+  ar: { rm_wait_others: 'بانتظار انتهاء اللاعبين الآخرين…', rm_confirm_next: '✅ تأكيد الجولة التالية', rm_wait_ready: 'تم التأكيد. بانتظار الآخرين ({n}/{m})', rm_ready_tag: 'جاهز', rm_dead_hint: 'تمت تسوية نتيجتك. تبدأ الجولة التالية بعد أن ينتهي الجميع ويؤكدوا.', rm_all_done_hint: 'انتهى الجميع. أكّد للمتابعة؛ تبدأ الجولة التالية عندما يؤكد الجميع.', rm_sync: 'جارٍ المزامنة…' },
+};
+const t = (key, vars) => {
+  if (!(key in NEW.zh)) return t0(key, vars);
+  let s = (NEW[getLang()] || NEW.zh)[key] ?? NEW.en[key];
+  if (vars) for (const k of Object.keys(vars)) s = s.split('{' + k + '}').join(vars[k]);
+  return s;
+};
 
 const MAX = 8;
 const ALPHA = /[^A-HJ-NP-Z2-9]/g;
@@ -38,7 +51,8 @@ export class Room {
     this.myScore = null;
     this.pending = null;     // 待交的成绩（交失败时保留，可重试）
     this.round = 1;          // 我正在玩 / 刚玩完的是第几局
-    this.newer = null;       // 别人在同一房间开了更新的一局时，存放那一局的房间信息
+    this.newer = null;       // 房间翻到了更新的一局（所有人都确认后）时，存放那一局的房间信息
+    this.myReady = false;    // 我是否已点“确认下一局”
     this._build();
     game.onMatchOver = (r) => this._finished(r);
     window.addEventListener('hashchange', () => this._checkLink());
@@ -144,7 +158,7 @@ export class Room {
       let right;
       if (mode === 'result') {
         if (p.score !== null && p.score !== prev) { rank = i + 1; prev = p.score; }
-        right = p.score === null ? `<em>${escapeHtml(t('rm_waiting'))}</em>` : `<b>${p.score}</b>`;
+        right = p.score === null ? `<em>${escapeHtml(t('rm_waiting'))}</em>` : `${p.ready ? `<small class="rm-ready">✅ ${escapeHtml(t('rm_ready_tag'))}</small> ` : ''}<b>${p.score}</b>`;
       } else right = p.score === null ? '' : `<b>${p.score}</b>`;
       const lead = mode === 'result' ? `<span class="rk">${p.score === null ? '–' : rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : rank}</span>` : '';
       return `<li class="${p.id === me ? 'me' : ''}">${lead}<span class="av" style="background:${escapeHtml(p.color)}">${escapeHtml(p.avatar)}</span><span class="nm">${escapeHtml(p.nickname)}${p.id === me ? ' <small>(' + escapeHtml(t('rm_you')) + ')</small>' : ''}</span>${right}</li>`;
@@ -194,7 +208,7 @@ export class Room {
   _start() {
     this._stopPoll();
     this._hide();
-    this.phase = 'playing'; this.myScore = null; this.pending = null; this.newer = null;
+    this.phase = 'playing'; this.myScore = null; this.pending = null; this.newer = null; this.myReady = false;
     this.round = this.room.round;
     this.chip.textContent = t('rm_chip', { code: this.room.code }) + ' · ' + t('rm_round', { n: this.round });
     this.chip.classList.remove('hidden');
@@ -202,8 +216,8 @@ export class Room {
   }
 
   /* ---------- 结果 ---------- */
-  async _finished({ code, score, record }) {
-    this.phase = 'result'; this.myScore = score; this.record = !!record; this.pending = { code, score, round: this.round };
+  async _finished({ code, score }) {
+    this.phase = 'result'; this.myScore = score; this.pending = { code, score, round: this.round };
     this.chip.classList.add('hidden');
     this._result();
     await this._submit();
@@ -234,12 +248,12 @@ export class Room {
     this.body.innerHTML = `
       <h2>${escapeHtml(t('rm_result'))} <small>${escapeHtml(t('rm_round', { n: this.round }))}</small></h2>
       <p class="room-label">${escapeHtml(t('rm_code_label'))} <b>${escapeHtml(this.room.code)}</b></p>
-      ${this.record ? `<div class="record">${escapeHtml(t('new_record'))}</div>` : ''}
       <div class="over-score">${this.myScore}</div>
       <p class="room-verdict" id="roomVerdict"></p>
       <div id="roomPlayers"></div>
       <div class="btn-row"><button type="button" class="btn" data-act="retry-submit" id="roomRetry" hidden>${escapeHtml(t('rm_retry'))}</button><button type="button" class="btn" data-act="copy">${escapeHtml(t('rm_copy_link'))}</button></div>
-      <button type="button" class="btn primary big" data-act="again" id="roomAgain">${escapeHtml(t('rm_again'))}</button>
+      <p class="room-hint" id="roomHint"></p>
+      <button type="button" class="btn primary big" data-act="again" id="roomAgain" disabled>${escapeHtml(t('rm_wait_others'))}</button>
       <button type="button" class="link-btn" data-act="home">${escapeHtml(t('rm_home'))}</button>
       <p class="room-msg" id="roomMsg" role="status" aria-live="polite"></p>`;
     this._paintResult(false);
@@ -248,15 +262,27 @@ export class Room {
 
   _paintResult(failed) {
     if (this.phase !== 'result' || !$('roomPlayers')) return;
+    if (this.newer) { this._joinNewer(); return; }   // 房间翻篇只会发生在所有人都确认之后 → 自动进入新的一局
     const me = Storage.getPlayer().id;
     // 我的成绩如果还没交上去，先在本地补上，列表里也能看到自己
     const players = this.room.players.map((p) => (p.id === me && p.score === null && this.myScore !== null ? { ...p, score: this.myScore } : p));
     const room = { ...this.room, players };
     $('roomPlayers').innerHTML = this._playersHtml(room, 'result');
     $('roomRetry').hidden = !failed;
-    const again = $('roomAgain');
-    if (again) { again.textContent = this.newer ? t('rm_join_next', { n: this.newer.round }) : t('rm_again'); again.classList.toggle('pulse', !!this.newer); }
     const done = players.filter((p) => p.score !== null);
+    // 开新局的条件：所有人都结算了（含我的成绩已经交到服务器），然后每个人都点确认
+    const allDone = !this.pending && done.length === players.length;
+    const mine = this.room.players.find((p) => p.id === me);
+    const ready = this.myReady || !!(mine && mine.ready);
+    const readyN = players.filter((p) => p.ready || (p.id === me && ready)).length;
+    const again = $('roomAgain'), hint = $('roomHint');
+    if (again) {
+      if (!allDone) { again.disabled = true; again.textContent = t('rm_wait_others'); again.classList.remove('pulse'); }
+      else if (!ready) { again.disabled = false; again.textContent = t('rm_confirm_next'); again.classList.add('pulse'); }
+      else { again.disabled = true; again.textContent = t('rm_wait_ready', { n: readyN, m: players.length }); again.classList.remove('pulse'); }
+      again.style.opacity = again.disabled ? '.6' : '';
+    }
+    if (hint) hint.textContent = players.length < 2 ? '' : allDone ? (ready ? '' : t('rm_all_done_hint')) : t('rm_dead_hint');
     const best = Math.max(...done.map((p) => p.score));
     const ahead = done.filter((p) => p.score > this.myScore).length;
     const tied = done.filter((p) => p.id !== me && p.score === this.myScore).length;
@@ -266,15 +292,31 @@ export class Room {
     else v.textContent = ahead === 0 ? (tied ? t('rm_tie') : t('rm_win')) : t('rm_lose', { n: ahead + 1 });
   }
 
-  /* ---------- 同一个房间再来一局 ---------- */
-  async _rematch() {
-    this._msg(t('rm_loading'));
+  /* ---------- 同一个房间再来一局：所有人都结算 + 所有人都确认，服务器才翻到下一局 ---------- */
+  async _confirmNext() {
+    if (this.newer) { this._joinNewer(); return; }
+    if (this.pending || this.myReady) return;
+    this._msg(t('rm_sync'));
     try {
-      let room = this.newer;                                            // 别人已经开了新的一局：直接加入
-      if (!room) room = (await api('/api/room/rematch', { code: this.room.code, round: this.round })).room;
-      this._stopPoll();
-      this.room = room; this._start();
-    } catch (e) { this._msg(this._err(e)); }
+      const j = await api('/api/room/ready', { code: this.room.code, round: this.round });
+      this.myReady = true; this._msg('');
+      if (j.room.round > this.round) { this.newer = j.room; this._joinNewer(); }   // 我是最后一个确认的
+      else { this.room = j.room; this._paintResult(false); }
+    } catch (e) {
+      if (e.code === 'not_finished') { this._msg(''); this._paintResult(true); }
+      else this._msg(this._err(e));
+    }
+  }
+
+  _joinNewer() {
+    if (!this.newer) return;
+    this._stopPoll();
+    this.room = this.newer; this._start();
+  }
+
+  _leaveRoom() {   // 通知服务器我走了，其他人就不用再等我
+    const code = this.room && this.room.code;
+    if (code) api('/api/room/leave', { code }).catch(() => {});
   }
 
   /* ---------- 点击事件 ---------- */
@@ -287,10 +329,10 @@ export class Room {
     else if (a === 'join-code') this._join(b.dataset.code);
     else if (a === 'close') this.close();
     else if (a === 'start') this._start();
-    else if (a === 'leave') { this._stopPoll(); this.room = null; this.phase = 'idle'; this._hide(); }
+    else if (a === 'leave') { this._stopPoll(); if (this.phase === 'lobby') this._leaveRoom(); this.room = null; this.phase = 'idle'; this._hide(); }
     else if (a === 'retry-submit') this._submit();
-    else if (a === 'again') this._rematch();
-    else if (a === 'home') { this._stopPoll(); this.game.leaveMatch(); this.room = null; this.phase = 'idle'; this._hide(); }
+    else if (a === 'again') this._confirmNext();
+    else if (a === 'home') { this._stopPoll(); this._leaveRoom(); this.game.leaveMatch(); this.room = null; this.phase = 'idle'; this._hide(); }
     else if (a === 'copy' || a === 'share') {
       const link = this._link(this.room.code);
       if (a === 'share' && navigator.share) { try { await navigator.share({ title: t('rm_title'), text: t('rm_share_text', { code: this.room.code }), url: link }); } catch (er) { /* 取消分享 */ } return; }
