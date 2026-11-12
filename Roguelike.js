@@ -86,6 +86,24 @@ export const BUFFS = [
 ];
 
 export const BUFF_BY_ID = Object.fromEntries(BUFFS.map((b) => [b.id, b]));
+/** 联动（觉醒）：凑齐指定 Buff（或同流派 3 张不同的）就质变。数值全在这里和使用处的注释里。 */
+const S = (id, icon, name, desc, extra) => ({ id, icon, name, desc, ...extra });
+export const SYNERGIES = [
+  S('shieldloop', '🔁', tri('无限护盾', 'Shield Loop', 'حلقة الدرع'), tri('吸血易拉罐改为每 3 次连续 Perfect 回 1 护盾（原来 5 次）', 'Vampire Can restores a shield every 3 perfects (was 5)', 'مصاصة الدماء تعيد درعاً كل 3 هبوطات مثالية'), { need: ['BUFF_02', 'BUFF_05'] }),
+  S('compound', '🏦', tri('复利', 'Compound Interest', 'فائدة مركبة'), tri('滚雪球每 5 秒 +1（原来 10 秒）', 'Snowball adds +1 every 5s (was 10s)', 'كرة الثلج +1 كل 5 ثوانٍ'), { need: ['BUFF_10', 'BUFF_13'] }),
+  S('rocket2', '🛰️', tri('超载火箭', 'Overload Rocket', 'صاروخ زائد'), tri('火箭推力触发率 10% → 30%', 'Rocket Thrust chance 10% → 30%', 'احتمال الصاروخ 30%'), { need: ['BUFF_12', 'BUFF_15'] }),
+  S('sniper', '🎯', tri('神射手', 'Sharpshooter', 'القناص'), tri('靶心暴击 ×5 → ×8，边缘不再减半', 'Bullseye ×5 → ×8 and edges no longer halve', 'الإصابة ×8 والحواف بلا تقليل'), { need: ['BUFF_09', 'BUFF_11'] }),
+  S('maglev', '🧲', tri('磁悬浮', 'Maglev', 'الرفع المغناطيسي'), tri('羽毛缓降的空中修正 35% → 70%（范围更大），Perfect 判定再 +15%', 'Feather Fall corrects 70% (wider range) and Perfect zone +15%', 'تصحيح الهواء 70% ومنطقة المثالي +15%'), { need: ['BUFF_01', 'BUFF_03'] }),
+  S('barrage', '🔫', tri('弹幕', 'Barrage', 'وابل'), tri('自动炮塔每 2 秒一发；连击炮最多存 5 发', 'Turret fires every 2s; Combo Cannon stores up to 5', 'البرج كل ثانيتين والمدفع 5 طلقات'), { need: ['BUFF_33', 'BUFF_34'] }),
+  S('unbreak', '🔰', tri('不破之盾', 'Unbreakable', 'لا ينكسر'), tri('硬化罐壳每 2 层就恢复（原来 5 层）', 'Hardened Shell recharges every 2 floors (was 5)', 'الغلاف يُشحن كل طابقين'), { need: ['BUFF_31', 'BUFF_35'] }),
+  S('hunter', '☠️', tri('赏金风暴', 'Bounty Storm', 'عاصفة الجوائز'), tri('击落敌人得分 ×3 → ×5，冲击波半径 +1.5 格', 'Kill score ×3 → ×5 and shockwave radius +1.5', 'نقاط الإسقاط ×5 ونصف قطر الموجة +1.5'), { need: ['BUFF_36', 'BUFF_32'] }),
+  S('fortress', '🏰', tri('铜墙铁壁', 'Fortress', 'حصن'), tri('集齐 3 张生存流：每 5 层送 1 护盾，Perfect 范围 +10%', '3 Survival cards: +1 shield every 5 floors, Perfect zone +10%', '3 بطاقات بقاء: درع كل 5 طوابق'), { cat: 'survive', n: 3 }),
+  S('grand', '💎', tri('满贯', 'Grand Slam', 'الضربة الكبرى'), tri('集齐 3 张暴击得分流：所有落地得分 ×1.5，Perfect 额外 +10 能量', '3 Crit cards: all landings ×1.5, perfects give +10 energy', '3 بطاقات نقاط: كل هبوط ×1.5'), { cat: 'crit', n: 3 }),
+  S('chaosrain', '🎲', tri('混沌宝箱雨', 'Chaos Rain', 'مطر الفوضى'), tri('集齐 3 张混沌流：每次落地 20% 凭空开一个宝箱奖励', '3 Chaos cards: every landing has a 20% chance to open a free chest', '3 بطاقات فوضى: 20% صندوق مجاني'), { cat: 'chaos', n: 3 }),
+  S('warmachine', '⚔️', tri('战争机器', 'War Machine', 'آلة الحرب'), tri('集齐 3 张反击流：击落敌人 +15 能量，爆发后额外送 1 层罐壳', '3 Counter cards: kills give +15 energy', '3 بطاقات هجوم: +15 طاقة لكل إسقاط'), { cat: 'counter', n: 3 }),
+];
+export const SYN_BY_ID = Object.fromEntries(SYNERGIES.map((x) => [x.id, x]));
+
 export const RUN_POOL = BUFFS.filter((b) => b.pool === 'run');
 export const VIP_BUFFS = BUFFS.filter((b) => b.pool === 'vip');
 
@@ -114,6 +132,17 @@ export const HZ = {
 };
 
 const TXT = {
+  synAwake: tri('✨ 觉醒：{icon}{name}！{desc}', '✨ Awakened: {icon}{name}! {desc}', '✨ استيقظ: {icon}{name}! {desc}'),
+  synHint: tri('🔗 {left}：{icon}{name}', '🔗 {left}: {icon}{name}', '🔗 {left}: {icon}{name}'),
+  synNow: tri('拿它立刻觉醒', 'awakens now', 'يوقظ الآن'),
+  synMore: tri('再差 {n} 张', '{n} more to go', 'بقي {n}'),
+  codexBtn: tri('📖 图鉴', '📖 Codex', '📖 الدليل'),
+  codexTitle: tri('📖 图鉴', '📖 Codex', '📖 الدليل'),
+  codexBuffs: tri('Buff（{a}/{b}）', 'Buffs ({a}/{b})', 'الميزات ({a}/{b})'),
+  codexSyns: tri('联动觉醒（{a}/{b}）', 'Synergies ({a}/{b})', 'الترابطات ({a}/{b})'),
+  codexHidden: tri('？？？还没有遇到', '??? not found yet', '؟؟؟ لم يُكتشف'),
+  codexSynHidden: tri('？？？ 凑齐对应 Buff 觉醒', '??? awaken it by collecting the right buffs', '؟؟؟'),
+  synHud: tri('联动', 'Synergy', 'ترابط'),
   pick: tri('第 {n} 层 · 选一个 Buff', 'Floor {n} · pick a buff', 'الطابق {n} · اختر ميزة'),
   reroll: tri('🧰 刷新重抽（无限）', '🧰 Reroll (unlimited)', '🧰 إعادة السحب (بلا حدود)'),
   title: tri('Roguelike 模式', 'Roguelike mode', 'وضع Roguelike'),
@@ -218,12 +247,37 @@ export class RunState {
     this.beat10 = false;
     this.feverStreak = 0; this.rushes = 0; this.fevers = 0; this.contract = null; this.contracts = 0;   // 极速连跳 / 狂暴 / 恶魔契约
     this.energy = 0; this.grazes = 0; this.chests = 0; this.waves = 0; this.waveLeft = 0; this.waveHit = false;   // 主动玩法：能量 / 擦弹 / 宝箱 / 敌潮
+    this.syns = {};           // 已觉醒的联动
     this.kills = 0; this.ammo = 0; this.armor = 0; this.turretT = 0; this.seenEnemies = {};   // 敌人 / 反击流
     if (this.vip) this.shield += 1;     // BUFF_23 黄金护甲
   }
 
   has(id) { return !!this.buffs[id]; }
   count(id) { return this.buffs[id] || 0; }
+  syn(id) { return !!this.syns[id]; }
+  /** 某个联动还差几张：-1 = 已觉醒 */
+  _synLeft(sy) {
+    if (this.syns[sy.id]) return -1;
+    if (sy.need) return sy.need.filter((id) => !this.buffs[id]).length;
+    return Math.max(0, sy.n - Object.keys(this.buffs).filter((id) => BUFF_BY_ID[id] && BUFF_BY_ID[id].cat === sy.cat).length);
+  }
+  /** 选完卡后检查：返回这次新觉醒的联动 */
+  checkSyn() {
+    const out = [];
+    for (const sy of SYNERGIES) if (this._synLeft(sy) === 0) { this.syns[sy.id] = 1; out.push(sy); }
+    return out;
+  }
+  /** 这张卡会推进 / 完成哪些联动：[{ s, left }]，left = 拿了它之后还差几张（0 = 马上觉醒） */
+  hintFor(buffId) {
+    const b = BUFF_BY_ID[buffId], out = [];
+    if (!b) return out;
+    for (const sy of SYNERGIES) {
+      if (this.syns[sy.id]) continue;
+      if (sy.need && sy.need.includes(buffId) && !this.buffs[buffId]) out.push({ s: sy, left: this._synLeft(sy) - 1 });
+      else if (sy.cat && sy.cat === b.cat && !this.buffs[buffId]) out.push({ s: sy, left: this._synLeft(sy) - 1 });
+    }
+    return out;
+  }
   vipHas(n) { return this.vip && n >= 23 && n <= 30; }   // 8 个 VIP 被动开局全部生效
 
   /** 记录选中的 Buff；立刻生效的效果由 Game 在选完后处理 */
@@ -244,13 +298,19 @@ export class RunState {
       const cs = RUN_POOL.filter((b) => b.cat === 'counter' && (b.repeat || !this.buffs[b.id]) && !exclude.includes(b.id));
       if (cs.length) out[out.length - 1] = cs[Math.floor(Math.random() * cs.length)];
     }
+    // 联动诱饵：如果有卡能让某个联动马上觉醒，65% 的概率保证它出现在候选里（让玩家有“差一张”的期待）
+    if (out.length === n) {
+      const done = (b) => this.hintFor(b.id).some((h) => h.left === 0 && h.s.need);
+      const pool2 = RUN_POOL.filter((b) => (b.repeat || !this.buffs[b.id]) && !exclude.includes(b.id) && !out.includes(b) && done(b));
+      if (pool2.length && !out.some(done) && Math.random() < 0.65) out[Math.floor(Math.random() * n)] = pool2[Math.floor(Math.random() * pool2.length)];
+    }
     return out;
   }
 
   /** 叠加到罐子能力表上的数值（判定范围、蓄力速度、先知之眼） */
   perkMods() {
     return {
-      perfectMul: this.has('BUFF_01') ? 1.25 : 1,
+      perfectMul: (this.has('BUFF_01') ? 1.25 : 1) * (this.syn('maglev') ? 1.15 : 1) * (this.syn('fortress') ? 1.1 : 1),
       chargeMul: (this.has('BUFF_12') ? 1.5 : 1) * ((this.contract && this.contract.chargeMul) || 1),
     };
   }
@@ -260,7 +320,8 @@ export class RunState {
   gain(base, { perfect, combo, diamond, quantum, invisible }) {
     let g = base + this.bonusBase;
     if (this.has('BUFF_09') && perfect) g *= combo >= 4 ? 3 : combo === 3 ? 2 : combo === 2 ? 1.5 : 1;
-    if (this.has('BUFF_11')) g *= perfect ? 5 : 0.5;
+    if (this.has('BUFF_11')) g *= perfect ? (this.syn('sniper') ? 8 : 5) : (this.syn('sniper') ? 1 : 0.5);
+    if (this.syn('grand')) g *= 1.5;
     if (this.has('BUFF_10')) g *= 2;
     if (diamond) g *= 2;
     if (quantum) g *= 3;

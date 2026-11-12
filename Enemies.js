@@ -13,7 +13,7 @@
 import * as THREE from 'three';
 import { CONFIG } from './config.js?v=20261114a';
 import { L } from './i18n.js?v=20261114a';
-import { rt } from './Roguelike.js?v=20261116r';
+import { rt } from './Roguelike.js?v=20261117r';
 import { playSfx } from './SkinAudio.js?v=20261114a';
 
 const tri = (zh, en, ar) => ({ zh, en, ar });
@@ -382,12 +382,12 @@ export class Enemies {
   _kill(e, byWave) {
     if (!this.list.includes(e)) return;
     const g = this.g, rg = g.rogue;
-    const pts = ENEMY.killScore(rg.layers) * (rg.has('BUFF_36') ? 3 : 1);
+    const pts = ENEMY.killScore(rg.layers) * (rg.has('BUFF_36') ? (rg.syn('hunter') ? 5 : 3) : 1);
     g.score += pts; g.ui.setScore(g.score);
     const sp = g._toScreen(e.pos, 0.4); g.ui.popScore(`${e.K.icon} +${pts}`, sp.x, sp.y, true);
     this._boom(e.pos.x, e.pos.y, e.pos.z, 0xffd24a);
     playSfx(g.sound, 'tock', 1, 1.5);
-    rg.kills++; g.addEnergy(10);
+    rg.kills++; g.addEnergy(rg.syn('warmachine') ? 25 : 10);
     if (rg.has('BUFF_36') && rg.kills % 5 === 0) { rg.shield++; g.ui.toast(rt('bounty')); }
     this._remove(e, true);
     g._rogueBestCheck();
@@ -406,8 +406,9 @@ export class Enemies {
   }
   _autoFire(dt, rg) {
     if (rg.has('BUFF_34')) {                                             // 自动炮塔：每 4 秒一发
-      rg.turretT = Math.min(ENEMY.turretEvery, rg.turretT + dt);
-      if (rg.turretT >= ENEMY.turretEvery) { const e = this._nearest(); if (e) { rg.turretT = 0; this._fire(e); } }
+      const te = rg.syn('barrage') ? 2 : ENEMY.turretEvery;
+      rg.turretT = Math.min(te, rg.turretT + dt);
+      if (rg.turretT >= te) { const e = this._nearest(); if (e) { rg.turretT = 0; this._fire(e); } }
     }
     if (rg.ammo > 0) { const e = this._nearest(); if (e) { rg.ammo--; this._fire(e); this.g.rogueUI.refresh(rg); } }   // 连击炮：有弹药就打
   }

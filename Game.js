@@ -4,7 +4,7 @@ import { CONFIG } from './config.js?v=20261114a';
 import { Storage } from './Storage.js?v=20261114a';
 import { Tweens, clamp, Ease } from './utils.js?v=20261114a';
 import { SkinManager } from './SkinManager.js?v=20261114a';
-import { BlockManager } from './BlockManager.js?v=20261116r';
+import { BlockManager } from './BlockManager.js?v=20261117r';
 import { Player } from './Player.js?v=20261114a';
 import { UIManager } from './UIManager.js?v=20261114a';
 import { Sound } from './Sound.js?v=20261114a';
@@ -14,9 +14,10 @@ import { getSignature, RARITY } from './canSignature.js?v=20261114a';
 import { PLAYER_SKINS } from './SkinManager.js?v=20261114a';
 import { Music, playSfx } from './SkinAudio.js?v=20261114a';
 import { SignatureFX } from './SignatureFX.js?v=20261114a';
-import { RunState, rt, chargeTimeFor, HZ, RUSH, FEVER, CONTRACTS, CONTRACT_BY_ID } from './Roguelike.js?v=20261116r';
+import { RunState, rt, chargeTimeFor, HZ, RUSH, FEVER, CONTRACTS, CONTRACT_BY_ID, SYN_BY_ID } from './Roguelike.js?v=20261117r';
 import { fetchTop } from './Leaderboard.js?v=20261114a';
-import { Enemies, ENEMY, KINDS } from './Enemies.js?v=20261116r';
+import { Codex } from './Codex.js?v=20261117r';
+import { Enemies, ENEMY, KINDS } from './Enemies.js?v=20261117r';
 import { stairParams, STAND_HZ, STAIR, HZT } from './Staircase.js?v=20261114a';
 const hz = (b, k) => !!(b && b.hzs && b.hzs.includes(k));      // 方块是否带某个机制
 
@@ -233,13 +234,13 @@ export class Game {
     const dd = rg && hz(next, 'blackhole') ? dist * HZT.blackhole : dist;      // 黑洞吸附：把跳跃吸短
     let lx = p.x + dx * dd, lz = p.z + dz * dd;
     if (rg) {
-      if (rg.has('BUFF_15') && Math.random() < 0.1) { lx = next.x; lz = next.z; rocket = true; this.ui.toast(rt('rocket')); }   // 火箭推力：直达正中心
+      if (rg.has('BUFF_15') && Math.random() < (rg.syn('rocket2') ? 0.3 : 0.1)) { lx = next.x; lz = next.z; rocket = true; this.ui.toast(rt('rocket')); }   // 火箭推力：直达正中心
       if (!rocket) {
         const w = rg.wind || 0;
         if (w) { lx += -dz * w; lz += dx * w; }
         if (rg.hazWind) { lx += dx * rg.hazWind; lz += dz * rg.hazWind; }       // 强风方块：顺风 / 逆风，落点被推远或拉近（可以靠少蓄 / 多蓄力来补偿）
         if (hz(next, 'icy')) { lx += dx * HZT.icy; lz += dz * HZT.icy; }                                        // 冰霜滑行：落地多滑一段                                                              // 气流干扰：侧风把落点吹偏
-        if (rg.has('BUFF_03')) { const ex = next.x - lx, ez = next.z - lz; if (Math.hypot(ex, ez) < 1.2) { lx += ex * 0.35; lz += ez * 0.35; } }   // 羽毛缓降：空中微调
+        if (rg.has('BUFF_03')) { const ex = next.x - lx, ez = next.z - lz; const mg = rg.syn('maglev'); if (Math.hypot(ex, ez) < (mg ? 2.0 : 1.2)) { lx += ex * (mg ? 0.7 : 0.35); lz += ez * (mg ? 0.7 : 0.35); } }   // 羽毛缓降：空中微调
       }
     }
     const top = CONFIG.BLOCK_HEIGHT;
@@ -601,7 +602,8 @@ export class Game {
     this._sinkTick(dt);
     if (rg.has('BUFF_13')) {
       rg.snowT += dt;
-      if (rg.snowT >= 10) { rg.snowT -= 10; rg.bonusBase += 1; this.ui.toast(rt('snow', { n: rg.bonusBase })); this.rogueUI.refresh(rg); }
+      const snowP = rg.syn('compound') ? 5 : 10;
+      if (rg.snowT >= snowP) { rg.snowT -= snowP; rg.bonusBase += 1; this.ui.toast(rt('snow', { n: rg.bonusBase })); this.rogueUI.refresh(rg); }
     }
   }
 
@@ -612,7 +614,7 @@ export class Game {
     if (rg.contract && --rg.contract.left <= 0) { rg.contract = null; this._refreshPerk(); this.ui.toast(rt('contractEnd'), 1800); }
     if (MILESTONES.includes(rg.layers)) { this.ui.toast(rt('milestone', { n: rg.layers }), 2200); this.rogueUI.flash(); playSfx(this.sound, 'icechime', 1, 1); }
     if (rg.layers % 10 === 0) rg.wavePending = true;     // 每 10 层一波敌潮（落地后、下一次等待起跳时刷出）
-    if (perfect && rg.has('BUFF_05') && this.combo > 0 && this.combo % 5 === 0) { rg.shield++; this.ui.toast(rt('vamp')); }   // 吸血易拉罐
+    if (perfect && rg.has('BUFF_05') && this.combo > 0 && this.combo % (rg.syn('shieldloop') ? 3 : 5) === 0) { rg.shield++; this.ui.toast(rt('vamp')); }   // 吸血易拉罐
     if (rg.has('BUFF_06') && Math.floor(this.score / 50) > Math.floor(before / 50)) { this.blocks.nearNext = true; this.ui.toast(rt('airbag')); }   // 安全气囊
     if (rg.vip && perfect) {
       const g = getSignature('gold'), sp = this._toScreen(this.player.root.position, 0);
@@ -626,9 +628,12 @@ export class Game {
         this.ui.toast(rt('resonance'));
       }
     }
-    if (rg.has('BUFF_32') && this.enemies) this.enemies.shockwave(perfect ? ENEMY.wave[1] : ENEMY.wave[0]);       // 落地冲击波
-    if (rg.has('BUFF_33') && perfect && this.combo > 0 && this.combo % ENEMY.cannonEvery === 0 && rg.ammo < ENEMY.cannonMax) { rg.ammo++; this.ui.toast(rt('cannon', { n: rg.ammo })); }   // 连击炮装填
-    if (rg.has('BUFF_35') && rg.layers % 5 === 0 && !rg.armor) { rg.armor = 1; this.ui.toast(rt('armorBack')); }   // 硬化罐壳恢复
+    if (rg.has('BUFF_32') && this.enemies) this.enemies.shockwave((perfect ? ENEMY.wave[1] : ENEMY.wave[0]) + (rg.syn('hunter') ? 1.5 : 0));       // 落地冲击波
+    if (rg.has('BUFF_33') && perfect && this.combo > 0 && this.combo % ENEMY.cannonEvery === 0 && rg.ammo < (rg.syn('barrage') ? 5 : ENEMY.cannonMax)) { rg.ammo++; this.ui.toast(rt('cannon', { n: rg.ammo })); }   // 连击炮装填
+    if (rg.has('BUFF_35') && rg.layers % (rg.syn('unbreak') ? 2 : 5) === 0 && !rg.armor) { rg.armor = 1; this.ui.toast(rt('armorBack')); }   // 硬化罐壳恢复
+    if (rg.syn('fortress') && rg.layers % 5 === 0) { rg.shield++; this.ui.toast('🏰 +🛡️', 1400); }     // 联动：铜墙铁壁
+    if (rg.syn('grand') && perfect) this.addEnergy(10);                                                  // 联动：满贯
+    if (rg.syn('chaosrain') && Math.random() < 0.2) this._chestReward();                                 // 联动：混沌宝箱雨
     if (rg.mirrorLeft > 0 && --rg.mirrorLeft === 0) { this._setMirror(false); this.ui.toast(rt('mirrorEnd')); }
     if (rg.vip && rg.target10 != null && !rg.beat10 && this.score > rg.target10) { rg.beat10 = true; this.ui.toast(rt('beat')); }
     this.rogueUI.refresh(rg);
@@ -817,7 +822,7 @@ export class Game {
 
   _roguePick(id) {
     const rg = this.rogue; if (!rg || this.state !== 'choosing') return;
-    rg.take(id);
+    rg.take(id); Codex.took(id);
     if (id === 'BUFF_07') { this.blocks.sizeBoostLeft = 10; this.ui.toast(rt('wall')); }
     else if (id === 'BUFF_14') { this.blocks.diamondLeft = 4; this.blocks.markDiamond(this.blocks.next); this.ui.toast(rt('diamond')); }
     else if (id === 'BUFF_16') { this.blocks.offsetNext(0.2); this._updateCamGoal(); this.ui.toast(rt('quantum')); }
@@ -827,6 +832,12 @@ export class Game {
       else { this.combo = 0; this.ui.setCombo(0); this._comboFx(); this.ui.toast(rt('coinLose')); }
     } else if (id === 'BUFF_22') { rg.mirrorLeft = 10; this._setMirror(true); this.ui.toast(rt('mirror')); }
     this._refreshPerk();
+    for (const sy of rg.checkSyn()) {                                      // 联动觉醒
+      Codex.awaken(sy.id);
+      this.ui.toast(rt('synAwake', { icon: sy.icon, name: L(sy.name), desc: L(sy.desc) }), 4200);
+      this.rogueUI.flash(); this.addEnergy(25);
+      playSfx(this.sound, 'icechime', 1, 1.1);
+    }
     this.state = 'ready';
     this._rogueReady();
     this._updatePerkHud();

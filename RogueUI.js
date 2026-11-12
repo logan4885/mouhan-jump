@@ -1,7 +1,8 @@
 // Roguelike 模式的界面：入口说明、三选一抽卡、局内 Buff 栏、先知之眼标记、各种全屏闪光
 import { t, L } from './i18n.js?v=20261114a';
 import { escapeHtml } from './utils.js?v=20261114a';
-import { BUFF_BY_ID, CATS, VIP_BUFFS, HZ, rt } from './Roguelike.js?v=20261116r';
+import { BUFF_BY_ID, CATS, VIP_BUFFS, HZ, rt, RUN_POOL, SYNERGIES, SYN_BY_ID } from './Roguelike.js?v=20261117r';
+import { Codex } from './Codex.js?v=20261117r';
 
 const $ = (id) => document.getElementById(id);
 
@@ -23,6 +24,9 @@ export class RogueUI {
       <div class="modal-wrap hidden" id="rgIntro" role="dialog" aria-modal="true">
         <div class="modal rg-intro"><button class="close" data-rgclose aria-label="Close">✕</button><div id="rgIntroBody"></div></div>
       </div>
+      <div class="modal-wrap hidden" id="rgCodex" role="dialog" aria-modal="true">
+        <div class="modal rg-intro"><button class="close" data-cxclose aria-label="Close">✕</button><div id="rgCodexBody"></div></div>
+      </div>
       <div class="modal-wrap hidden" id="rgModal" role="dialog" aria-modal="true">
         <div class="modal rgpick"><h2 id="rgPickTitle"></h2><div class="rg-cards" id="rgCards"></div><button type="button" class="btn rg-reroll hidden" id="rgReroll"></button></div>
       </div>`);
@@ -37,8 +41,10 @@ export class RogueUI {
     $('rgIntro').addEventListener('click', (e) => {
       if (e.target === $('rgIntro') || e.target.closest('[data-rgclose]')) $('rgIntro').classList.add('hidden');
       else if (e.target.closest('#rgRank')) { $('rgIntro').classList.add('hidden'); this.game.ui.openRank('rogue'); }
+      else if (e.target.closest('#rgCodexBtn')) { this.openCodex(); }
       else if (e.target.closest('#rgGo')) { $('rgIntro').classList.add('hidden'); this.game.enterRogue(); }
     });
+    $('rgCodex').addEventListener('click', (e) => { if (e.target === $('rgCodex') || e.target.closest('[data-cxclose]')) $('rgCodex').classList.add('hidden'); });
     $('rgCards').addEventListener('click', (e) => { const c = e.target.closest('[data-id]'); if (c) this._take(c.dataset.id); });
     $('rgReroll').addEventListener('click', () => this._reroll());
     window.addEventListener('keydown', (e) => {
@@ -61,6 +67,13 @@ export class RogueUI {
 body.rg-fever::before{content:"";position:fixed;inset:0;z-index:24;pointer-events:none;box-shadow:inset 0 0 70px 14px rgba(255,61,240,.7),inset 0 0 0 3px rgba(255,61,240,.9);animation:rg-fv .35s ease-in-out infinite alternate}
 @keyframes rg-fv{from{opacity:.5}to{opacity:1}}
 .rg-fever-tag{position:fixed;left:50%;top:calc(64px + env(safe-area-inset-top,0px));transform:translateX(-50%);z-index:31;padding:4px 14px;border-radius:999px;background:linear-gradient(90deg,#ff3df0,#ff9f1c);color:#fff;font:800 15px/1.3 system-ui,sans-serif;letter-spacing:1px;text-shadow:0 1px 3px rgba(0,0,0,.5);box-shadow:0 0 16px rgba(255,61,240,.8);pointer-events:none}
+.rg-syn{display:block;margin-top:4px;font:700 12px/1.3 system-ui,sans-serif;color:#ffd23d}
+.rg-syn.now{color:#ff6bd6;animation:rg-skill-pulse .9s ease-in-out infinite}
+.rg-cx{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px;margin:6px 0 12px;text-align:left}
+.rg-cx div{padding:6px 8px;border-radius:8px;background:rgba(255,255,255,.08);font:600 12px/1.35 system-ui,sans-serif}
+.rg-cx div.off{opacity:.45}
+.rg-cx b{display:block;font-size:13px}
+.rg-chip.synchip{background:#3b1d6b;color:#fff}
 body.rg-rush .charge-track{box-shadow:0 0 0 2px #ffb300,0 0 14px 2px rgba(255,179,0,.85)}
 body.rg-invuln::after{content:"";position:fixed;inset:0;z-index:25;pointer-events:none;box-shadow:inset 0 0 60px 10px rgba(255,228,92,.75);animation:rg-inv 0.6s ease-in-out infinite alternate}
 @keyframes rg-inv{from{opacity:.45}to{opacity:1}}
@@ -97,8 +110,27 @@ body.rg-invuln::after{content:"";position:fixed;inset:0;z-index:25;pointer-event
       <p class="room-intro">${escapeHtml(rt('intro'))}</p>
       <div class="rg-vipbox ${vip ? 'on' : ''}"><div>${vipList}</div><p>${escapeHtml(vip ? rt('vipOn', { n: VIP_BUFFS.length }) : rt('vipOff'))}</p></div>
       <button type="button" class="btn primary big" id="rgGo">${escapeHtml(rt('start'))}</button>
+      <button type="button" class="btn" id="rgCodexBtn">${escapeHtml(rt('codexBtn'))}</button>
       <button type="button" class="btn" id="rgRank">${escapeHtml(rt('rankBtn'))}</button>`;
     $('rgIntro').classList.remove('hidden');
+  }
+
+  /* ---------- 图鉴 ---------- */
+  openCodex() {
+    const buffs = RUN_POOL.map((b) => {
+      const on = Codex.hasBuff(b.id);
+      return `<div class="${on ? '' : 'off'}"><b>${on ? b.icon + ' ' + escapeHtml(L(b.name)) : '❓'}</b>${escapeHtml(on ? L(b.desc) : rt('codexHidden'))}</div>`;
+    }).join('');
+    const syns = SYNERGIES.map((sy) => {
+      const on = Codex.hasSyn(sy.id);
+      const recipe = sy.need ? sy.need.map((id) => BUFF_BY_ID[id].icon).join(' + ') : `${CATS[sy.cat].name ? L(CATS[sy.cat].name) : ''} ×${sy.n}`;
+      return `<div class="${on ? '' : 'off'}"><b>${on ? sy.icon + ' ' + escapeHtml(L(sy.name)) : '❓ ' + escapeHtml(recipe)}</b>${escapeHtml(on ? L(sy.desc) : rt('codexSynHidden'))}</div>`;
+    }).join('');
+    const nb = RUN_POOL.filter((b) => Codex.hasBuff(b.id)).length, ns = SYNERGIES.filter((x) => Codex.hasSyn(x.id)).length;
+    $('rgCodexBody').innerHTML = `<h2>${escapeHtml(rt('codexTitle'))}</h2>
+      <h3>${escapeHtml(rt('codexSyns', { a: ns, b: SYNERGIES.length }))}</h3><div class="rg-cx">${syns}</div>
+      <h3>${escapeHtml(rt('codexBuffs', { a: nb, b: RUN_POOL.length }))}</h3><div class="rg-cx">${buffs}</div>`;
+    $('rgCodex').classList.remove('hidden');
   }
 
   /* ---------- 局内 Buff 栏 ---------- */
@@ -148,6 +180,7 @@ body.rg-invuln::after{content:"";position:fixed;inset:0;z-index:25;pointer-event
     if (rg.grazes > 0) chips.push(`<span class="rg-chip">🌀 ${rg.grazes}</span>`);
     if (rg.rushes > 0) chips.push(`<span class="rg-chip">⚡RUSH ${rg.rushes}</span>`);
     if (rg.contract) chips.push(`<span class="rg-chip" style="background:#5a0010;color:#fff">😈${rg.contract.icon}×${rg.contract.mul} · ${rg.contract.left}</span>`);
+    for (const id of Object.keys(rg.syns || {})) { const sy = SYN_BY_ID[id]; if (sy) chips.push(`<span class="rg-chip synchip" title="${escapeHtml(L(sy.name))}">${sy.icon}${escapeHtml(L(sy.name))}</span>`); }
     if (rg.bonusBase) chips.push(`<span class="rg-chip">📈+${rg.bonusBase}</span>`);
     if (rg.has('BUFF_21')) chips.push(`<span class="rg-chip wind">${escapeHtml(rg.wind === 0 ? '💨 0' : rt(rg.wind < 0 ? 'windL' : 'windR', { n: Math.abs(rg.wind).toFixed(2) }))}</span>`);
     if (rg.vip && rg.target10 != null) chips.push(`<span class="rg-chip">${escapeHtml(rt('target', { n: rg.target10 }))}</span>`);
@@ -170,10 +203,14 @@ body.rg-invuln::after{content:"";position:fixed;inset:0;z-index:25;pointer-event
   }
   _cards(opts) {
     this.opts = opts;
+    const rg = this.game.rogue;
+    for (const b of opts) Codex.seen(b.id);
+    const hintHtml = (b) => (rg && rg.hintFor ? rg.hintFor(b.id) : []).map((h) =>
+      `<span class="rg-syn ${h.left === 0 ? 'now' : ''}">${escapeHtml(rt('synHint', { left: h.left === 0 ? rt('synNow') : rt('synMore', { n: h.left }), icon: h.s.icon, name: L(h.s.name) }))}</span>`).join('');
     $('rgCards').innerHTML = opts.map((b, i) => `
       <button type="button" class="rg-card" data-id="${b.id}" style="--c:${CATS[b.cat].color}">
         <span class="k">${i + 1}</span><span class="ic">${b.icon}</span>
-        <span class="tx"><b>${escapeHtml(L(b.name))}</b><em>${escapeHtml(L(CATS[b.cat].name))}</em><span>${escapeHtml(L(b.desc))}</span></span>
+        <span class="tx"><b>${escapeHtml(L(b.name))}</b><em>${escapeHtml(L(CATS[b.cat].name))}</em><span>${escapeHtml(L(b.desc))}</span>${hintHtml(b)}</span>
       </button>`).join('');
   }
   _reroll() { if (this.pick) { const o = this.pick.rerollFn(); if (o.length) this._cards(o); } }
