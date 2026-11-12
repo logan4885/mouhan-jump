@@ -4,7 +4,7 @@ import { CONFIG } from './config.js?v=20261114a';
 import { Storage } from './Storage.js?v=20261114a';
 import { Tweens, clamp, Ease } from './utils.js?v=20261114a';
 import { SkinManager } from './SkinManager.js?v=20261114a';
-import { BlockManager } from './BlockManager.js?v=20261117r';
+import { BlockManager } from './BlockManager.js?v=20261118r';
 import { Player } from './Player.js?v=20261114a';
 import { UIManager } from './UIManager.js?v=20261114a';
 import { Sound } from './Sound.js?v=20261114a';
@@ -14,10 +14,11 @@ import { getSignature, RARITY } from './canSignature.js?v=20261114a';
 import { PLAYER_SKINS } from './SkinManager.js?v=20261114a';
 import { Music, playSfx } from './SkinAudio.js?v=20261114a';
 import { SignatureFX } from './SignatureFX.js?v=20261114a';
-import { RunState, rt, chargeTimeFor, HZ, RUSH, FEVER, CONTRACTS, CONTRACT_BY_ID, SYN_BY_ID } from './Roguelike.js?v=20261117r';
+import { RunState, rt, chargeTimeFor, HZ, RUSH, FEVER, CONTRACTS, CONTRACT_BY_ID, SYN_BY_ID } from './Roguelike.js?v=20261118r';
 import { fetchTop } from './Leaderboard.js?v=20261114a';
-import { Codex } from './Codex.js?v=20261117r';
-import { Enemies, ENEMY, KINDS } from './Enemies.js?v=20261117r';
+import { Codex } from './Codex.js?v=20261118r';
+import { Earn } from './Earn.js?v=20261118r';
+import { Enemies, ENEMY, KINDS } from './Enemies.js?v=20261118r';
 import { stairParams, STAND_HZ, STAIR, HZT } from './Staircase.js?v=20261114a';
 const hz = (b, k) => !!(b && b.hzs && b.hzs.includes(k));      // 方块是否带某个机制
 
@@ -545,6 +546,7 @@ export class Game {
     Storage.saveStats(stats);
     const unlocked = this.skins.checkUnlocks(this.best);
     this.ui.showGameOver({ score: this.score, best: this.best, record, perfects: this.perfects, unlocked });
+    setTimeout(() => Earn.finish(this, this.score), 900);     // 服务器核对分数后发皮肤（弹窗出来之后再提示）
   }
 
   /* ================= Roguelike 模式 ================= */
@@ -1028,6 +1030,7 @@ export class Game {
     this._endTrial(false);
     this._sinceTrial = 3; this._trialsThisRound = 0;
     this.rogueBestAtStart = this.rogueBest;
+    if (!this.rogueMode && !this.match) Earn.start();     // 靠分数解锁皮肤：开局告诉服务器
     this.ui.setBest(this.rogueMode ? this.rogueBest : this.best);
     this.ui.hideStart();
     this._startMusic();

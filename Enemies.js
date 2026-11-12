@@ -13,7 +13,7 @@
 import * as THREE from 'three';
 import { CONFIG } from './config.js?v=20261114a';
 import { L } from './i18n.js?v=20261114a';
-import { rt } from './Roguelike.js?v=20261117r';
+import { rt } from './Roguelike.js?v=20261118r';
 import { playSfx } from './SkinAudio.js?v=20261114a';
 
 const tri = (zh, en, ar) => ({ zh, en, ar });
