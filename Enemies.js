@@ -13,7 +13,7 @@
 import * as THREE from 'three';
 import { CONFIG } from './config.js?v=20261114a';
 import { L } from './i18n.js?v=20261114a';
-import { rt } from './Roguelike.js?v=20261115r';
+import { rt } from './Roguelike.js?v=20261116r';
 import { playSfx } from './SkinAudio.js?v=20261114a';
 
 const tri = (zh, en, ar) => ({ zh, en, ar });
@@ -74,8 +74,8 @@ export const ENEMY = {
   tierSize: 10,                                                    // 每多少层一档（要和 Staircase 的 STAIR.tierSize 一致）
   firstDelay: 3,                                                   // 第 1 档开始后第一只出现的时间（秒）
   tier: (layers) => Math.floor(layers / 10),
-  interval: (layers) => Math.max(2.4, 7 - (Math.floor(layers / 10) - 1) * 0.5),   // 两次刷怪的间隔（秒）：第 1 档 7 秒 → 逐档缩短到 2.4 秒
-  maxAlive: (layers) => { const t = Math.floor(layers / 10); return t < 3 ? 1 : t < 6 ? 2 : 3; },   // 同时最多几只
+  interval: (layers) => Math.max(1.4, 3.6 - 0.3 * Math.floor(layers / 10)),   // 两次刷怪的间隔（秒）：6 层起 3.6 秒 → 逐档缩短到 1.4 秒
+  maxAlive: (layers) => { const t = Math.floor(layers / 10); return t < 1 ? 1 : t < 3 ? 2 : t < 6 ? 3 : t < 9 ? 4 : 5; },   // 同时最多几只
   warnScale: (layers) => Math.max(0.7, 1 - 0.03 * (Math.floor(layers / 10) - 1)),                  // 预警时间随档位缩短（最短 70%）
   killScore: (layers) => 5 + Math.floor(layers / 10),              // 击落一只得分
   turretEvery: 4,                                                  // 自动炮塔：每几秒一发
@@ -182,7 +182,7 @@ export class Enemies {
   }
 
   /* ---------------- 敌潮：一次来好几只，全部结束且你还活着 → 奖励 ---------------- */
-  waveSize(layers) { return Math.min(4, 1 + Math.floor(layers / 10)); }
+  waveSize(layers) { return Math.min(6, 2 + Math.floor(layers / 10)); }
   spawnWave(n) {
     const rg = this.g.rogue; if (!rg || n <= 0) return;
     rg.waveLeft = n; rg.waveActive = true;

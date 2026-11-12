@@ -4,7 +4,7 @@ import { CONFIG } from './config.js?v=20261114a';
 import { Storage } from './Storage.js?v=20261114a';
 import { Tweens, clamp, Ease } from './utils.js?v=20261114a';
 import { SkinManager } from './SkinManager.js?v=20261114a';
-import { BlockManager } from './BlockManager.js?v=20261115r';
+import { BlockManager } from './BlockManager.js?v=20261116r';
 import { Player } from './Player.js?v=20261114a';
 import { UIManager } from './UIManager.js?v=20261114a';
 import { Sound } from './Sound.js?v=20261114a';
@@ -14,9 +14,9 @@ import { getSignature, RARITY } from './canSignature.js?v=20261114a';
 import { PLAYER_SKINS } from './SkinManager.js?v=20261114a';
 import { Music, playSfx } from './SkinAudio.js?v=20261114a';
 import { SignatureFX } from './SignatureFX.js?v=20261114a';
-import { RunState, rt, chargeTimeFor, HZ, RUSH, FEVER, CONTRACTS, CONTRACT_BY_ID } from './Roguelike.js?v=20261115r';
+import { RunState, rt, chargeTimeFor, HZ, RUSH, FEVER, CONTRACTS, CONTRACT_BY_ID } from './Roguelike.js?v=20261116r';
 import { fetchTop } from './Leaderboard.js?v=20261114a';
-import { Enemies, ENEMY, KINDS } from './Enemies.js?v=20261115r';
+import { Enemies, ENEMY, KINDS } from './Enemies.js?v=20261116r';
 import { stairParams, STAND_HZ, STAIR, HZT } from './Staircase.js?v=20261114a';
 const hz = (b, k) => !!(b && b.hzs && b.hzs.includes(k));      // 方块是否带某个机制
 
