@@ -12,6 +12,10 @@ tr.hid td{opacity:.45;text-decoration:line-through}tr.hid td.act{text-decoration
 .tx{max-width:360px;overflow-wrap:anywhere}.pid{font:12px monospace;color:#777}.rep{color:#d33;font-weight:800}.ban{background:#d33;color:#fff;border-radius:6px;padding:0 5px;font-size:12px}
 #msg{margin:8px 0;font-weight:700;color:#d33;min-height:20px}.act button{margin:2px}
 #waBox{display:none}.wabar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0}.num{font-family:monospace;font-weight:700}
+#plBox{display:none}.plbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0}.plbar input{width:280px}
+#plDetail{display:none;background:#fff;border:2px solid #2b2540;border-radius:12px;padding:12px 14px;margin:0 0 12px}#plDetail h2{font-size:17px;margin:0 0 8px}
+.kv{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:4px 16px;margin:6px 0}.kv span{color:#777}.chip{display:inline-block;background:#efe9ff;border-radius:6px;padding:1px 7px;margin:1px 2px;font-size:13px}
+tr.pl{cursor:pointer}tr.pl:hover td{background:#faf7ff}
 td a{color:#1a7f37;font-weight:700;text-decoration:none}.ok{color:#1a7f37;font-weight:800}input.note{width:130px;padding:4px 6px}
 </style></head><body>
 <h1>💬 留言板 / 📱 WhatsApp 名单管理</h1>
@@ -20,9 +24,13 @@ td a{color:#1a7f37;font-weight:700;text-decoration:none}.ok{color:#1a7f37;font-w
   <input id="api" placeholder="后端地址（自动填，一般不用改）" size="30">
   <button class="p" id="go">查看最近消息</button>
   <button class="p" id="goWa">📱 WhatsApp 名单</button>
+  <button class="p" id="goPl">🔍 玩家查询</button>
   <label><input type="checkbox" id="auto"> 每 5 秒刷新</label>
 </div>
 <div id="msg"></div>
+<div id="plBox"><div class="plbar"><input id="plQ" placeholder="昵称 / 玩家ID（至少4位）/ WhatsApp 号码" maxlength="40"><button class="p" id="plGo">查询</button><span style="color:#777;font-size:13px">最多显示 50 条，点一行看详情。</span></div>
+<div id="plDetail"></div>
+<table><thead><tr><th>玩家</th><th>成绩</th><th>登录 / WhatsApp</th><th>注册 / 最近活跃</th></tr></thead><tbody id="plRows"></tbody></table></div>
 <div id="waBox"><div class="wabar"><b id="waCount"></b><button class="p" id="waCsv">⬇ 下载 CSV</button><button id="waCopy">复制全部号码</button><span style="color:#777;font-size:13px">号码只检查了格式，没有验证码；联系后在"已核对"里打勾。</span></div>
 <table><thead><tr><th>时间</th><th>玩家</th><th>WhatsApp</th><th>语言/区号</th><th>得到的皮肤</th><th>成绩</th><th>核对 / 备注</th><th></th></tr></thead><tbody id="waRows"></tbody></table></div>
 <table id="chatTable"><thead><tr><th>时间</th><th>玩家</th><th>内容</th><th>举报</th><th>操作</th></tr></thead><tbody id="rows"></tbody></table>
@@ -65,7 +73,7 @@ async function loadWa() {
   try {
     sessionStorage.setItem('chatKey', $('key').value); localStorage.setItem('chatApi', $('api').value);
     leads = (await call({ action: 'wa_list' })).leads;
-    $('chatTable').style.display = 'none'; $('waBox').style.display = 'block';
+    $('chatTable').style.display = 'none'; $('plBox').style.display = 'none'; $('waBox').style.display = 'block';
     $('waCount').textContent = '共 ' + leads.length + ' 个号码';
     $('waRows').innerHTML = leads.map((l) => `<tr><td>${new Date(l.ts * 1000).toLocaleString()}</td><td><b>${esc(l.nick || '?')}</b><div class="pid">${l.pid}</div></td>
       <td><span class="num">+${esc(l.phone)}</span><br><a href="https://wa.me/${esc(l.phone)}" target="_blank" rel="noopener">在 WhatsApp 打开 ↗</a></td>
@@ -76,7 +84,7 @@ async function loadWa() {
 }
 $('goWa').onclick = loadWa;
 const origLoad = load;
-$('go').onclick = () => { $('waBox').style.display = 'none'; $('chatTable').style.display = ''; load(); };
+$('go').onclick = () => { $('waBox').style.display = 'none'; $('plBox').style.display = 'none'; $('chatTable').style.display = ''; load(); };
 $('waRows').onchange = async (e) => {
   const id = e.target.dataset.wv || e.target.dataset.wn; if (!id) return;
   const v = document.querySelector(`[data-wv="${id}"]`).checked, n = document.querySelector(`[data-wn="${id}"]`).value;
@@ -97,6 +105,58 @@ $('waCsv').onclick = () => {
 };
 $('waCopy').onclick = async () => { try { await navigator.clipboard.writeText(leads.map((l) => '+' + l.phone).join('\n')); $('msg').textContent = '已复制 ' + leads.length + ' 个号码'; } catch (e) { $('msg').textContent = '复制失败，请用 CSV'; } };
 
-let t = null; $('auto').onchange = () => { clearInterval(t); if ($('auto').checked) t = setInterval(() => { if ($('waBox').style.display !== 'block') load(); }, 5000); };
+/* ---------- 玩家查询 ---------- */
+const fmt = (ts) => ts ? new Date(ts * 1000).toLocaleString() : '-';
+const PN = { google: 'Google', facebook: 'Facebook' };
+const skinName = (k) => String(k).replace(/^(player|block):/, '$1·');
+function showPl() {
+  $('chatTable').style.display = 'none'; $('waBox').style.display = 'none'; $('plBox').style.display = 'block';
+  $('msg').textContent = '';
+  try { sessionStorage.setItem('chatKey', $('key').value); localStorage.setItem('chatApi', $('api').value); } catch (e) {}
+  $('plQ').focus();
+}
+async function searchPl() {
+  const qv = $('plQ').value.trim(); $('msg').textContent = '';
+  if (!qv) { $('msg').textContent = '请输入昵称、玩家ID或 WhatsApp 号码'; return; }
+  try {
+    const j = await call({ action: 'player_search', q: qv });
+    $('plDetail').style.display = 'none';
+    $('plRows').innerHTML = j.players.length ? j.players.map((p) => `<tr class="pl" data-pid="${p.id}">
+      <td>${esc(p.avatar)} <b>${esc(p.nick)}</b><div class="pid">${p.id}</div></td>
+      <td>本周 ${p.best}<br>Rogue ${p.rogue}<br>历史最高 ${p.allBest} · ${p.games} 局</td>
+      <td>${p.providers ? esc(p.providers.split(',').map((x) => PN[x] || x).join(' / ')) : '游客'}<br>${p.phone ? '<span class="num">+' + esc(p.phone) + '</span>' : '<span style="color:#999">未留号码</span>'}</td>
+      <td>${fmt(p.created)}<br>${fmt(p.updated)}</td></tr>`).join('') : '<tr><td colspan="4" style="color:#777">没有找到匹配的玩家</td></tr>';
+    if (j.players.length === 1) openPl(j.players[0].id);
+  } catch (e) { $('msg').textContent = e.message; }
+}
+async function openPl(pid) {
+  try {
+    const p = (await call({ action: 'player_detail', pid })).player, d = $('plDetail');
+    const bt = p.ban ? `<span class="ban">已禁言</span> ${esc(p.ban.reason || '')} ${p.ban.until ? '（到 ' + fmt(p.ban.until) + '）' : '（永久）'}` : '正常';
+    d.innerHTML = `<h2>${esc(p.avatar)} ${esc(p.nick)} <span class="pid">${p.id}</span></h2>
+      <div class="kv"><div><span>本周最高</span> ${p.best}</div><div><span>Roguelike 本周</span> ${p.rogue}</div><div><span>历史最高</span> ${p.allBest}</div>
+        <div><span>局数</span> ${p.games}</div><div><span>完美跳</span> ${p.perfects}</div><div><span>靠分数解锁</span> ${p.earned} 款</div>
+        <div><span>注册</span> ${fmt(p.created)}</div><div><span>最近活跃</span> ${fmt(p.updated)}</div><div><span>正在使用</span> ${esc(skinName(p.equipped))}</div>
+        <div><span>邀请好友</span> ${p.invited} 人</div><div><span>被邀请</span> ${p.invitedBy ? `<a href="#" data-pid="${p.invitedBy}">${p.invitedBy.slice(0, 8)}…</a>` : '否'}</div><div><span>留言状态</span> ${bt}</div></div>
+      <div><span style="color:#777">登录方式：</span>${p.accounts.length ? p.accounts.map((a) => `<span class="chip">${esc(PN[a.provider] || a.provider)} · ${fmt(a.ts)}</span>`).join('') : '游客（未绑定账号）'}</div>
+      <div style="margin-top:4px"><span style="color:#777">WhatsApp：</span>${p.wa ? `<span class="num">+${esc(p.wa.phone)}</span> <a href="https://wa.me/${esc(p.wa.phone)}" target="_blank" rel="noopener">打开 ↗</a> · 皮肤 ${esc(p.wa.skin)} · ${p.wa.verified ? '<span class="ok">已核对</span>' : '未核对'}${p.wa.note ? ' · ' + esc(p.wa.note) : ''} · ${fmt(p.wa.ts)}` : '未留号码'}</div>
+      <div style="margin-top:4px"><span style="color:#777">已解锁 ${p.unlocked.length} 款：</span>${p.unlocked.map((k) => `<span class="chip">${esc(skinName(k))}</span>`).join('')}</div>
+      <div style="margin-top:6px"><span style="color:#777">留言 ${p.chat.total} 条（已隐藏 ${p.chat.hidden}），最近 10 条：</span>${p.chat.recent.length ? p.chat.recent.map((m) => `<div class="${m.hidden ? 'pid' : ''}" style="${m.hidden ? 'text-decoration:line-through' : ''}">${fmt(m.ts)}　${esc(m.text)}</div>`).join('') : '<div class="pid">无</div>'}</div>
+      <div style="margin-top:8px">${p.ban ? `<button data-pa="unban" data-pid="${p.id}">解封</button>` : `<button class="d" data-pa="ban" data-pid="${p.id}" data-h="24">禁言24小时</button> <button class="d" data-pa="ban" data-pid="${p.id}" data-h="0">永久禁言</button>`}</div>`;
+    d.style.display = 'block'; d.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  } catch (e) { $('msg').textContent = e.message; }
+}
+$('goPl').onclick = showPl;
+$('plGo').onclick = searchPl;
+$('plQ').onkeydown = (e) => { if (e.key === 'Enter') searchPl(); };
+$('plRows').onclick = (e) => { const r = e.target.closest('tr[data-pid]'); if (r) openPl(r.dataset.pid); };
+$('plDetail').onclick = async (e) => {
+  const l = e.target.closest('a[data-pid]'); if (l) { e.preventDefault(); return openPl(l.dataset.pid); }
+  const b = e.target.closest('button[data-pa]'); if (!b) return;
+  if (b.dataset.pa === 'ban' && !confirm(b.dataset.h === '0' ? '永久禁言这个玩家，并隐藏他的全部消息？' : '禁言这个玩家 24 小时，并隐藏他的全部消息？')) return;
+  try { await call({ action: b.dataset.pa, pid: b.dataset.pid, hours: Number(b.dataset.h || 0), purge: true }); openPl(b.dataset.pid); } catch (err) { $('msg').textContent = err.message; }
+};
+
+let t = null; $('auto').onchange = () => { clearInterval(t); if ($('auto').checked) t = setInterval(() => { if ($('waBox').style.display !== 'block' && $('plBox').style.display !== 'block') load(); }, 5000); };
 if ($('key').value && $('api').value) $('go').onclick();
 </script></body></html>
