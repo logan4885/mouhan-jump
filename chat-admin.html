@@ -40,6 +40,7 @@ const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&
 try { const m = await import('./Leaderboard.js?v=20261113b'); if (m.LEADERBOARD_API.baseUrl) $('api').value = m.LEADERBOARD_API.baseUrl; } catch (e) {}
 try { $('key').value = sessionStorage.getItem('chatKey') || ''; $('api').value = $('api').value || localStorage.getItem('chatApi') || ''; } catch (e) {}
 async function call(body) {
+  $('msg').style.color = '';
   const base = $('api').value.trim().replace(/\/+$/, '');
   if (!base) throw new Error('请填写后端地址');
   const r = await fetch(base + '/api/chat/admin', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key: $('key').value, ...body }) });
@@ -142,7 +143,7 @@ async function openPl(pid) {
       <div style="margin-top:4px"><span style="color:#777">WhatsApp：</span>${p.wa ? `<span class="num">+${esc(p.wa.phone)}</span> <a href="https://wa.me/${esc(p.wa.phone)}" target="_blank" rel="noopener">打开 ↗</a> · 皮肤 ${esc(p.wa.skin)} · ${p.wa.verified ? '<span class="ok">已核对</span>' : '未核对'}${p.wa.note ? ' · ' + esc(p.wa.note) : ''} · ${fmt(p.wa.ts)}` : '未留号码'}</div>
       <div style="margin-top:4px"><span style="color:#777">已解锁 ${p.unlocked.length} 款：</span>${p.unlocked.map((k) => `<span class="chip">${esc(skinName(k))}</span>`).join('')}</div>
       <div style="margin-top:6px"><span style="color:#777">留言 ${p.chat.total} 条（已隐藏 ${p.chat.hidden}），最近 10 条：</span>${p.chat.recent.length ? p.chat.recent.map((m) => `<div class="${m.hidden ? 'pid' : ''}" style="${m.hidden ? 'text-decoration:line-through' : ''}">${fmt(m.ts)}　${esc(m.text)}</div>`).join('') : '<div class="pid">无</div>'}</div>
-      <div style="margin-top:8px">${p.ban ? `<button data-pa="unban" data-pid="${p.id}">解封</button>` : `<button class="d" data-pa="ban" data-pid="${p.id}" data-h="24">禁言24小时</button> <button class="d" data-pa="ban" data-pid="${p.id}" data-h="0">永久禁言</button>`}</div>`;
+      <div style="margin-top:8px"><button class="p" data-pa="grant" data-pid="${p.id}">🎁 补发随机罐子</button> ${p.ban ? `<button data-pa="unban" data-pid="${p.id}">解封</button>` : `<button class="d" data-pa="ban" data-pid="${p.id}" data-h="24">禁言24小时</button> <button class="d" data-pa="ban" data-pid="${p.id}" data-h="0">永久禁言</button>`}</div>`;
     d.style.display = 'block'; d.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   } catch (e) { $('msg').textContent = e.message; }
 }
@@ -153,6 +154,12 @@ $('plRows').onclick = (e) => { const r = e.target.closest('tr[data-pid]'); if (r
 $('plDetail').onclick = async (e) => {
   const l = e.target.closest('a[data-pid]'); if (l) { e.preventDefault(); return openPl(l.dataset.pid); }
   const b = e.target.closest('button[data-pa]'); if (!b) return;
+  if (b.dataset.pa === 'grant') {
+    if (!confirm('给这个玩家补发 1 款随机的、他还没有的特效罐？（发出后不能撤回）')) return;
+    try { const r = await call({ action: 'grant_skin', pid: b.dataset.pid }); await openPl(b.dataset.pid); $('msg').textContent = '已补发：' + r.skin + '（玩家下次打开游戏并同步后会看到）'; $('msg').style.color = '#1a7f37'; }
+    catch (err) { $('msg').textContent = err.message === 'none' ? '这个玩家的罐子已经集齐，没有可补发的' : err.message; }
+    return;
+  }
   if (b.dataset.pa === 'ban' && !confirm(b.dataset.h === '0' ? '永久禁言这个玩家，并隐藏他的全部消息？' : '禁言这个玩家 24 小时，并隐藏他的全部消息？')) return;
   try { await call({ action: b.dataset.pa, pid: b.dataset.pid, hours: Number(b.dataset.h || 0), purge: true }); openPl(b.dataset.pid); } catch (err) { $('msg').textContent = err.message; }
 };
